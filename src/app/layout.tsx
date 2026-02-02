@@ -10,7 +10,7 @@ import routerProvider from "@refinedev/nextjs-router";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@refinedev/antd/dist/reset.css";
 import { authProviderClient } from "@providers/auth-provider/auth-provider.client";
-import { dataProvider } from "@providers/data-provider";
+import { dataProvider, liveProvider } from "@providers/data-provider";
 import { ColorModeContextProvider } from "@contexts/color-mode";
 
 export const metadata: Metadata = {
@@ -34,48 +34,71 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <Suspense>
-          <GitHubBanner />
+          {/* <GitHubBanner /> */}
           <RefineKbarProvider>
             <AntdRegistry>
               <ColorModeContextProvider defaultMode={defaultMode}>
-                <DevtoolsProvider>
-                  <Refine
-                    routerProvider={routerProvider}
-                    authProvider={authProviderClient}
-                    dataProvider={dataProvider}
-                    notificationProvider={useNotificationProvider}
-                    resources={[
-                      {
-                        name: "blog_posts",
-                        list: "/blog-posts",
-                        create: "/blog-posts/create",
-                        edit: "/blog-posts/edit/:id",
-                        show: "/blog-posts/show/:id",
-                        meta: {
-                          canDelete: true,
-                        },
+                {/* <DevtoolsProvider> */}
+                <Refine
+                  routerProvider={routerProvider}
+                  authProvider={authProviderClient}
+                  dataProvider={dataProvider}
+                  liveProvider={liveProvider}
+                  notificationProvider={useNotificationProvider}
+                  // i18nProvider={{v:{}}}
+                  resources={[
+                    {
+                      name: "groups",
+                      list: "/blog-posts",
+                      create: "/blog-posts/create",
+                      edit: "/blog-posts/edit/:id",
+                      show: "/blog-posts/show/:id",
+                      meta: {
+                        canDelete: true,
                       },
-                      {
-                        name: "categories",
-                        list: "/categories",
-                        create: "/categories/create",
-                        edit: "/categories/edit/:id",
-                        show: "/categories/show/:id",
-                        meta: {
-                          canDelete: true,
-                        },
+                    },
+                    {
+                      name: "messages",
+                      list: "/room",
+                      show: "/room/:id",
+                      meta: {
+                        label: "room",
                       },
-                    ]}
-                    options={{
-                      syncWithLocation: true,
-                      warnWhenUnsavedChanges: true,
-                      projectId: "pR79IU-yumvAC-RqQuUo",
-                    }}
-                  >
-                    {children}
-                    <RefineKbar />
-                  </Refine>
-                </DevtoolsProvider>
+                    },
+                    {
+                      name: "users",
+                      list: "/users",
+                      create: "/users/create",
+                      edit: "/users/edit/:id",
+                      show: "/users/show/:id",
+                      meta: {
+                        canDelete: true,
+                      },
+                    },
+                    {
+                      name: "categories",
+                      list: "/categories",
+                      create: "/categories/create",
+                      edit: "/categories/edit/:id",
+                      show: "/categories/show/:id",
+                      meta: {
+                        canDelete: true,
+                      },
+                    },
+                  ]}
+                  options={{
+                    syncWithLocation: true,
+                    warnWhenUnsavedChanges: true,
+                    projectId: "pR79IU-yumvAC-RqQuUo",
+                    title: {
+                      text:'Killerqueen'
+                    }
+                  }}
+                >
+                  {children}
+                  <RefineKbar />
+                </Refine>
+                {/* </DevtoolsProvider> */}
               </ColorModeContextProvider>
             </AntdRegistry>
           </RefineKbarProvider>

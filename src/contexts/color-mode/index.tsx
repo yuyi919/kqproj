@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { RefineThemes } from "@refinedev/antd";
-import { ConfigProvider, App as AntdApp, theme } from "antd";
+import { ConfigProvider, App as AntdApp, theme, ThemeConfig } from "antd";
 import Cookies from "js-cookie";
 
 type ColorModeContextType = {
@@ -49,9 +49,7 @@ export const ColorModeContextProvider: React.FC<
       Cookies.set("theme", "light");
     }
   };
-
-  const { darkAlgorithm, defaultAlgorithm } = theme;
-
+  
   return (
     <ColorModeContext.Provider
       value={{
@@ -59,15 +57,30 @@ export const ColorModeContextProvider: React.FC<
         mode,
       }}
     >
-      <ConfigProvider
-        // you can change the theme colors here. example: ...RefineThemes.Magenta,
-        theme={{
-          ...RefineThemes.Blue,
-          algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
-        }}
-      >
-        <AntdApp>{children}</AntdApp>
-      </ConfigProvider>
+      <AntdApp>
+        <ConfigProvider
+          // you can change the theme colors here. example: ...RefineThemes.Magenta,
+          theme={mode === "light" ? light_ : dark_}
+        >
+          {children}
+        </ConfigProvider>
+      </AntdApp>
     </ColorModeContext.Provider>
   );
 };
+
+const { darkAlgorithm, defaultAlgorithm, compactAlgorithm } = theme;
+const dark_: ThemeConfig = {
+  cssVar: {},
+  // zeroRuntime: false,
+  ...RefineThemes.Blue,
+  algorithm: [darkAlgorithm, compactAlgorithm],
+};
+
+const light_: ThemeConfig = {
+  cssVar: {},
+  // zeroRuntime: false,
+  ...RefineThemes.Blue,
+  algorithm: [defaultAlgorithm, compactAlgorithm],
+};
+// console.log(light_, dark_);

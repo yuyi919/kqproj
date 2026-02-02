@@ -10,3 +10,5 @@ export const supabaseBrowserClient = createBrowserClient(
     },
   }
 );
+
+export type SupabaseClient = typeof supabaseBrowserClient

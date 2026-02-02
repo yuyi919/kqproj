@@ -7,16 +7,16 @@ import React from "react";
 export default function BlogPostCreate() {
   const { formProps, saveButtonProps } = useForm({});
 
-  const { selectProps: categorySelectProps } = useSelect({
-    resource: "categories",
-  });
+  // const { selectProps: categorySelectProps } = useSelect({
+  //   resource: "categories",
+  // });
 
   return (
     <Create saveButtonProps={saveButtonProps}>
       <Form {...formProps} layout="vertical">
         <Form.Item
-          label={"Title"}
-          name={["title"]}
+          label={"Name"}
+          name={["name"]}
           rules={[
             {
               required: true,
@@ -26,8 +26,8 @@ export default function BlogPostCreate() {
           <Input />
         </Form.Item>
         <Form.Item
-          label={"Content"}
-          name="content"
+          label={"Description"}
+          name="description"
           rules={[
             {
               required: true,
@@ -36,7 +36,7 @@ export default function BlogPostCreate() {
         >
           <Input.TextArea rows={5} />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           label={"Category"}
           name={"categoryId"}
           rules={[
@@ -46,7 +46,7 @@ export default function BlogPostCreate() {
           ]}
         >
           <Select {...categorySelectProps} />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           label={"Status"}
           name={["status"]}
@@ -58,7 +58,6 @@ export default function BlogPostCreate() {
           ]}
         >
           <Select
-            defaultValue={"draft"}
             options={[
               { value: "draft", label: "Draft" },
               { value: "published", label: "Published" },

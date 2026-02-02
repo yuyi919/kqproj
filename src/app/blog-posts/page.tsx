@@ -11,13 +11,13 @@ import {
 } from "@refinedev/antd";
 import { type BaseRecord, useMany } from "@refinedev/core";
 import { Space, Table } from "antd";
-import React from "react";
 
 export default function BlogPostList() {
   const { result, tableProps } = useTable({
+    resource: "groups",
     syncWithLocation: true,
     meta: {
-      select: "*, categories(id,title)",
+      select: "*, members:group_members(id:user_id,meta:users(*))",
     },
   });
 
@@ -25,7 +25,7 @@ export default function BlogPostList() {
     result: { data: categories },
     query: { isLoading: categoryIsLoading },
   } = useMany({
-    resource: "categories",
+    resource: "groups",
     ids:
       result?.data?.map((item) => item?.categories?.id).filter(Boolean) ?? [],
     queryOptions: {

@@ -1,26 +1,15 @@
 "use client";
 
+import { UserAvatar } from "@components/Avatar";
 import { ColorModeContext } from "@contexts/color-mode";
+import type { IUser } from "@interfaces/user";
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
 import { useGetIdentity } from "@refinedev/core";
-import {
-  Avatar,
-  Layout as AntdLayout,
-  Space,
-  Switch,
-  theme,
-  Typography,
-} from "antd";
+import { Layout as AntdLayout, Space, Switch, theme, Typography } from "antd";
 import React, { useContext } from "react";
 
 const { Text } = Typography;
 const { useToken } = theme;
-
-type IUser = {
-  id: number;
-  name: string;
-  avatar: string;
-};
 
 export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   sticky = true,
@@ -56,7 +45,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
         {(user?.name || user?.avatar) && (
           <Space style={{ marginLeft: "8px" }} size="middle">
             {user?.name && <Text strong>{user.name}</Text>}
-            {user?.avatar && <Avatar src={user?.avatar} alt={user?.name} />}
+            {user && <UserAvatar user={user.meta} />}
           </Space>
         )}
       </Space>

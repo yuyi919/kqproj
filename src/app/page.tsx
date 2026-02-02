@@ -8,9 +8,9 @@ import { Authenticated } from "@refinedev/core";
 export default function IndexPage() {
   return (
     <Suspense>
-      <Authenticated key="home-page">
+      {/* <Authenticated key="home-page"> */}
         <NavigateToResource />
-      </Authenticated>
+      {/* </Authenticated> */}
     </Suspense>
   );
 }

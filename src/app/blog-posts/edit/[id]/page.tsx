@@ -7,23 +7,23 @@ import React from "react";
 export default function BlogPostEdit() {
   const { formProps, saveButtonProps, query } = useForm({
     meta: {
-      select: "*, categories(id,title)",
+      select: "*",
     },
   });
 
   const blogPostsData = query?.data?.data;
 
-  const { selectProps: categorySelectProps } = useSelect({
-    resource: "categories",
-    defaultValue: blogPostsData?.categories?.id,
-  });
+  // const { selectProps: categorySelectProps } = useSelect({
+  //   resource: "categories",
+  //   defaultValue: blogPostsData?.categories?.id,
+  // });
 
   return (
     <Edit saveButtonProps={saveButtonProps}>
       <Form {...formProps} layout="vertical">
         <Form.Item
-          label={"Title"}
-          name={["title"]}
+          label={"Name"}
+          name={["name"]}
           rules={[
             {
               required: true,
@@ -33,8 +33,8 @@ export default function BlogPostEdit() {
           <Input />
         </Form.Item>
         <Form.Item
-          label={"Content"}
-          name="content"
+          label={"Description"}
+          name="description"
           rules={[
             {
               required: true,
@@ -43,7 +43,7 @@ export default function BlogPostEdit() {
         >
           <Input.TextArea rows={5} />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           label={"Category"}
           name={"categoryId"}
           initialValue={formProps?.initialValues?.categories?.id}
@@ -54,7 +54,7 @@ export default function BlogPostEdit() {
           ]}
         >
           <Select {...categorySelectProps} />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           label={"Status"}
           name={["status"]}
@@ -66,7 +66,6 @@ export default function BlogPostEdit() {
           ]}
         >
           <Select
-            defaultValue={"draft"}
             options={[
               { value: "draft", label: "Draft" },
               { value: "published", label: "Published" },

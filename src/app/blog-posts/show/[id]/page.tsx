@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import {
   DateField,
@@ -7,47 +7,42 @@ import {
   Show,
   TextField,
 } from "@refinedev/antd";
-import { useOne, useShow } from "@refinedev/core";
-import { Typography } from "antd";
+import {
+  useCreate,
+  useGetIdentity,
+  useList,
+  useOne,
+  useShow,
+} from "@refinedev/core";
+import { Typography, Avatar, Skeleton } from "antd";
 import React from "react";
-
+import { Bubble } from "@ant-design/x";
+import { ChatInput } from "@components/chat/input";
+// import { useParams } from "next/navigation";
+import { supabaseBrowserClient } from "@utils/supabase/client";
+import { createSupabaseServerClient } from "@utils/supabase/server";
+import GroupShow from "@components/pages/groups/show";
 const { Title } = Typography;
 
-export default function BlogPostShow() {
-  const { result: record, query } = useShow({
-    meta: {
-      select: "*, categories(id,title)",
-    },
-  });
-  const { isLoading } = query;
+export default async function BlogPostShow({
+  params,
+}: PageProps<"/blog-posts/show/[id]">) {
+  const { id } = await params;
+  const { data: record, error } = await (await createSupabaseServerClient())
+    .from("groups")
+    .select("*, members:group_members(user_id,meta:users(*))")
+    .single();
+  console.log(record, id);
+  // const { result: record, query } = useShow<Group>({
+  //   resource: "groups",
+  //   id,
+  //   meta: {
+  //     select: "*, members:group_members(user_id,meta:users(*))",
+  //   },
+  // });
+  // const { isLoading } = query;
 
-  const {
-    result: category,
-    query: { isLoading: categoryIsLoading },
-  } = useOne({
-    resource: "categories",
-    id: record?.categories?.id || "",
-    queryOptions: {
-      enabled: !!record,
-    },
-  });
-
-  return (
-    <Show isLoading={isLoading}>
-      <Title level={5}>{"ID"}</Title>
-      <TextField value={record?.id} />
-      <Title level={5}>{"Title"}</Title>
-      <TextField value={record?.title} />
-      <Title level={5}>{"Content"}</Title>
-      <MarkdownField value={record?.content} />
-      <Title level={5}>{"Category"}</Title>
-      <TextField
-        value={categoryIsLoading ? <>Loading...</> : <>{category?.title}</>}
-      />
-      <Title level={5}>{"Status"}</Title>
-      <TextField value={record?.status} />
-      <Title level={5}>{"CreatedAt"}</Title>
-      <DateField value={record?.createdAt} />
-    </Show>
-  );
+  // // console.log(isLoading)
+  return <GroupShow id={id} initialData={record} />;
+  // return null;
 }

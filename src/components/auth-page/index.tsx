@@ -1,5 +1,5 @@
 "use client";
-import { AuthPage as AuthPageBase } from "@refinedev/antd";
+import { AuthPage as AuthPageBase, ThemedTitle } from "@refinedev/antd";
 import type { AuthPageProps } from "@refinedev/core";
 
 export const AuthPage = (props: AuthPageProps) => {
@@ -12,6 +12,15 @@ export const AuthPage = (props: AuthPageProps) => {
           password: "refine-supabase",
         },
       }}
+      title={<ThemedTitle {...{ collapsed: false }}></ThemedTitle>}
+      renderContent={(CardContent, PageTitle) => (
+        <>
+          {props.title}
+          <br/>
+          {PageTitle}
+          {CardContent}
+        </>
+      )}
     />
   );
 };
