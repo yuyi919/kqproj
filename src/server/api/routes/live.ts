@@ -3,92 +3,7 @@ import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import type { ApiVariables } from "../middleware/supabase";
-
-// --- Utils ---
-
-const mapOperator = (operator: string) => {
-  switch (operator) {
-    case "ne":
-      return "neq";
-    case "nin":
-      return "not.in";
-    case "contains":
-      return "ilike";
-    case "ncontains":
-      return "not.ilike";
-    case "containss":
-      return "like";
-    case "ncontainss":
-      return "not.like";
-    case "null":
-      return "is";
-    case "nnull":
-      return "not.is";
-    case "ina":
-      return "cs";
-    case "nina":
-      return "not.cs";
-    default:
-      return operator;
-  }
-};
-
-const mapFilter = (filters?: any[]): string | undefined => {
-  if (!filters || filters.length === 0) {
-    return undefined;
-  }
-
-  return filters
-    .map((filter: any): string | undefined => {
-      if (filter && "field" in filter && "operator" in filter) {
-        return `${filter.field}=${mapOperator(filter.operator)}.${filter.value}`;
-      }
-      return undefined;
-    })
-    .filter(Boolean)
-    .join(",");
-};
-
-const applyPostgrestFilter = (filter: any, query: any) => {
-  const { field, operator, value } = filter;
-
-  switch (operator) {
-    case "eq":
-      return query.eq(field, value);
-    case "ne":
-      return query.neq(field, value);
-    case "lt":
-      return query.lt(field, value);
-    case "gt":
-      return query.gt(field, value);
-    case "lte":
-      return query.lte(field, value);
-    case "gte":
-      return query.gte(field, value);
-    case "contains":
-      return query.contains(field, value);
-    case "containedBy":
-      return query.containedBy(field, value);
-    case "range":
-      return query.range(value[0], value[1]);
-    case "isnull":
-    case "null":
-      return query.is(field, null);
-    case "isnotnull":
-    case "notnull":
-      return query.not(field, "is", null);
-    case "in":
-      return query.in(field, value);
-    case "between":
-      return query.gte(field, value[0]).lte(field, value[1]);
-    case "startsWith":
-      return query.ilike(field, `${value}%`);
-    case "endsWith":
-      return query.ilike(field, `%${value}`);
-    default:
-      return query;
-  }
-};
+import { serlizeFilter, applyPostgrestFilter } from "@utils/supabase";
 
 /**
  * Supabase Realtime 包装路由 (SSE 方案)
@@ -128,7 +43,7 @@ export const live = /*#__PURE__*/ new Hono<{ Variables: ApiVariables }>().get(
       });
     }
 
-    const realtimeFilter = mapFilter(filters);
+    const realtimeFilter = serlizeFilter(filters);
     const channelName = `${resource}:${Math.random().toString(36).substring(2)}`;
     // const channelName = `${resource}:${parsedTypes.join("|")}${realtimeFilter ? `:${realtimeFilter}` : ""}`;
     let channel: ReturnType<typeof supabase.channel> | undefined = undefined;

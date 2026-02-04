@@ -1,6 +1,10 @@
 import { Server } from "socket.io";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { SUPABASE_KEY, SUPABASE_URL } from "@utils/supabase/constants";
+import {
+  parseCookies,
+  createSupabaseClient,
+  SupabaseHost,
+  serlizeFilter,
+} from "@utils/supabase";
 import { nanoid } from "nanoid";
 import type {
   ClientToServerEvents,
@@ -9,8 +13,11 @@ import type {
   ResourceEventPayload,
   RoomEventPayload,
   MessageReceivedPayload,
+  SubscribeParams,
 } from "@interfaces/socket";
 import type { SupabaseClient, SupabaseUser } from "@utils/supabase/client";
+import { createAdapter } from "@socket.io/postgres-adapter";
+import { Pool } from "pg";
 
 /**
  * Socket 存储的自定义数据
@@ -18,23 +25,7 @@ import type { SupabaseClient, SupabaseUser } from "@utils/supabase/client";
 interface SocketData {
   user?: SupabaseUser;
   supabase: SupabaseClient;
-}
-
-/**
- * 从 Socket 握手请求中解析 Cookie
- */
-function parseCookies(cookieHeader: string) {
-  const cookies: Record<string, string> = {};
-  if (!cookieHeader) return cookies;
-  decodeURIComponent(cookieHeader)
-    .split(";")
-    .forEach((cookie) => {
-      const [name, ...rest] = cookie.split("=");
-      const value = rest.join("=").trim();
-      if (!name) return;
-      cookies[name.trim()] = value;
-    });
-  return cookies;
+  host: SupabaseHost;
 }
 
 /**
@@ -49,40 +40,51 @@ export const setupSocketIO = (
     SocketData
   >,
 ) => {
+  const pool = new Pool({
+    host: "aws-1-ap-south-1.pooler.supabase.com",
+    user: "postgres.qmvduqswpeqyrrnydcyo",
+    database: "postgres",
+    password: process.env.DB_PWD!,
+    port: 5432,
+  });
+
+  pool.query(`
+    CREATE TABLE IF NOT EXISTS public.socket_io_attachments (
+        id          bigserial UNIQUE,
+        created_at  timestamptz DEFAULT NOW(),
+        payload     bytea
+    );
+  `);
+
+  io.adapter(createAdapter(pool));
+
+  const ns = io.of("/");
   // 身份验证中间件
-  io.use(async (socket, next) => {
+  ns.use(async (socket, next) => {
     try {
       const cookieHeader = socket.handshake.headers.cookie || "";
-      const cookies = parseCookies(cookieHeader);
-      const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
-        cookies: {
-          get(name: string) {
-            return cookies[name];
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            // Socket 连接过程中通常不需要设置 Cookie
-          },
-          remove(name: string, options: CookieOptions) {
-            // Socket 连接过程中通常不需要移除 Cookie
-          },
+      const cookies = /*#__PURE__*/ parseCookies(cookieHeader);
+      const supabase = /*#__PURE__*/ createSupabaseClient({
+        get(name: string) {
+          return cookies[name];
         },
       });
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const host = new SupabaseHost(supabase);
+      const { authenticated, user, error } = await host.check();
 
       if (user) {
         socket.data.user = user;
         socket.data.supabase = supabase;
+        socket.data.host = host;
         console.log(`[Socket] Auth success: ${user.email} (${socket.id})`);
         socket.emit("auth:status", {
-          authenticated: true,
+          authenticated,
           user: { id: user.id, email: user.email! },
         });
       } else {
         console.log(`[Socket] Anonymous connection: ${socket.id}`);
-        socket.emit("auth:status", { authenticated: false });
+        socket.emit("auth:status", { authenticated });
       }
       next();
     } catch (err) {
@@ -91,7 +93,21 @@ export const setupSocketIO = (
     }
   });
 
-  io.on("connection", (socket) => {
+  const rooms: Record<string, SubscribeParams> = {};
+  ns.adapter.on("create-room", (room) => {
+    console.log(`room ${room} was created`);
+  });
+  ns.adapter.on("delete-room", (room) => {
+    console.log(`room ${room} was deleted`);
+  });
+
+  ns.adapter.on("join-room", (room, id) => {
+    console.log(`socket ${id} has joined room ${room}`);
+  });
+  ns.adapter.on("leave-room", (room, id) => {
+    console.log(`socket ${id} has left room ${room}`);
+  });
+  ns.on("connection", (socket) => {
     const user = socket.data.user;
     console.log(
       `[Socket] User connected: ${socket.id} (${user?.email || "anonymous"})`,
@@ -101,28 +117,28 @@ export const setupSocketIO = (
 
     // 订阅资源
     socket.on("subscribe", (data) => {
-      const room = `resource:${data.resource}`;
+      const room = `resource:${data.resource}:${serlizeFilter(data.params?.filters)}`;
+      rooms[room] = data;
       console.log(
-        `[Socket] User ${socket.id} subscribed to resource: ${data.resource}`,
+        `[Socket] User ${socket.id} subscribed to resource: ${data.resource} with filters: ${serlizeFilter(data.params?.filters)}`,
       );
       socket.join(room);
     });
 
     // 取消订阅资源
     socket.on("unsubscribe", (data) => {
-      const room = `resource:${data.resource}`;
+      const room = `resource:${data.resource}:${serlizeFilter(data.params?.filters)}`;
       console.log(
-        `[Socket] User ${socket.id} unsubscribed from resource: ${data.resource}`,
+        `[Socket] User ${socket.id} unsubscribed from resource: ${data.resource} with filters: ${serlizeFilter(data.params?.filters)}`,
       );
       socket.leave(room);
     });
-
     // 发布自定义事件
     socket.on("publish", (data) => {
       const resource = data.channel.replace("resources/", "");
-      const room = `resource:${resource}`;
+      const room = `resource:${resource}:${serlizeFilter(data.params?.filters)}`;
       console.log(
-        `[Socket] User ${socket.id} published to ${data.channel}: ${data.type}`,
+        `[Socket] User ${socket.id} published to ${data.channel}: ${data.type} with filters: ${serlizeFilter(data.params?.filters)}`,
       );
 
       // 广播给订阅了该资源的所有人
@@ -132,9 +148,9 @@ export const setupSocketIO = (
         payload: data.payload,
         socketId: socket.id,
         userId: user?.id || null,
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
       };
-      io.to(room).emit("resource-event", payload);
+      ns.to(room).emit("resource-event", payload);
     });
 
     // --- 原有聊天逻辑 ---
@@ -162,12 +178,8 @@ export const setupSocketIO = (
 
       // 获取更多用户信息 (可选)
       let userInfo = {};
-      if (user && socket.data.supabase) {
-        const { data: profile } = await socket.data.supabase
-          .from("users")
-          .select("username, avatar_url")
-          .eq("id", user.id)
-          .single();
+      if (user && socket.data.host) {
+        const { data: profile } = await socket.data.host.getProfile(user.id);
         if (profile) {
           userInfo = profile;
         }
@@ -183,7 +195,7 @@ export const setupSocketIO = (
         text: data.message,
         timestamp: Date.now(),
       };
-      io.to(data.room).emit("message:received", payload);
+      ns.to(data.room).emit("message:received", payload);
     });
 
     // 离开房间

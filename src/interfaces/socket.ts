@@ -1,3 +1,12 @@
+import type {
+  BaseKey,
+  CrudFilter,
+  LiveCommonParams,
+  LiveListParams,
+  LiveManyParams,
+  LiveOneParams,
+} from "@refinedev/core";
+
 /**
  * 基础身份字段
  */
@@ -12,7 +21,9 @@ export interface IdentityFields {
 export interface ResourceEventPayload extends IdentityFields {
   resource: string;
   type: string;
-  payload: any;
+  payload: {
+    ids?: BaseKey[];
+  };
   timestamp: number;
 }
 
@@ -61,17 +72,31 @@ export interface ServerToClientEvents {
   "auth:status": (data: AuthStatusPayload) => void;
 }
 
+export type SubscribeParams = {
+  resource: string;
+  params?: LiveCommonParams & LiveListParams & LiveOneParams & LiveManyParams;
+};
 /**
  * 客户端发送给服务端的事件
  */
 export interface ClientToServerEvents {
-  subscribe: (data: {
-    resource: string;
-    types?: string[];
-    params?: any;
+  subscribe: (
+    data: SubscribeParams & {
+      types?: string[];
+    },
+  ) => void;
+  unsubscribe: (data: SubscribeParams) => void;
+  publish: (data: {
+    channel: string;
+    type: string;
+    payload: {
+      ids?: BaseKey[];
+    };
+    params?: {
+      filters?: CrudFilter[];
+    };
+    timestamp: number;
   }) => void;
-  unsubscribe: (data: { resource: string }) => void;
-  publish: (data: { channel: string; type: string; payload: any }) => void;
   "room:join": (room: string) => void;
   "room:leave": (room: string) => void;
   "message:send": (data: { room: string; message: string }) => void;

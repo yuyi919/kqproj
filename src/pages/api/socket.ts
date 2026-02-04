@@ -38,19 +38,19 @@ const initializeSocketServer = (httpServer: HTTPServer): IOServer => {
   return io
 }
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponseWithSocket,
 ) {
-  if (process.env.NODE_ENV !== "production") {
-    // 在开发环境下，如果 io 已经存在，我们关闭它以允许重新初始化
-    // 这样可以确保 setupSocketIO 中的逻辑变更能通过热更新生效
-    if (res.socket.server.io) {
-      console.log("Socket is re-initializing (HMR)")
-      res.socket.server.io.close()
-      res.socket.server.io = undefined
-    }
-  }
+  // if (process.env.NODE_ENV !== "production") {
+  //   // 在开发环境下，如果 io 已经存在，我们关闭它以允许重新初始化
+  //   // 这样可以确保 setupSocketIO 中的逻辑变更能通过热更新生效
+  //   if (res.socket.server.io) {
+  //     console.log("Socket is re-initializing (HMR)")
+  //     res.socket.server.io.removeAllListeners()
+  //     res.socket.server.io = undefined
+  //   }
+  // }
 
   if (res.socket.server.io) {
     console.log("Socket is already running")

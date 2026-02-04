@@ -124,12 +124,14 @@ export const data = /*#__PURE__*/ new Hono<{ Variables: ApiVariables }>()
       const { current = 1, pageSize = 10, mode = "server" } = parsedPagination;
 
       const client = parsedMeta.schema
-        ? supabase.schema(parsedMeta.schema)
+        ? (supabase.schema(parsedMeta.schema) as unknown as typeof supabase)
         : supabase;
 
-      let query = client.from(resource).select(parsedMeta.select ?? "*", {
-        count: parsedMeta.count ?? "exact",
-      });
+      let query = client
+        .from(resource)
+        .select((parsedMeta.select as "*") ?? "*", {
+          count: parsedMeta.count ?? "exact",
+        });
 
       if (mode === "server") {
         query = query.range((current - 1) * pageSize, current * pageSize - 1);

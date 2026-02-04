@@ -7,6 +7,7 @@ import type {
   GetListResponse,
   GetManyResponse,
   GetOneResponse,
+  MetaQuery,
   UpdateManyResponse,
   UpdateResponse,
 } from "@refinedev/core";
@@ -21,7 +22,7 @@ export const dataProvider = (): DataProvider => {
           pagination: JSON.stringify(pagination),
           filters: JSON.stringify(filters),
           sorters: JSON.stringify(sorters),
-          meta: JSON.stringify(meta),
+          meta: JSON.stringify(pickMeta(meta)),
         },
       });
 
@@ -45,7 +46,7 @@ export const dataProvider = (): DataProvider => {
               value: ids,
             },
           ]),
-          meta: JSON.stringify(meta),
+          meta: JSON.stringify(pickMeta(meta)),
         },
       });
 
@@ -62,7 +63,7 @@ export const dataProvider = (): DataProvider => {
       const res = await rpc.data[":resource"][":id"].$get({
         param: { resource, id: id.toString() },
         query: {
-          meta: JSON.stringify(meta),
+          meta: JSON.stringify(pickMeta(meta)),
         },
       });
 
@@ -147,7 +148,7 @@ export const dataProvider = (): DataProvider => {
     deleteOne: async ({ resource, id, meta }) => {
       const res = await rpc.data[":resource"][":id"].$delete({
         param: { resource, id: id.toString() },
-        query: { meta: JSON.stringify(meta) },
+        query: { meta: JSON.stringify(pickMeta(meta)) },
       });
 
       if (!res.ok) {
@@ -163,7 +164,7 @@ export const dataProvider = (): DataProvider => {
         ids.map((id) =>
           rpc.data[":resource"][":id"].$delete({
             param: { resource, id: id.toString() },
-            query: { meta: JSON.stringify(meta) },
+            query: { meta: JSON.stringify(pickMeta(meta)) },
           }),
         ),
       );
@@ -197,3 +198,11 @@ export const dataProvider = (): DataProvider => {
     },
   };
 };
+function pickMeta(meta?: MetaQuery): MetaQuery {
+  return {
+    schema: meta?.schema,
+    count: meta?.count,
+    select: meta?.select,
+    idColumnName: meta?.idColumnName,
+  };
+}

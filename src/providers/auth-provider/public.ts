@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@utils/supabase/client";
+import { SupabaseHost } from "@utils/supabase/host";
 import type { AuthProvider, CheckResponse } from "@refinedev/core";
 import type { IUser, UserMeta } from "@interfaces/user";
 
 export function createPublicAuthProvider(client: SupabaseClient) {
+  const host = new SupabaseHost(client);
   return {
     login: async ({ email, password, providerName }) => {
       if (providerName) {
@@ -104,8 +106,7 @@ export function createPublicAuthProvider(client: SupabaseClient) {
       };
     },
     check: async (): Promise<CheckResponse> => {
-      const { data, error } = await client.auth.getUser();
-      const { user } = data;
+      const { authenticated, error } = await host.check();
 
       if (error) {
         return {
@@ -115,7 +116,7 @@ export function createPublicAuthProvider(client: SupabaseClient) {
         };
       }
 
-      if (user) {
+      if (authenticated) {
         return {
           authenticated: true,
         };
@@ -127,35 +128,16 @@ export function createPublicAuthProvider(client: SupabaseClient) {
       };
     },
     getPermissions: async () => {
-      const user = await client.auth.getUser();
+      const { user } = await host.getUser();
 
       if (user) {
-        return user.data.user?.role;
+        return user.role;
       }
 
       return null;
     },
     getIdentity: async (): Promise<IUser | null> => {
-      const { data } = await client.auth.getUser();
-
-      if (data?.user) {
-        const _meta = await client
-          .from("users")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
-
-        const meta = _meta.data as UserMeta;
-        if (!_meta.data || _meta.error) return null;
-        return {
-          ...data.user,
-          name: meta.username ?? data.user.email!,
-          avatar: meta.avatar_url || null,
-          meta: meta,
-        };
-      }
-
-      return null;
+      return host.getIdentity();
     },
     onError: async (error) => {
       if (error?.code === "PGRST301" || error?.code === 401) {
