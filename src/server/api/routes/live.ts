@@ -132,7 +132,7 @@ export const live = /*#__PURE__*/ new Hono<{ Variables: ApiVariables }>().get(
                 await stream.writeSSE({
                   data: JSON.stringify(payload),
                   event: "message",
-                  id: String(payload.new?.id || payload.old?.id || Date.now()),
+                  id: String(payload.new?.id || (payload.old as any)?.id || Date.now()),
                 });
               }
             },
