@@ -17,6 +17,9 @@ export const supabaseMiddleware = /*#__PURE__*/ createMiddleware<{ Variables: Ap
       },
       set(name: string, value: string, options: CookieOptions) {
         // console.log(options.maxAge = 34560000)
+        if (options.maxAge > 34560000) {
+          options.maxAge = 34560000
+        }
         setCookie(c, name, value, options)
       },
       remove(name: string, options: CookieOptions) {
