@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { cookies } from "next/headers";
 import React, { Suspense } from "react";
 import { Refine, GitHubBanner } from "@refinedev/core";
-import { DevtoolsProvider } from "@providers/devtools";
+// import { DevtoolsProvider } from "@providers/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { useNotificationProvider } from "@refinedev/antd";
 import routerProvider from "@refinedev/nextjs-router";
@@ -62,6 +62,7 @@ export default async function RootLayout({
                       list: "/room",
                       show: "/room/:id",
                       meta: {
+                        canDelete: false,
                         label: "room",
                       },
                     },
@@ -91,8 +92,8 @@ export default async function RootLayout({
                     warnWhenUnsavedChanges: true,
                     projectId: "pR79IU-yumvAC-RqQuUo",
                     title: {
-                      text:'Killerqueen'
-                    }
+                      text: "Killerqueen",
+                    },
                   }}
                 >
                   {children}

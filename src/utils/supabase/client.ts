@@ -8,7 +8,11 @@ export const supabaseBrowserClient = createBrowserClient(
     db: {
       schema: "public",
     },
-  }
+  },
 );
 
-export type SupabaseClient = typeof supabaseBrowserClient
+export type SupabaseClient = typeof supabaseBrowserClient;
+export type SupabaseUser = Exclude<
+  Awaited<ReturnType<SupabaseClient["auth"]["getUser"]>>["data"]["user"],
+  null
+>;

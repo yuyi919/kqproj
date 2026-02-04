@@ -1,10 +1,6 @@
-import React from "react";
-import { Grid, Layout as AntdLayout } from "antd";
-import { ThemedLayout, PageHeader } from "@refinedev/antd";
-import { Flex } from "antd";
-import { Header } from "@components/header";
 import { authProviderServer } from "@providers/auth-provider/auth-provider.server";
-import { redirect } from "next/navigation";
+import { Layout as AntdLayout, Flex } from "antd";
+import React from "react";
 
 export default async function Layout({ children }: React.PropsWithChildren) {
   // const data = await getData();

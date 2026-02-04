@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - esbuild
+  - protobufjs
+
+onlyBuiltDependencies:
+  - '@rocicorp/zero-sqlite3'

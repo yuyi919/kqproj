@@ -4,6 +4,7 @@ import { Bubble } from "@ant-design/x";
 import { ChatInput } from "@components/chat/input";
 import { UserMeta } from "@interfaces/user";
 import { useCreate, useGetIdentity, useList } from "@refinedev/core";
+import { supabaseBrowserClient } from "@utils/supabase/client";
 import { Avatar, Skeleton, Splitter } from "antd";
 
 export type Group = {
@@ -48,7 +49,22 @@ const getUserInitials = (message: Message) => {
     .toUpperCase()
     .slice(0, 2);
 };
-
+// const c = supabaseBrowserClient
+//   .channel("public:"+Math.random().toString(36).substring(2))
+//   .on(
+//     "postgres_changes",
+//     {
+//       event: "*",
+//       schema: "public",
+//       table: "messages",
+//       filter: `group_id=eq.f35b84d5-9a5d-4be0-a7c3-41cdf4db1cd8`,
+//     },
+//     (payload) => {
+//       console.log("postgres_changes", payload);
+//       supabaseBrowserClient.removeChannel(c)
+//     },
+//   )
+//   .subscribe(console.log);
 export const ChatWindow = ({
   id = "",
   initialData,
@@ -64,7 +80,7 @@ export const ChatWindow = ({
 
   const {
     result: { data: messages },
-    query: { isLoading: loading },
+    query: c,
   } = useList<Message>({
     resource: "messages",
     queryOptions: {
@@ -89,8 +105,13 @@ export const ChatWindow = ({
     meta: {
       select: "*, user:users(id, username, email, avatar_url)",
     },
-    liveMode: "auto",
+    liveMode: "manual",
+    onLiveEvent: (event) => {
+      console.log('[Chat]', event);
+      c.refetch();
+    },
   });
+
   // console.log(messages, loading);
   // Create message mutation
   const { mutate: createMessage, mutation } = useCreate<Message>({
@@ -163,8 +184,8 @@ export const ChatWindow = ({
                     // onSuccess: resolve,
                     onError: reject,
                     onSettled: resolve,
-                  }
-                )
+                  },
+                ),
               );
           }}
         />

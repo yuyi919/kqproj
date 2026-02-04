@@ -15,7 +15,6 @@ export default function CategoryList() {
   const { tableProps } = useTable<UserMeta>({
     syncWithLocation: true,
   });
-
   return (
     <List>
       <Table {...tableProps} rowKey="id">
