@@ -64,8 +64,13 @@ export interface CardRef {
  */
 export interface Card extends CardRef {
   name: string;
+  /** 卡牌描述文本 */
   description: string;
+  /** 卡牌图标 (Emoji) */
+  icon: string;
+  /** 是否为消耗品（使用后是否消失） */
   consumable: boolean;
+  /** 行动优先级，数值越大优先级越高 */
   priority: number;
 }
 
@@ -73,10 +78,15 @@ export interface Card extends CardRef {
  * 卡牌池配置
  */
 export interface CardPoolConfig {
+  /** 魔女杀手卡牌初始数量 */
   witch_killer: number;
+  /** 结界魔法卡牌初始数量 */
   barrier: number;
+  /** 杀人魔法卡牌初始数量 */
   kill: number;
+  /** 探知魔法卡牌初始数量 */
   detect: number;
+  /** 检定魔法卡牌初始数量 */
   check: number;
 }
 
@@ -88,7 +98,9 @@ export interface CardPoolConfig {
  */
 export interface PublicPlayerInfo {
   id: string;
+  /** 座位编号，从0开始 */
   seatNumber: number;
+  /** 公开状态，仅显示存活或死亡 */
   status: PublicPlayerStatus;
 }
 
@@ -97,15 +109,25 @@ export interface PublicPlayerInfo {
  * 包含完整状态（包括 witch/wreck）和手牌等秘密信息
  */
 export interface PrivatePlayerInfo {
+  /** 实际内部状态，包括魔女(witch)和残骸(wreck) */
   status: PlayerStatus;
+  /** 玩家当前手牌列表 */
   hand: CardRef[];
+  /** 玩家是否已魔女化 */
   isWitch: boolean;
+  /** 玩家本回合是否开启了结界防护 */
   hasBarrier: boolean;
+  /** 玩家是否持有魔女杀手卡牌 */
   witchKillerHolder: boolean;
+  /** 上次进行击杀行动的回合数 */
   lastKillRound: number;
+  /** 连续未击杀的回合数，达到2次将残骸化 */
   consecutiveNoKillRounds: number;
+  /** 玩家已获悉的所有揭示信息 */
   revealedInfo: RevealedInfoItem[];
+  /** 玩家死亡的原因 */
   deathCause?: DeathCause;
+  /** 击杀该玩家的玩家ID */
   killerId?: string;
 }
 
@@ -115,8 +137,11 @@ export interface PrivatePlayerInfo {
  * 揭示的信息项
  */
 export interface RevealedInfoItem {
+  /** 信息类型 */
   type: RevealedInfoType;
+  /** 信息具体内容（根据类型变化） */
   content: unknown;
+  /** 信息产生的时间戳 */
   timestamp: number;
 }
 
@@ -127,13 +152,21 @@ export interface RevealedInfoItem {
  */
 export interface PlayerAction {
   id: string;
+  /** 发起行动的玩家ID */
   playerId: string;
+  /** 行动类型 */
   type: ActionType;
+  /** 行动发生的合回 */
   round: number;
+  /** 行动发生的阶段 */
   phase: GamePhase;
+  /** 使用的卡牌ID */
   cardId?: string;
+  /** 使用的卡牌类型 */
   cardType?: CardType;
+  /** 行动目标玩家的ID */
   targetId?: string;
+  /** 行动发生的时间戳 */
   timestamp: number;
 }
 
@@ -141,9 +174,13 @@ export interface PlayerAction {
  * 投票记录
  */
 export interface Vote {
+  /** 投票者ID */
   voterId: string;
+  /** 被投票者ID */
   targetId: string;
+  /** 投票发生的合回 */
   round: number;
+  /** 投票发生的时间戳 */
   timestamp: number;
 }
 
@@ -152,10 +189,15 @@ export interface Vote {
  */
 export interface NightAction {
   id: string;
+  /** 行动玩家ID */
   playerId: string;
+  /** 使用的卡牌ID */
   cardId: string;
+  /** 使用的卡牌类型 */
   cardType: CardType;
+  /** 目标玩家ID（可选） */
   targetId?: string;
+  /** 行动产生的时间戳 */
   timestamp: number;
 }
 
@@ -165,11 +207,17 @@ export interface NightAction {
  * 死亡记录（服务器端完整信息）
  */
 export interface DeathRecord {
+  /** 死亡发生的合回 */
   round: number;
+  /** 死亡玩家ID */
   playerId: string;
+  /** 死亡原因 */
   cause: DeathCause;
+  /** 凶手玩家ID（如有） */
   killerId?: string;
+  /** 该玩家死亡时掉落的卡牌列表 */
   droppedCards: CardRef[];
+  /** 卡牌被其他玩家拾取的情况记录 */
   cardReceivers?: Record<string, CardRef[]>;
 }
 
@@ -177,8 +225,11 @@ export interface DeathRecord {
  * 公开死亡信息（玩家可见）
  */
 export interface PublicDeathInfo {
+  /** 死亡发生的合回 */
   round: number;
+  /** 死亡玩家ID */
   playerId: string;
+  /** 是否已死亡（固定为true） */
   died: true;
 }
 
@@ -189,11 +240,17 @@ export interface PublicDeathInfo {
  */
 export interface ChatMessage {
   id: string;
+  /** 消息类型：说出(say)或行动/系统描述(action) */
   type: "say" | "action";
+  /** 发送者玩家ID */
   playerId: string;
+  /** 发送者玩家名称（冗余存储方便查询） */
   playerName?: string;
+  /** 消息内容 */
   content: string;
+  /** 消息发送的时间戳 */
   timestamp: number;
+  /** 是否为系统消息 */
   isSystem?: boolean;
 }
 
@@ -203,10 +260,15 @@ export interface ChatMessage {
  * 投票结果
  */
 export interface VoteResult {
+  /** 投票所属的回合 */
   round: number;
+  /** 投票详情：被投票者ID -> 投票给他的玩家ID列表 */
   votes: Record<string, string[]>;
+  /** 最终被监禁的玩家ID */
   imprisonedId: string | null;
+  /** 本次投票是否出现平票 */
   isTie: boolean;
+  /** 投票数统计：玩家ID -> 得票数 */
   voteCounts: Record<string, number>;
 }
 
@@ -216,11 +278,17 @@ export interface VoteResult {
  * 游戏配置
  */
 export interface GameConfig {
+  /** 最大玩家数量 */
   maxPlayers: number;
+  /** 最大游戏回合数 */
   maxRounds: number;
+  /** 日间阶段持续时间（秒） */
   dayDuration: number;
+  /** 夜间阶段持续时间（秒） */
   nightDuration: number;
+  /** 投票阶段持续时间（秒） */
   votingDuration: number;
+  /** 卡牌池初始配置 */
   cardPool: CardPoolConfig;
 }
 
@@ -233,44 +301,66 @@ export interface GameConfig {
 export interface BGGameState {
   // === 基本信息（原子）===
   id: string;
+  /** 房间ID */
   roomId: string;
+  /** 当前游戏阶段 */
   status: GamePhase;
+  /** 当前游戏回合 */
   round: number;
 
   // === 玩家（公开信息 - 所有人可见）===
+  /** 玩家公开信息映射：玩家ID -> 公开信息 */
   players: Record<string, PublicPlayerInfo>;
+  /** 玩家座位顺序列表 */
   playerOrder: string[];
 
   // === 卡牌系统（原子 - 最小化存储）===
+  /** 牌堆中剩余的卡牌列表 */
   deck: CardRef[];
+  /** 弃牌堆中的卡牌列表 */
   discardPile: CardRef[];
 
   // === 当前回合行动（原子）===
+  /** 当前正在进行的玩家行动记录：玩家ID -> 行动 */
   currentActions: Record<string, PlayerAction>;
+  /** 当前投票阶段已收到的投票记录 */
   currentVotes: Vote[];
+  /** 夜间阶段已排队的行动列表 */
   nightActions: NightAction[];
 
   // === 历史记录（原子）===
+  /** 游戏至今的所有玩家行动记录 */
   actionHistory: PlayerAction[];
+  /** 游戏至今的所有投票结果记录 */
   voteHistory: VoteResult[];
+  /** 游戏至今的所有死亡记录 */
   deathLog: DeathRecord[];
 
   // === 回合临时状态（原子）===
+  /** 本回合被监禁的玩家ID */
   imprisonedId: string | null;
+  /** 攻击配额管理 */
   attackQuota: {
+    /** 魔女杀手是否已被使用 */
     witchKillerUsed: boolean;
+    /** 本回合杀人魔法已使用的次数 */
     killMagicUsed: number;
   };
 
   // === 配置和时间戳（原子）===
+  /** 当前游戏配置 */
   config: GameConfig;
+  /** 当前阶段开始的时间戳 */
   phaseStartTime: number;
+  /** 当前阶段结束的时间戳 */
   phaseEndTime: number;
 
   // === 秘密信息（会被 playerView 过滤）===
+  /** 玩家私有信息映射：玩家ID -> 私有信息 */
   secrets: Record<string, PrivatePlayerInfo>;
 
   // === 聊天消息（公开）===
+  /** 历史聊天消息列表 */
   chatMessages: ChatMessage[];
 }
 

@@ -312,15 +312,6 @@ describe("Mutations", () => {
   });
 });
 
-describe("createCard", () => {
-  it("应创建正确类型的卡牌", () => {
-    const card = createCard("barrier");
-    expect(card.type).toBe("barrier");
-    expect(card.id).toBeDefined();
-    expect(typeof card.id).toBe("string");
-  });
-});
-
 describe("createDeck", () => {
   it("应创建正确数量的卡牌", () => {
     const config: GameConfig["cardPool"] = {

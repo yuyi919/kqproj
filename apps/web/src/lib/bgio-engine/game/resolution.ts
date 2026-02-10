@@ -6,17 +6,18 @@
 
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import type { BGGameState, CardRef, DeathCause } from "../types";
+import { orderBy } from "es-toolkit";
 import { Mutations, Selectors, getCardDefinition } from "../utils";
 
 /**
  * 解析夜间行动
  */
 export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
-  const sortedActions = [...G.nightActions].sort((a, b) => {
-    const priorityA = getCardPriority(a.cardType);
-    const priorityB = getCardPriority(b.cardType);
-    return priorityB - priorityA;
-  });
+  const sortedActions = orderBy(
+    G.nightActions,
+    [(a) => getCardPriority(a.cardType)],
+    ["desc"],
+  );
 
   const deadPlayers = new Set<string>();
   const barrierPlayers = new Set<string>();

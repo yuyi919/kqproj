@@ -5,6 +5,7 @@
  */
 
 import { ActivePlayers, TurnOrder } from "boardgame.io/core";
+import { countBy } from "es-toolkit";
 import type { PhaseConfig } from "boardgame.io";
 import type { BGGameState, GamePhase } from "../types";
 import { moveFunctions } from "./moves";
@@ -86,11 +87,8 @@ const phaseConfigs = {
         `[Phase] Voting phase ended, processing ${G.currentVotes.length} votes`,
       );
 
-      // 统计票数
-      const voteCounts: Record<string, number> = {};
-      for (const vote of G.currentVotes) {
-        voteCounts[vote.targetId] = (voteCounts[vote.targetId] || 0) + 1;
-      }
+      // 统计票数 (Refactor: use countBy)
+      const voteCounts = countBy(G.currentVotes, (vote) => vote.targetId);
 
       // 找出最高票（不包括弃权票）
       let maxVotes = 0;
@@ -112,15 +110,11 @@ const phaseConfigs = {
         // 弃权票定义为：投给自己的票
         let validVotes = count;
 
-        // 检查是否有弃权票（投给自己）
-        const selfVoteCount = G.currentVotes.filter(
-          (v) => v.targetId === targetId && v.voterId === targetId,
-        ).length;
-
-        if (selfVoteCount > 0) {
-          validVotes -= selfVoteCount;
+        if (abstentionVotes.has(targetId)) {
+          // 如果目标自己也投了自己，那么这一票是弃权票，需要减去
+          validVotes -= 1;
           console.log(
-            `[VoteResult] Candidate ${targetId} has ${selfVoteCount} abstention votes, valid votes: ${validVotes}`,
+            `[VoteResult] Candidate ${targetId} has 1 abstention vote, valid votes: ${validVotes}`,
           );
         }
 
