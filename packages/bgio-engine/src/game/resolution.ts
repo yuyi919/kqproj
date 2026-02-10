@@ -7,7 +7,12 @@
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import type { BGGameState, CardRef, DeathCause } from "../types";
 import { orderBy } from "es-toolkit";
-import { Mutations, Selectors, getCardDefinition } from "../utils";
+import {
+  Mutations,
+  Selectors,
+  getCardDefinition,
+  MessageBuilder,
+} from "../utils";
 
 /**
  * 解析夜间行动
@@ -41,6 +46,21 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
               ].type
             : undefined;
 
+        // 添加探知消息
+        const targetPlayer = G.players[action.targetId];
+        const actorPlayer = G.players[action.playerId];
+        if (targetPlayer && actorPlayer) {
+          MessageBuilder.addDetectResultMessage(
+            G,
+            action.playerId,
+            actorPlayer,
+            action.targetId,
+            targetPlayer,
+            handCount,
+            seenCard,
+          );
+        }
+
         Mutations.addRevealedInfo(G, action.playerId, "detect", {
           targetId: action.targetId,
           handCount,
@@ -62,9 +82,21 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     const actorSecret = G.secrets[action.playerId];
     const targetPlayer = G.players[action.targetId];
     const targetSecret = G.secrets[action.targetId];
+    const actorPlayer = G.players[action.playerId];
 
-    if (!actorSecret || !targetPlayer || !targetSecret) continue;
+    if (!actorSecret || !targetPlayer || !targetSecret || !actorPlayer)
+      continue;
     if (deadPlayers.has(action.targetId)) {
+      // 攻击失败：目标已死亡
+      MessageBuilder.addAttackResultMessage(
+        G,
+        action.playerId,
+        actorPlayer,
+        targetPlayer,
+        action.card.type,
+        false,
+        "target_already_dead",
+      );
       Mutations.addRevealedInfo(G, action.playerId, "attack_failed", {
         targetId: action.targetId,
         reason: "target_already_dead",
@@ -73,6 +105,24 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     }
 
     if (barrierPlayers.has(action.targetId)) {
+      // 攻击失败：结界保护
+      MessageBuilder.addAttackResultMessage(
+        G,
+        action.playerId,
+        actorPlayer,
+        targetPlayer,
+        action.card.type,
+        false,
+        "barrier_protected",
+      );
+      MessageBuilder.addBarrierMessage(
+        G,
+        action.targetId,
+        targetPlayer,
+        action.playerId,
+        actorPlayer,
+      );
+
       Mutations.addRevealedInfo(G, action.playerId, "attack_failed", {
         targetId: action.targetId,
         reason: "barrier_protected",
@@ -98,8 +148,34 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     if (result) {
       deadPlayers.add(action.targetId);
 
+      // 添加攻击成功消息
+      MessageBuilder.addAttackResultMessage(
+        G,
+        action.playerId,
+        actorPlayer,
+        targetPlayer,
+        action.card.type,
+        true,
+      );
+
+      // 添加死亡消息
+      MessageBuilder.addDeathMessage(
+        G,
+        action.targetId,
+        targetPlayer,
+        cause,
+        G.round,
+      );
+
       if (action.card.type === "kill") {
         actorSecret.isWitch = true;
+        // 添加魔女化消息
+        MessageBuilder.addWitchTransformMessage(
+          G,
+          action.playerId,
+          actorPlayer,
+          "kill_success",
+        );
         Mutations.addRevealedInfo(G, action.playerId, "witch_transform", {
           reason: "kill_success",
         });
@@ -126,9 +202,22 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     if (!action.targetId) continue;
 
     const targetSecret = G.secrets[action.targetId];
-    if (!targetSecret) continue;
+    const targetPlayer = G.players[action.targetId];
+    const actorPlayer = G.players[action.playerId];
+    if (!targetSecret || !targetPlayer || !actorPlayer) continue;
 
     const isWitchKiller = targetSecret.deathCause === "witch_killer";
+
+    // 添加检定结果消息
+    MessageBuilder.addCheckResultMessage(
+      G,
+      action.playerId,
+      actorPlayer,
+      action.targetId,
+      targetPlayer,
+      isWitchKiller,
+      targetSecret.deathCause,
+    );
 
     Mutations.addRevealedInfo(G, action.playerId, "check", {
       targetId: action.targetId,
@@ -142,16 +231,23 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     if (!secret.isWitch) continue;
     if (deadPlayers.has(playerId)) continue;
 
+    const player = G.players[playerId];
+    if (!player) continue;
+
     const hasKilledThisRound = G.nightActions.some(
       (a) =>
         a.playerId === playerId &&
-        a.card && (a.card.type === "witch_killer" || a.card.type === "kill"),
+        a.card &&
+        (a.card.type === "witch_killer" || a.card.type === "kill"),
     );
 
     if (!hasKilledThisRound) {
       secret.consecutiveNoKillRounds++;
 
       if (secret.consecutiveNoKillRounds >= 2) {
+        // 添加残骸化消息（在击杀之前）
+        MessageBuilder.addWreckMessage(G, playerId, player);
+
         const result = Mutations.killPlayer(
           G,
           playerId,
@@ -236,6 +332,35 @@ function distributeDroppedCards(
   );
   if (deathRecord) {
     deathRecord.cardReceivers = receivers;
+  }
+
+  // 添加卡牌分配消息
+  const victimPlayer = G.players[victimId];
+  if (victimPlayer && Object.keys(receivers).length > 0) {
+    // 系统消息：显示谁收到了卡牌
+    MessageBuilder.addCardDistributionMessage(
+      G,
+      victimId,
+      `玩家${victimPlayer.seatNumber}`,
+      receivers,
+    );
+
+    // 为每个接收者添加个人消息
+    for (const [receiverId, receivedCards] of Object.entries(receivers)) {
+      const receiver = G.players[receiverId];
+      if (receiver) {
+        const cardNames = receivedCards
+          .map((c) => getCardDefinition(c).name)
+          .join(", ");
+        MessageBuilder.addPlayerAction(
+          G,
+          receiverId,
+          receiver,
+          "获得遗落卡牌",
+          cardNames,
+        );
+      }
+    }
   }
 
   for (const [receiverId, receivedCards] of Object.entries(receivers)) {

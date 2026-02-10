@@ -238,8 +238,8 @@ export interface PublicDeathInfo {
  */
 export interface ChatMessage {
   id: string;
-  /** 消息类型：说出(say)或行动/系统描述(action) */
-  type: "say" | "action";
+  /** 消息类型：说出(say)或行动(action)/系统描述(system) */
+  type: "say" | "action" | "system";
   /** 发送者玩家ID */
   playerId: string;
   /** 发送者玩家名称（冗余存储方便查询） */

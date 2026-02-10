@@ -27,6 +27,7 @@ import type {
   DeathCause,
   GamePhase,
   RevealedInfoType,
+  ChatMessage,
 } from "./types";
 
 // ==================== 计算层（Selectors）====================
@@ -614,3 +615,410 @@ export function formatDuration(seconds: number): string {
     .toString()
     .padStart(2, "0")}`;
 }
+
+// ==================== 消息工具（Message Builder）====================
+
+/**
+ * 聊天消息类型定义
+ */
+export type { ChatMessage };
+
+/**
+ * 消息构建器 - 用于创建和管理游戏中的聊天消息
+ */
+export const MessageBuilder = {
+  /**
+   * 创建普通聊天消息
+   */
+  createSay(
+    playerId: string,
+    player: PublicPlayerInfo,
+    content: string,
+  ): ChatMessage {
+    return {
+      id: nanoid(),
+      type: "say",
+      playerId,
+      playerName: `玩家${player.seatNumber}`,
+      content: content.trim(),
+      timestamp: Date.now(),
+    };
+  },
+
+  /**
+   * 创建行动消息（投票、使用卡牌等）
+   */
+  createAction(
+    playerId: string,
+    player: PublicPlayerInfo,
+    content: string,
+  ): ChatMessage {
+    return {
+      id: nanoid(),
+      type: "action",
+      playerId,
+      playerName: `玩家${player.seatNumber}`,
+      content: content.trim(),
+      timestamp: Date.now(),
+    };
+  },
+
+  /**
+   * 创建系统消息
+   */
+  createSystem(content: string): ChatMessage {
+    return {
+      id: nanoid(),
+      type: "system",
+      playerId: "system",
+      playerName: "系统",
+      content,
+      timestamp: Date.now(),
+    };
+  },
+
+  /**
+   * 添加系统消息
+   */
+  addSystem(state: BGGameState, content: string): ChatMessage {
+    const message = this.createSystem(content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加消息到游戏状态（带限制）
+   */
+  addMessage(state: BGGameState, message: ChatMessage): void {
+    state.chatMessages.push(message);
+
+    // 限制聊天记录数量，避免状态过大
+    if (state.chatMessages.length > 200) {
+      state.chatMessages.shift();
+    }
+  },
+
+  /**
+   * 批量添加消息
+   */
+  addMessages(state: BGGameState, messages: ChatMessage[]): void {
+    for (const message of messages) {
+      this.addMessage(state, message);
+    }
+  },
+
+  /**
+   * 添加阶段转换消息
+   */
+  addPhaseTransition(
+    state: BGGameState,
+    fromPhase: GamePhase,
+    toPhase: GamePhase,
+  ): ChatMessage {
+    const phaseNames: Record<GamePhase, string> = {
+      lobby: "等待加入",
+      setup: "游戏准备",
+      morning: "晨间",
+      day: "日间",
+      night: "夜间",
+      voting: "投票",
+      resolution: "结算",
+      ended: "游戏结束",
+    };
+
+    const message = this.createSystem(
+      `阶段转换: ${phaseNames[fromPhase]} → ${phaseNames[toPhase]}`,
+    );
+
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加回合开始消息
+   */
+  addRoundStart(state: BGGameState): ChatMessage {
+    const message = this.createSystem(`=== 第 ${state.round} 回合开始 ===`);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加玩家行动消息
+   */
+  addPlayerAction(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    action: string,
+    details?: string,
+  ): ChatMessage {
+    const content = details ? `${action}: ${details}` : action;
+    const message = this.createAction(playerId, player, content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加投票消息
+   */
+  addVoteMessage(
+    state: BGGameState,
+    voterId: string,
+    voter: PublicPlayerInfo,
+    targetId: string,
+    target: PublicPlayerInfo,
+    isChanging: boolean = false,
+  ): ChatMessage {
+    const content = isChanging
+      ? `改变投票为 玩家${target.seatNumber}`
+      : `投票给 玩家${target.seatNumber}`;
+    const message = this.createAction(voterId, voter, content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加弃权消息
+   */
+  addPassMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+  ): ChatMessage {
+    const message = this.createAction(playerId, player, "弃权");
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加夜间行动消息
+   */
+  addNightActionMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    cardType: string,
+    targetId?: string,
+    target?: PublicPlayerInfo,
+  ): ChatMessage {
+    const cardNames: Record<string, string> = {
+      witch_killer: "魔女杀手",
+      kill: "杀人魔法",
+      barrier: "结界魔法",
+      detect: "探知魔法",
+      check: "检定魔法",
+    };
+
+    const cardName = cardNames[cardType] || cardType;
+    let content = `使用 ${cardName}`;
+
+    if (targetId && target) {
+      content += ` 针对 玩家${target.seatNumber}`;
+    }
+
+    const message = this.createAction(playerId, player, content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加攻击结果消息
+   */
+  addAttackResultMessage(
+    state: BGGameState,
+    attackerId: string,
+    attacker: PublicPlayerInfo,
+    target: PublicPlayerInfo,
+    cardType: string,
+    success: boolean,
+    reason?: string,
+  ): ChatMessage {
+    const cardNames: Record<string, string> = {
+      witch_killer: "魔女杀手",
+      kill: "杀人魔法",
+    };
+
+    const cardName = cardNames[cardType] || cardType;
+    const targetName = `玩家${target.seatNumber}`;
+    const attackerName = `玩家${attacker.seatNumber}`;
+
+    let content: string;
+    if (success) {
+      content = `${cardName}攻击成功！${attackerName} 击杀了 ${targetName}`;
+    } else {
+      const reasons: Record<string, string> = {
+        barrier_protected: "目标有结界保护",
+        target_already_dead: "目标已经死亡",
+      };
+      const reasonText = reason ? reasons[reason] || reason : "攻击失败";
+      content = `${cardName}攻击失败：${reasonText}`;
+    }
+
+    const message = this.createAction(attackerId, attacker, content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加魔女化消息
+   */
+  addWitchTransformMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    reason: string,
+  ): ChatMessage {
+    const reasons: Record<string, string> = {
+      kill_success: "使用杀人魔法成功",
+      witch_killer_inherit: "继承魔女杀手",
+      wreck_inherit: "残骸化继承",
+    };
+    const reasonText = reasons[reason] || reason;
+    const message = this.createAction(
+      playerId,
+      player,
+      `魔女化：${reasonText}`,
+    );
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加死亡消息
+   */
+  addDeathMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    cause: DeathCause,
+    round: number,
+  ): ChatMessage {
+    const causeNames: Record<DeathCause, string> = {
+      witch_killer: "被魔女杀手击杀",
+      kill_magic: "被杀人魔法击杀",
+      wreck: "残骸化死亡",
+    };
+    const causeName = causeNames[cause] || cause;
+    const message = this.createAction(
+      playerId,
+      player,
+      `死亡：${causeName}（第${round}回合）`,
+    );
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加残骸化消息
+   */
+  addWreckMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+  ): ChatMessage {
+    const message = this.createAction(
+      playerId,
+      player,
+      "残骸化：连续两回合未击杀，已转化为残骸",
+    );
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加结界保护消息
+   */
+  addBarrierMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    attackerId?: string,
+    attacker?: PublicPlayerInfo,
+  ): ChatMessage {
+    const attackerName =
+      attacker && attackerId ? `玩家${attacker.seatNumber}` : "攻击者";
+    const message = this.createAction(
+      playerId,
+      player,
+      `结界保护：成功抵御 ${attackerName} 的攻击`,
+    );
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加检定结果消息
+   */
+  addCheckResultMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    targetId: string,
+    target: PublicPlayerInfo,
+    isWitchKiller: boolean,
+    deathCause?: DeathCause,
+  ): ChatMessage {
+    const causeNames: Record<DeathCause, string> = {
+      witch_killer: "魔女杀手",
+      kill_magic: "杀人魔法",
+      wreck: "残骸化",
+    };
+    const causeName = deathCause ? causeNames[deathCause] : "未知";
+
+    const content = `检定结果：玩家${target.seatNumber}的死因是${isWitchKiller ? "（持有魔女杀手）" : ""} ${causeName}`;
+    const message = this.createAction(playerId, player, content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加卡牌分配消息
+   */
+  addCardDistributionMessage(
+    state: BGGameState,
+    victimId: string,
+    victimName: string,
+    receivers: Record<string, CardRef[]>,
+  ): ChatMessage {
+    const receiverNames = Object.entries(receivers)
+      .map(([playerId, cards]) => `玩家${playerId}(${cards.length}张)`)
+      .join(", ");
+
+    const content = `遗落卡牌分配：${victimName} 的卡牌已分配给 ${receiverNames}`;
+    const message = this.createSystem(content);
+    this.addMessage(state, message);
+    return message;
+  },
+
+  /**
+   * 添加探知结果消息
+   */
+  addDetectResultMessage(
+    state: BGGameState,
+    playerId: string,
+    player: PublicPlayerInfo,
+    targetId: string,
+    target: PublicPlayerInfo,
+    handCount: number,
+    seenCard?: string,
+  ): ChatMessage {
+    const cardNames: Record<string, string> = {
+      witch_killer: "魔女杀手",
+      barrier: "结界魔法",
+      kill: "杀人魔法",
+      detect: "探知魔法",
+      check: "检定魔法",
+    };
+
+    let content = `探知：玩家${target.seatNumber} 手牌数 ${handCount} 张`;
+    if (seenCard) {
+      const cardName = cardNames[seenCard] || seenCard;
+      content += `，随机看到一张 ${cardName}`;
+    }
+
+    const message = this.createAction(playerId, player, content);
+    this.addMessage(state, message);
+    return message;
+  },
+};

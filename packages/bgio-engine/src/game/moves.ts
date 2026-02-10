@@ -5,8 +5,8 @@
  */
 
 import { nanoid } from "nanoid";
-import type { BGGameState, ChatMessage, PublicPlayerInfo } from "../types";
-import { Selectors, getCardDefinition } from "../utils";
+import type { PublicPlayerInfo } from "../types";
+import { Selectors, getCardDefinition, MessageBuilder } from "../utils";
 import {
   assertPhase,
   assertNotEmpty,
@@ -73,12 +73,14 @@ const moveFunctions = {
       console.log(
         `[Vote] ${playerID} changed vote from ${oldTarget} to ${targetId}`,
       );
-      G.chatMessages.push(
-        makeActionMessage(
-          playerID,
-          player.public,
-          `改变投票为 玩家${target.seatNumber}`,
-        ),
+
+      MessageBuilder.addVoteMessage(
+        G,
+        playerID,
+        player.public,
+        targetId,
+        target,
+        true,
       );
     } else {
       const vote = {
@@ -92,12 +94,14 @@ const moveFunctions = {
       console.log(
         `[Vote] ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
       );
-      G.chatMessages.push(
-        makeActionMessage(
-          playerID,
-          player.public,
-          `投票给 玩家${target.seatNumber}`,
-        ),
+
+      MessageBuilder.addVoteMessage(
+        G,
+        playerID,
+        player.public,
+        targetId,
+        target,
+        false,
       );
     }
   }),
@@ -116,7 +120,7 @@ const moveFunctions = {
    */
   pass: wrapMove(({ G, playerID }: MoveContext) => {
     assertPhase(G, "voting");
-    assertPlayerAlive(G, playerID);
+    const player = assertPlayerAlive(G, playerID);
 
     console.log(`[Vote] ${playerID} passes (votes for self)`);
 
@@ -138,12 +142,14 @@ const moveFunctions = {
       console.log(
         `[Vote] ${playerID} changed vote to pass (from ${oldTarget})`,
       );
+      MessageBuilder.addPassMessage(G, playerID, player.public);
     } else {
       // 新增弃权票
       G.currentVotes.push(vote);
       console.log(
         `[Vote] ${playerID} passed, total votes: ${G.currentVotes.length}`,
       );
+      MessageBuilder.addPassMessage(G, playerID, player.public);
     }
   }),
 
@@ -182,6 +188,23 @@ const moveFunctions = {
         timestamp: Date.now(),
       });
 
+      // 添加夜间行动消息
+      let targetPlayer: PublicPlayerInfo | undefined;
+      if (targetId) {
+        const target = G.players[targetId];
+        if (target) {
+          targetPlayer = target;
+        }
+      }
+      MessageBuilder.addNightActionMessage(
+        G,
+        playerID,
+        player.public,
+        card.type,
+        targetId,
+        targetPlayer,
+      );
+
       if (card.type === "witch_killer") {
         G.attackQuota.witchKillerUsed = true;
         player.secret.lastKillRound = G.round;
@@ -215,6 +238,9 @@ const moveFunctions = {
       timestamp: Date.now(),
     });
 
+    // 添加夜间弃权消息
+    MessageBuilder.addPassMessage(G, playerID, player.public);
+
     // Refinement: 魔女化玩家未击杀需要累积回合
     if (isWitch(player) && !hasKilledThisRound(G, playerID)) {
       player.secret.consecutiveNoKillRounds++;
@@ -227,49 +253,9 @@ const moveFunctions = {
     const player = assertPlayerAlive(G, playerID);
     assertValidMessage(content);
 
-    const message: ChatMessage = makeChatMessage(playerID, player, content);
-
-    addMessage(G, message);
+    const message = MessageBuilder.createSay(playerID, player.public, content);
+    MessageBuilder.addMessage(G, message);
   }),
 };
 
 export { moveFunctions };
-
-function addMessage(G: BGGameState, message: ChatMessage) {
-  G.chatMessages.push(message);
-
-  // 限制聊天记录数量，避免状态过大
-  if (G.chatMessages.length > 200) {
-    G.chatMessages.shift();
-  }
-}
-
-function makeChatMessage(
-  playerID: string,
-  player: PlayerFullInfo,
-  content: string,
-): ChatMessage {
-  return {
-    id: nanoid(),
-    type: "say",
-    playerId: playerID,
-    playerName: `玩家${player.public.seatNumber}`,
-    content: content.trim(),
-    timestamp: Date.now(),
-  };
-}
-
-function makeActionMessage(
-  playerID: string,
-  player: PublicPlayerInfo,
-  content: string,
-): ChatMessage {
-  return {
-    id: nanoid(),
-    type: "action",
-    playerId: playerID,
-    playerName: `玩家${player.seatNumber}`,
-    content: content.trim(),
-    timestamp: Date.now(),
-  };
-}

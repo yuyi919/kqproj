@@ -11,6 +11,7 @@ import type { BGGameState, GamePhase } from "../types";
 import { moveFunctions } from "./moves";
 import type { PhaseHookContext } from "./types";
 import { resolveNightActions } from "./resolution";
+import { MessageBuilder, Selectors } from "../utils";
 
 const phaseConfigs = {
   morning: {
@@ -38,6 +39,29 @@ const phaseConfigs = {
       const duration = 5000;
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + duration;
+
+      // 添加早晨阶段消息
+      MessageBuilder.addSystem(G, "☀️ 早晨：公布夜间死亡信息");
+
+      // 显示死亡日志
+      const lastRoundDeaths = G.deathLog.filter(
+        (record) => record.round === G.round - 1,
+      );
+      if (lastRoundDeaths.length > 0) {
+        for (const death of lastRoundDeaths) {
+          const player = G.players[death.playerId];
+          if (player && death.cause) {
+            MessageBuilder.addDeathMessage(
+              G,
+              death.playerId,
+              player,
+              death.cause,
+              death.round,
+            );
+          }
+        }
+      }
+
       // setTimeout(() => {
       //   // events.endPhase?.();
       //   console.log("endPhase morning");
@@ -56,6 +80,9 @@ const phaseConfigs = {
       G.status = "day" as GamePhase;
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + G.config.dayDuration * 1000;
+
+      // 添加日间阶段消息
+      MessageBuilder.addSystem(G, "🌤️ 日间：自由讨论和交易时间");
     },
   } satisfies PhaseConfig<BGGameState>,
 
@@ -81,6 +108,19 @@ const phaseConfigs = {
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + G.config.votingDuration * 1000;
       console.log(`[Phase] Voting phase started, round ${G.round}`);
+
+      // 添加投票阶段消息
+      MessageBuilder.addSystem(
+        G,
+        `🗳️ 投票阶段开始（${G.config.votingDuration / 1000}秒）`,
+      );
+
+      // 显示存活玩家列表
+      const alivePlayers = Selectors.getAlivePlayers(G);
+      const playerList = alivePlayers
+        .map((p) => `玩家${p.seatNumber}`)
+        .join(", ");
+      MessageBuilder.addSystem(G, `存活玩家：${playerList}`);
     },
     onEnd: ({ G }: PhaseHookContext) => {
       console.log(
@@ -140,12 +180,21 @@ const phaseConfigs = {
       if (isTie) {
         console.log(`[VoteResult] Tie! No one will be imprisoned`);
         imprisonedId = null;
+        MessageBuilder.addSystem(G, "⚠️ 投票平票，无人被监禁");
       } else if (imprisonedId) {
         console.log(
           `[VoteResult] ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
         );
+        const imprisonedPlayer = G.players[imprisonedId];
+        if (imprisonedPlayer) {
+          MessageBuilder.addSystem(
+            G,
+            `🔒 玩家${imprisonedPlayer.seatNumber} 以 ${maxVotes} 票被监禁`,
+          );
+        }
       } else {
         console.log(`[VoteResult] No valid votes, no one imprisoned`);
+        MessageBuilder.addSystem(G, "⚠️ 无有效投票，无人被监禁");
       }
 
       G.imprisonedId = imprisonedId;
@@ -171,6 +220,19 @@ const phaseConfigs = {
       console.log(
         `[VoteResult] Vote history updated, total records: ${G.voteHistory.length}`,
       );
+
+      // 添加投票结果摘要
+      const voteSummary = Object.entries(voteCounts)
+        .map(([targetId, count]) => {
+          const player = G.players[targetId];
+          return player
+            ? `玩家${player.seatNumber}: ${count}票`
+            : `${targetId}: ${count}票`;
+        })
+        .join(" | ");
+      if (voteSummary) {
+        MessageBuilder.addSystem(G, `投票结果：${voteSummary}`);
+      }
     },
   } satisfies PhaseConfig<BGGameState>,
 
@@ -189,6 +251,13 @@ const phaseConfigs = {
       };
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + G.config.nightDuration * 1000;
+
+      // 添加夜间阶段消息
+      MessageBuilder.addSystem(G, "🌙 夜间：使用手牌进行暗中行动");
+      MessageBuilder.addSystem(
+        G,
+        `剩余攻击名额：魔女杀手${G.attackQuota.witchKillerUsed ? "已使用" : "可用"}｜杀人魔法 ${3 - G.attackQuota.killMagicUsed}次`,
+      );
     },
   } satisfies PhaseConfig<BGGameState>,
 
@@ -198,7 +267,26 @@ const phaseConfigs = {
     turn: { order: TurnOrder.RESET, activePlayers: ActivePlayers.ALL },
     onBegin: ({ G, random }: PhaseHookContext) => {
       G.status = "resolution" as GamePhase;
+
+      // 添加结算阶段开始消息
+      MessageBuilder.addSystem(G, "⚖️ 结算阶段：处理所有夜间行动");
+
       resolveNightActions(G, random);
+
+      // 添加结算完成消息
+      MessageBuilder.addSystem(G, "✅ 夜间行动结算完成");
+
+      // 显示本轮死亡汇总
+      const currentRoundDeaths = G.deathLog.filter(
+        (record) => record.round === G.round,
+      );
+      if (currentRoundDeaths.length > 0) {
+        const deathCount = currentRoundDeaths.length;
+        MessageBuilder.addSystem(G, `☠️ 本轮共有 ${deathCount} 人死亡`);
+      }
+
+      // 回合增加在 resolution 结束时发生，这里添加回合结束消息
+      MessageBuilder.addSystem(G, `📜 第 ${G.round} 回合结束`);
     },
   } satisfies PhaseConfig<BGGameState>,
 };
