@@ -6,6 +6,7 @@ import type { Translations } from "./zh-CN";
 
 export const en: Translations = {
   ID: "ID",
+  avatar: "Avatar",
   pages: {
     login: {
       title: "Sign in to your account",

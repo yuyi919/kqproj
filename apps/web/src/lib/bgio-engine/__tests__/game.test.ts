@@ -1,17 +1,17 @@
 import { describe, it, expect } from "bun:test";
-import { WitchTrialGame } from "../game";
+import { RandomAPI, WitchTrialGame } from "../game";
 import type { BGGameState } from "../types";
 
 // Mock 随机函数
 const mockShuffle = <T>(arr: T[]): T[] => [...arr];
-const mockRandom = {
+const mockRandom: RandomAPI = {
   Number: () => 0.5,
   Shuffle: mockShuffle,
   D4: () => 2,
   D6: () => 3,
   D10: () => 5,
   D20: () => 10,
-};
+} as RandomAPI;
 
 // 创建 mock 上下文 - 使用类型断言避免复杂的类型问题
 const createMockCtx = (playerIds: string[]) =>
@@ -116,7 +116,9 @@ describe("WitchTrialGame - Setup", () => {
     expect(holders).toHaveLength(1);
 
     const holderId = holders[0][0];
-    expect(G.players[holderId].status).toBe("witch");
+    // 公开状态显示为 alive，私有状态为 witch
+    expect(G.players[holderId].status).toBe("alive");
+    expect(G.secrets[holderId].status).toBe("witch");
   });
 });
 
@@ -131,7 +133,11 @@ describe("WitchTrialGame - Voting Phase", () => {
     const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
     expect(voteMove).toBeDefined();
 
-    const result = callMove(voteMove, createMoveContext(G, "p1", "voting"), "p2");
+    const result = callMove(
+      voteMove,
+      createMoveContext(G, "p1", "voting"),
+      "p2",
+    );
 
     expect(result).toBeUndefined();
     expect(G.currentVotes).toHaveLength(1);
@@ -161,10 +167,16 @@ describe("WitchTrialGame - Voting Phase", () => {
 
     let G = WitchTrialGame.setup!(context, {});
     G.status = "voting";
+    // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
+    G.secrets.p1.status = "dead";
 
     const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
-    const result = callMove(voteMove, createMoveContext(G, "p1", "voting"), "p2");
+    const result = callMove(
+      voteMove,
+      createMoveContext(G, "p1", "voting"),
+      "p2",
+    );
 
     expect(result).toBe("INVALID_MOVE");
   });
@@ -203,6 +215,89 @@ describe("WitchTrialGame - Voting Phase", () => {
 
     expect(G.imprisonedId).toBeNull();
     expect(G.voteHistory[0].isTie).toBe(true);
+  });
+
+  it("不应投给自己（弃权除外）", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "voting";
+
+    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+
+    // 尝试投给自己（不是通过pass）
+    const result = callMove(
+      voteMove,
+      createMoveContext(G, "p1", "voting"),
+      "p1",
+    );
+
+    expect(result).toBe("INVALID_MOVE");
+  });
+
+  it("不应投给已死亡玩家", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "voting";
+    // p2 死亡
+    G.players.p2.status = "dead";
+    G.secrets.p2.status = "dead";
+
+    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const result = callMove(
+      voteMove,
+      createMoveContext(G, "p1", "voting"),
+      "p2",
+    );
+
+    expect(result).toBe("INVALID_MOVE");
+  });
+
+  it("弃权票不应计入监禁", () => {
+    const playerIds = ["p1", "p2", "p3", "p4"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "voting";
+
+    // p1 和 p2 投给 p3
+    // p3 弃权（投给自己）
+    // p4 投给 p2
+    G.currentVotes = [
+      { voterId: "p1", targetId: "p3", round: 1, timestamp: Date.now() },
+      { voterId: "p2", targetId: "p3", round: 1, timestamp: Date.now() },
+      { voterId: "p3", targetId: "p3", round: 1, timestamp: Date.now() }, // 弃权
+      { voterId: "p4", targetId: "p2", round: 1, timestamp: Date.now() },
+    ];
+
+    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+
+    // p3 得 2 票，p2 得 1 票，p3 应该被监禁
+    expect(G.imprisonedId).toBe("p3");
+    // 弃权票不应该被当作监禁投票
+    expect(G.voteHistory[0].voteCounts["p3"]).toBe(3); // 总共3票（包括弃权）
+  });
+
+  it("全部弃权时无人被监禁", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "voting";
+
+    // 所有人都弃权
+    G.currentVotes = [
+      { voterId: "p1", targetId: "p1", round: 1, timestamp: Date.now() },
+      { voterId: "p2", targetId: "p2", round: 1, timestamp: Date.now() },
+      { voterId: "p3", targetId: "p3", round: 1, timestamp: Date.now() },
+    ];
+
+    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+
+    expect(G.imprisonedId).toBeNull();
   });
 });
 
@@ -283,7 +378,9 @@ describe("WitchTrialGame - Night Phase", () => {
 
     let G = WitchTrialGame.setup!(context, {});
     G.status = "night";
+    // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
+    G.secrets.p1.status = "dead";
 
     const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
     const result = callMove(
@@ -336,8 +433,11 @@ describe("WitchTrialGame - End Game Conditions", () => {
     const context = createSetupContext(playerIds);
 
     let G = WitchTrialGame.setup!(context, {});
+    // 同时更新公开状态和私有状态
     G.players.p2.status = "dead";
+    G.secrets.p2.status = "dead";
     G.players.p3.status = "dead";
+    G.secrets.p3.status = "dead";
 
     const gameover = WitchTrialGame.endIf!(createEndIfContext(G));
 
@@ -361,9 +461,13 @@ describe("WitchTrialGame - End Game Conditions", () => {
     const context = createSetupContext(playerIds);
 
     let G = WitchTrialGame.setup!(context, {});
+    // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
+    G.secrets.p1.status = "dead";
     G.players.p2.status = "dead";
+    G.secrets.p2.status = "dead";
     G.players.p3.status = "dead";
+    G.secrets.p3.status = "dead";
 
     const gameover = WitchTrialGame.endIf!(createEndIfContext(G));
 

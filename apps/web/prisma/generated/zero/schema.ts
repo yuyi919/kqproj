@@ -5,11 +5,17 @@ import {
   boolean,
   createBuilder,
   createSchema,
+  enumeration,
+  json,
   number,
   relationships,
   string,
   table,
 } from "@rocicorp/zero";
+
+export type GameRoomStatus = "WAITING" | "PLAYING" | "FINISHED" | "DESTROYED";
+
+export type GamePlayerStatus = "JOINED" | "READY" | "LEFT";
 
 export const groupMembersTable = table("group_members")
   .columns({
@@ -48,6 +54,30 @@ export const usersTable = table("users")
     email: string().optional(),
     avatar_url: string().optional(),
     created_at: number().optional(),
+  })
+  .primaryKey("id");
+
+export const gameRoomsTable = table("game_rooms")
+  .columns({
+    id: string(),
+    name: string(),
+    host_id: string(),
+    status: enumeration<GameRoomStatus>(),
+    config: json().optional(),
+    created_at: number().optional(),
+    updated_at: number().optional(),
+  })
+  .primaryKey("id");
+
+export const gamePlayersTable = table("game_players")
+  .columns({
+    id: string(),
+    room_id: string(),
+    user_id: string(),
+    seat_number: number().optional(),
+    status: enumeration<GamePlayerStatus>(),
+    created_at: number().optional(),
+    updated_at: number().optional(),
   })
   .primaryKey("id");
 
@@ -97,6 +127,40 @@ export const usersTableRelationships = relationships(usersTable, ({ many }) => (
     sourceField: ["id"],
     destField: ["user_id"],
     destSchema: messagesTable,
+  }),
+  hosted_rooms: many({
+    sourceField: ["id"],
+    destField: ["host_id"],
+    destSchema: gameRoomsTable,
+  }),
+  game_players: many({
+    sourceField: ["id"],
+    destField: ["user_id"],
+    destSchema: gamePlayersTable,
+  })
+}));
+export const gameRoomsTableRelationships = relationships(gameRoomsTable, ({ one, many }) => ({
+  host: one({
+    sourceField: ["host_id"],
+    destField: ["id"],
+    destSchema: usersTable,
+  }),
+  players: many({
+    sourceField: ["id"],
+    destField: ["room_id"],
+    destSchema: gamePlayersTable,
+  })
+}));
+export const gamePlayersTableRelationships = relationships(gamePlayersTable, ({ one }) => ({
+  room: one({
+    sourceField: ["room_id"],
+    destField: ["id"],
+    destSchema: gameRoomsTable,
+  }),
+  user: one({
+    sourceField: ["user_id"],
+    destField: ["id"],
+    destSchema: usersTable,
   })
 }));
 /**
@@ -109,12 +173,16 @@ export const schema = createSchema({
     groupsTable,
     messagesTable,
     usersTable,
+    gameRoomsTable,
+    gamePlayersTable,
   ],
   relationships: [
     groupMembersTableRelationships,
     groupsTableRelationships,
     messagesTableRelationships,
     usersTableRelationships,
+    gameRoomsTableRelationships,
+    gamePlayersTableRelationships,
   ],
 });
 

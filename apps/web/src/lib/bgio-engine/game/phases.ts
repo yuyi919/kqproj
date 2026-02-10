@@ -108,27 +108,37 @@ const phaseConfigs = {
       console.log(`[VoteResult] Abstentions: ${abstentionVotes.size}`);
 
       for (const [targetId, count] of Object.entries(voteCounts)) {
-        // 跳过弃权票（投给自己的不算监禁票数）
-        // 如果目标ID等于任何一个投给该目标的投票者的ID，说明是弃权
-        const isAbstention = G.currentVotes.some(
+        // 计算有效票数（总票数 - 弃权票数）
+        // 弃权票定义为：投给自己的票
+        let validVotes = count;
+
+        // 检查是否有弃权票（投给自己）
+        const selfVoteCount = G.currentVotes.filter(
           (v) => v.targetId === targetId && v.voterId === targetId,
-        );
-        if (isAbstention) {
-          console.log(`[VoteResult] Skipping abstention for ${targetId}`);
+        ).length;
+
+        if (selfVoteCount > 0) {
+          validVotes -= selfVoteCount;
+          console.log(
+            `[VoteResult] Candidate ${targetId} has ${selfVoteCount} abstention votes, valid votes: ${validVotes}`,
+          );
+        }
+
+        if (validVotes <= 0) {
           continue;
         }
 
-        if (count > maxVotes) {
-          maxVotes = count;
+        if (validVotes > maxVotes) {
+          maxVotes = validVotes;
           imprisonedId = targetId;
           isTie = false;
           console.log(
-            `[VoteResult] New leader: ${targetId} with ${count} votes`,
+            `[VoteResult] New leader: ${targetId} with ${validVotes} valid votes`,
           );
-        } else if (count === maxVotes && maxVotes > 0) {
+        } else if (validVotes === maxVotes && maxVotes > 0) {
           isTie = true;
           console.log(
-            `[VoteResult] Tie detected at ${count} votes between ${imprisonedId} and ${targetId}`,
+            `[VoteResult] Tie detected at ${validVotes} votes between ${imprisonedId} and ${targetId}`,
           );
         }
       }

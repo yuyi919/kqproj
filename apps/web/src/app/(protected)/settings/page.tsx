@@ -120,7 +120,7 @@ function UserProfile() {
 
       const data = await response.json();
       message.success(
-        t.path.notifications.uploadSuccess({ resource: "Avatar" }),
+        t.path.notifications.uploadSuccess({ resource: t.path.avatar() }),
       );
 
       // Update form field immediately for preview

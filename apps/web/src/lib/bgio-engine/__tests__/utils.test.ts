@@ -31,7 +31,7 @@ const createMockGameState = (): BGGameState => ({
   players: {
     p1: { id: "p1", seatNumber: 1, status: "alive" },
     p2: { id: "p2", seatNumber: 2, status: "alive" },
-    p3: { id: "p3", seatNumber: 3, status: "witch" },
+    p3: { id: "p3", seatNumber: 3, status: "alive" }, // 公开状态都是 alive
   },
   playerOrder: ["p1", "p2", "p3"],
   deck: [],
@@ -62,6 +62,7 @@ const createMockGameState = (): BGGameState => ({
   phaseEndTime: Date.now() + 60000,
   secrets: {
     p1: {
+      status: "alive",
       hand: [
         { id: "c1", type: "barrier" },
         { id: "c2", type: "detect" },
@@ -74,6 +75,7 @@ const createMockGameState = (): BGGameState => ({
       revealedInfo: [],
     },
     p2: {
+      status: "witch", // p2 是魔女杀手持有者
       hand: [
         { id: "c3", type: "kill" },
         { id: "c4", type: "witch_killer" },
@@ -86,6 +88,7 @@ const createMockGameState = (): BGGameState => ({
       revealedInfo: [],
     },
     p3: {
+      status: "alive",
       hand: [{ id: "c5", type: "check" }],
       isWitch: true,
       hasBarrier: false,
@@ -95,6 +98,7 @@ const createMockGameState = (): BGGameState => ({
       revealedInfo: [],
     },
   },
+  chatMessages: [],
 });
 
 describe("Selectors", () => {
@@ -110,7 +114,9 @@ describe("Selectors", () => {
 
     it("应排除已死亡玩家", () => {
       const state = createMockGameState();
+      // 同时更新公开状态和私有状态
       state.players.p1.status = "dead";
+      state.secrets.p1.status = "dead";
       const alive = Selectors.getAlivePlayers(state);
       expect(alive).toHaveLength(2);
       expect(alive.map((p) => p.id)).not.toContain("p1");
@@ -126,7 +132,9 @@ describe("Selectors", () => {
 
     it("应正确判断死亡玩家", () => {
       const state = createMockGameState();
+      // 同时更新公开状态和私有状态
       state.players.p1.status = "dead";
+      state.secrets.p1.status = "dead";
       expect(Selectors.isPlayerAlive(state, "p1")).toBe(false);
     });
 
@@ -210,8 +218,11 @@ describe("Selectors", () => {
   describe("isGameOver", () => {
     it("只剩1人时应结束游戏", () => {
       const state = createMockGameState();
+      // 同时更新公开状态和私有状态
       state.players.p2.status = "dead";
+      state.secrets.p2.status = "dead";
       state.players.p3.status = "dead";
+      state.secrets.p3.status = "dead";
       expect(Selectors.isGameOver(state)).toBe(true);
     });
 
@@ -266,7 +277,9 @@ describe("Mutations", () => {
     it("残骸化死亡时应将状态设为 wreck", () => {
       const state = createMockGameState();
       Mutations.killPlayer(state, "p1", "wreck");
-      expect(state.players.p1.status).toBe("wreck");
+      // 公开状态显示为 dead，私有状态为 wreck
+      expect(state.players.p1.status).toBe("dead");
+      expect(state.secrets.p1.status).toBe("wreck");
     });
 
     it("魔女杀手持有者被杀人魔法击杀时应转移给击杀者", () => {

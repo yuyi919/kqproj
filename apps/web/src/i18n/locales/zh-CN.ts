@@ -5,6 +5,7 @@
 
 export const zhCN = {
   ID: "ID",
+  avatar: "头像",
   pages: {
     login: {
       title: "登录您的账户",
