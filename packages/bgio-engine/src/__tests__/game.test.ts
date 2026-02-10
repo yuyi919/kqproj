@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { RandomAPI, WitchTrialGame } from "../game";
+import { phaseConfigs, RandomAPI, WitchTrialGame } from "../game";
 import type { BGGameState } from "../types";
+import { Selectors } from "../utils";
 
 // Mock 随机函数
 const mockShuffle = <T>(arr: T[]): T[] => [...arr];
@@ -24,7 +25,7 @@ const createMockCtx = (playerIds: string[]) =>
     playOrderPos: 0,
     _random: { seed: "test-seed" },
     activePlayers: null,
-  } as any);
+  }) as any;
 
 // 创建完整的 setup 上下文
 const createSetupContext = (playerIds: string[]) =>
@@ -33,7 +34,7 @@ const createSetupContext = (playerIds: string[]) =>
     random: mockRandom,
     events: {},
     log: [] as any[],
-  } as any);
+  }) as any;
 
 // 创建 move 上下文
 const createMoveContext = (
@@ -47,7 +48,7 @@ const createMoveContext = (
     playerID: playerId,
     events: {},
     random: mockRandom,
-  } as any);
+  }) as any;
 
 // 创建 phase 钩子上下文
 const createPhaseContext = (G: BGGameState, phase: string = "night") =>
@@ -56,7 +57,7 @@ const createPhaseContext = (G: BGGameState, phase: string = "night") =>
     ctx: { ...createMockCtx(G.playerOrder), phase },
     events: {},
     random: mockRandom,
-  } as any);
+  }) as any;
 
 // 创建 playerView 上下文
 const createPlayerViewContext = (G: BGGameState, playerId: string | null) =>
@@ -64,14 +65,14 @@ const createPlayerViewContext = (G: BGGameState, playerId: string | null) =>
     G,
     ctx: createMockCtx(G.playerOrder),
     playerID: playerId,
-  } as any);
+  }) as any;
 
 // 创建 endIf 上下文
 const createEndIfContext = (G: BGGameState) =>
   ({
     G,
     ctx: createMockCtx(G.playerOrder),
-  } as any);
+  }) as any;
 
 // 调用 move 函数的辅助函数
 const callMove = (move: any, context: any, ...args: any[]) => {
@@ -506,5 +507,152 @@ describe("WitchTrialGame - Player View", () => {
     );
 
     expect(playerView.deck).toHaveLength(0);
+  });
+});
+
+describe("WitchTrialGame - Night Card Limit", () => {
+  it("应该允许玩家在第一个晚上使用卡牌", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "night";
+
+    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const playerId = "p1";
+    const cardId = G.secrets[playerId].hand[0].id;
+
+    const result = callMove(
+      useCardMove,
+      createMoveContext(G, playerId, "night"),
+      cardId,
+    );
+
+    expect(result).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, playerId)).toBe(true);
+    expect(G.nightActions).toHaveLength(1);
+  });
+
+  it("应该阻止玩家在同一晚上使用第二张卡牌", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "night";
+
+    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const playerId = "p1";
+    const cardId1 = G.secrets[playerId].hand[0].id;
+    const cardId2 = G.secrets[playerId].hand[1].id;
+
+    // 使用第一张卡牌
+    const result1 = callMove(
+      useCardMove,
+      createMoveContext(G, playerId, "night"),
+      cardId1,
+    );
+    expect(result1).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, playerId)).toBe(true);
+
+    // 尝试使用第二张卡牌应该失败
+    const result2 = callMove(
+      useCardMove,
+      createMoveContext(G, playerId, "night"),
+      cardId2,
+    );
+    expect(result2).toBe("INVALID_MOVE");
+  });
+
+  it("应该允许不同玩家在同一晚上使用卡牌", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "night";
+
+    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+
+    // p1 使用卡牌
+    const cardId1 = G.secrets["p1"].hand[0].id;
+    const result1 = callMove(
+      useCardMove,
+      createMoveContext(G, "p1", "night"),
+      cardId1,
+    );
+    expect(result1).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+
+    // p2 也应该能使用卡牌
+    const cardId2 = G.secrets["p2"].hand[0].id;
+    const result2 = callMove(
+      useCardMove,
+      createMoveContext(G, "p2", "night"),
+      cardId2,
+    );
+    expect(result2).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p2")).toBe(true);
+  });
+
+  it("在下一个晚上应该重置 nightCardUsed", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+
+    // 第一个晚上
+    phaseConfigs.night.onBegin(createPhaseContext(G, "morning"));
+    expect(G.nightActions.length).toEqual(0);
+
+    const useCardMove = phaseConfigs.night.moves.useCard;
+    const cardId1 = G.secrets["p1"].hand[0].id;
+    const result1 = callMove(
+      useCardMove,
+      createMoveContext(G, "p1", "night"),
+      cardId1,
+    );
+    expect(result1).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+
+    // 模拟进入下一天（结算 -> 早晨 -> 晚上）
+    phaseConfigs.resolution.onBegin(createPhaseContext(G, "night"));
+    phaseConfigs.morning.onBegin(createPhaseContext(G, "resolution"));
+    phaseConfigs.night.onBegin(createPhaseContext(G, "morning"));
+
+    // nightCardUsed 应该被重置
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(false);
+
+    // p1 应该能再次使用卡牌
+    const cardId2 = G.secrets["p1"].hand[0].id;
+    const result2 = callMove(
+      useCardMove,
+      createMoveContext(G, "p1", "night"),
+      cardId2,
+    );
+    expect(result2).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+  });
+
+  it("弃权也应该标记为已使用卡牌", () => {
+    const playerIds = ["p1", "p2", "p3"];
+    const context = createSetupContext(playerIds);
+
+    let G = WitchTrialGame.setup!(context, {});
+    G.status = "night";
+
+    const passMove = WitchTrialGame.phases!.night.moves!.pass;
+    const result = callMove(passMove, createMoveContext(G, "p1", "night"));
+
+    expect(result).toBeUndefined();
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+
+    // 使用弃权后，应该不能再用卡牌
+    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const cardId = G.secrets["p1"].hand[0].id;
+    const result2 = callMove(
+      useCardMove,
+      createMoveContext(G, "p1", "night"),
+      cardId,
+    );
+    expect(result2).toBe("INVALID_MOVE");
   });
 });

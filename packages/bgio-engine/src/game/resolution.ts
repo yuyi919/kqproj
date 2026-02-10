@@ -15,7 +15,7 @@ import { Mutations, Selectors, getCardDefinition } from "../utils";
 export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
   const sortedActions = orderBy(
     G.nightActions,
-    [(a) => getCardPriority(a.cardType)],
+    [(a) => getCardPriority(a.card)],
     ["desc"],
   );
 
@@ -27,7 +27,10 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     const actorSecret = G.secrets[action.playerId];
     if (!actorSecret) continue;
 
-    if (action.cardType === "detect" && action.targetId) {
+    // 弃权行动跳过
+    if (!action.card) continue;
+
+    if (action.card.type === "detect" && action.targetId) {
       const targetSecret = G.secrets[action.targetId];
       if (targetSecret) {
         const handCount = targetSecret.hand.length;
@@ -44,14 +47,15 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
           seenCard,
         });
       }
-    } else if (action.cardType === "barrier") {
+    } else if (action.card.type === "barrier") {
       barrierPlayers.add(action.playerId);
     }
   }
 
   // 第二阶段：处理攻击
   for (const action of sortedActions) {
-    if (action.cardType !== "witch_killer" && action.cardType !== "kill")
+    if (!action.card) continue; // 跳过弃权
+    if (action.card.type !== "witch_killer" && action.card.type !== "kill")
       continue;
     if (!action.targetId) continue;
 
@@ -75,14 +79,14 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
       });
       Mutations.addRevealedInfo(G, action.targetId, "barrier", {
         attackerId: action.playerId,
-        cardType: action.cardType,
+        cardType: action.card.type,
       });
       targetSecret.hasBarrier = false;
       continue;
     }
 
     const cause: DeathCause =
-      action.cardType === "witch_killer" ? "witch_killer" : "kill_magic";
+      action.card.type === "witch_killer" ? "witch_killer" : "kill_magic";
     const result = Mutations.killPlayer(
       G,
       action.targetId,
@@ -94,7 +98,7 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     if (result) {
       deadPlayers.add(action.targetId);
 
-      if (action.cardType === "kill") {
+      if (action.card.type === "kill") {
         actorSecret.isWitch = true;
         Mutations.addRevealedInfo(G, action.playerId, "witch_transform", {
           reason: "kill_success",
@@ -103,7 +107,7 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
 
       if (
         result.droppedCards.length > 0 &&
-        action.cardType !== "witch_killer"
+        action.card.type !== "witch_killer"
       ) {
         distributeDroppedCards(
           G,
@@ -118,7 +122,7 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
 
   // 第三阶段：处理检定
   for (const action of sortedActions) {
-    if (action.cardType !== "check") continue;
+    if (!action.card || action.card.type !== "check") continue;
     if (!action.targetId) continue;
 
     const targetSecret = G.secrets[action.targetId];
@@ -141,7 +145,7 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     const hasKilledThisRound = G.nightActions.some(
       (a) =>
         a.playerId === playerId &&
-        (a.cardType === "witch_killer" || a.cardType === "kill"),
+        a.card && (a.card.type === "witch_killer" || a.card.type === "kill"),
     );
 
     if (!hasKilledThisRound) {
@@ -245,8 +249,8 @@ function distributeDroppedCards(
 /**
  * 获取卡牌优先级
  */
-function getCardPriority(cardType: string): number {
-  switch (cardType) {
+function getCardPriority(card: CardRef | null): number {
+  switch (card?.type) {
     case "witch_killer":
       return 5;
     case "kill":
@@ -258,6 +262,6 @@ function getCardPriority(cardType: string): number {
     case "check":
       return 1;
     default:
-      return 0;
+      return 0; // 弃权或其他情况
   }
 }

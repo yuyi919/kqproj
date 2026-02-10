@@ -5,7 +5,13 @@
  * 用于必须满足的条件，由 wrapMove 捕获并返回 INVALID_MOVE
  */
 
-import type { BGGameState, GamePhase, CardType, CardRef } from "../types";
+import type {
+  BGGameState,
+  GamePhase,
+  CardType,
+  CardRef,
+  PublicPlayerInfo,
+} from "../types";
 import { GameLogicError } from "./errors";
 import type { PlayerFullInfo } from "./types";
 
@@ -66,6 +72,29 @@ export function assertPlayerAlive(
     public: publicInfo,
     secret,
   };
+}
+
+/**
+ * Assertion: 验证玩家存在且存活 (使用公共信息)
+ * @returns PublicPlayerInfo 玩家公共信息
+ * @throws GameLogicError 玩家不存在或已死亡时抛出
+ */
+export function assertPlayerPublicAlive(
+  G: BGGameState,
+  playerID: string,
+): PublicPlayerInfo {
+  const publicInfo = G.players[playerID];
+
+  if (!publicInfo) {
+    throw new GameLogicError(`Player ${playerID} not found`);
+  }
+
+  const isAlive = publicInfo.status === "alive";
+  if (!isAlive) {
+    throw new GameLogicError(`Player ${playerID} is not alive`);
+  }
+
+  return publicInfo;
 }
 
 /**

@@ -31,10 +31,16 @@ export function ActionPanel(): React.ReactElement {
     isWitchKillerAvailable,
     isCurrentPlayerWitchKillerHolder,
     killMagicQuota,
+    isImprisoned,
   } = useGameContext();
 
   return (
-    <Space orientation="vertical" size={12} className="size-full">
+    <Space
+      orientation="vertical"
+      size={12}
+      className="size-full"
+      classNames={{ item: "size-full" }}
+    >
       {/* 投票面板 */}
       {currentPhase === "voting" && currentPlayerId && (
         <VotingPanel
@@ -58,6 +64,7 @@ export function ActionPanel(): React.ReactElement {
           witchKillerAvailable={
             isWitchKillerAvailable && isCurrentPlayerWitchKillerHolder
           }
+          isImprisoned={isImprisoned}
           killMagicAvailable={killMagicQuota}
           onUseCard={handleUseCard}
           onPass={handlePass}

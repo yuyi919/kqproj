@@ -43,7 +43,7 @@ const phaseConfigs = {
       //   console.log("endPhase morning");
       // }, duration);
     },
-  } as PhaseConfig<BGGameState>,
+  } satisfies PhaseConfig<BGGameState>,
 
   day: {
     moves: {
@@ -57,7 +57,7 @@ const phaseConfigs = {
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + G.config.dayDuration * 1000;
     },
-  } as PhaseConfig<BGGameState>,
+  } satisfies PhaseConfig<BGGameState>,
 
   /**
    * 投票阶段
@@ -172,7 +172,7 @@ const phaseConfigs = {
         `[VoteResult] Vote history updated, total records: ${G.voteHistory.length}`,
       );
     },
-  } as PhaseConfig<BGGameState>,
+  } satisfies PhaseConfig<BGGameState>,
 
   night: {
     turn: { order: TurnOrder.RESET, activePlayers: ActivePlayers.ALL },
@@ -190,7 +190,7 @@ const phaseConfigs = {
       G.phaseStartTime = Date.now();
       G.phaseEndTime = Date.now() + G.config.nightDuration * 1000;
     },
-  } as PhaseConfig<BGGameState>,
+  } satisfies PhaseConfig<BGGameState>,
 
   resolution: {
     moves: {},
@@ -200,7 +200,7 @@ const phaseConfigs = {
       G.status = "resolution" as GamePhase;
       resolveNightActions(G, random);
     },
-  } as PhaseConfig<BGGameState>,
+  } satisfies PhaseConfig<BGGameState>,
 };
 
 export { phaseConfigs };

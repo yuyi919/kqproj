@@ -72,8 +72,8 @@ export const WitchTrialGame: Game<BGGameState> = {
   minPlayers: 2,
   maxPlayers: 14,
 
-  setup: ({ ctx, random }, setupData): BGGameState => {
-    console.log("setupData", setupData);
+  setup({ ctx, random }, setupData): BGGameState {
+    console.log("setupData", ctx, setupData);
     const config = setupData?.config || SEVEN_PLAYER_CONFIG;
     const playerIds = ctx.playOrder;
 
@@ -164,8 +164,13 @@ export const WitchTrialGame: Game<BGGameState> = {
       deck: [],
     };
 
-    if (playerID && G.secrets[playerID]) {
-      publicState.secrets[playerID] = G.secrets[playerID];
+    if (playerID) {
+      if (playerID === "0") {
+        // 调试模式：显示所有玩家的私有信息
+        publicState.secrets = G.secrets;
+      } else if (G.secrets[playerID]) {
+        publicState.secrets[playerID] = G.secrets[playerID];
+      }
     }
 
     return publicState;

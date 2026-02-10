@@ -86,10 +86,8 @@ describe("resolution", () => {
       timestamp: Date.now(),
       playerId: "p1",
       targetId: "p2",
-      cardType: "kill",
-      cardId: "c1",
+      card: { id: "c1", type: "kill" },
     });
-
     resolveNightActions(G, mockRandom);
 
     expect(G.players["p2"].status).toBe("dead");
@@ -106,8 +104,7 @@ describe("resolution", () => {
       id: "na2",
       timestamp: Date.now(),
       playerId: "p2",
-      cardType: "barrier",
-      cardId: "c2",
+      card: { id: "c2", type: "barrier" },
     });
     // p1 kills p2
     G.nightActions.push({
@@ -115,8 +112,7 @@ describe("resolution", () => {
       timestamp: Date.now(),
       playerId: "p1",
       targetId: "p2",
-      cardType: "kill",
-      cardId: "c1",
+      card: { id: "c1", type: "kill" },
     });
 
     // Set barrier status manually or let resolution handle it?
@@ -154,16 +150,14 @@ describe("resolution", () => {
       timestamp: Date.now(),
       playerId: "p2",
       targetId: "p3",
-      cardType: "kill",
-      cardId: "c2",
+      card: { id: "c2", type: "kill" },
     });
     G.nightActions.push({
       id: "na1",
       timestamp: Date.now(),
       playerId: "p1",
       targetId: "p2",
-      cardType: "witch_killer",
-      cardId: "c1",
+      card: { id: "c1", type: "witch_killer" },
     });
 
     resolveNightActions(G, mockRandom);
@@ -183,16 +177,14 @@ describe("resolution", () => {
       timestamp: Date.now(),
       playerId: "p1",
       targetId: "p2",
-      cardType: "kill",
-      cardId: "c1",
+      card: { id: "c1", type: "kill" },
     });
     G.nightActions.push({
       id: "na2",
       timestamp: Date.now(),
       playerId: "p2",
       targetId: "p1",
-      cardType: "kill",
-      cardId: "c2",
+      card: { id: "c2", type: "kill" },
     });
 
     resolveNightActions(G, mockRandom);

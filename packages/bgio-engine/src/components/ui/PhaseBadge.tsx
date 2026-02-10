@@ -84,7 +84,7 @@ export function getPhaseConfig(
 }
 
 const sizeConfig = {
-  small: { fontSize: 14, width: 28, height: 28, lineHeight: "28px" },
+  small: { fontSize: 14, width: 24, height: 24, lineHeight: "24px" },
   medium: { fontSize: 20, width: 40, height: 40, lineHeight: "40px" },
   large: { fontSize: 28, width: 56, height: 56, lineHeight: "56px" },
 };

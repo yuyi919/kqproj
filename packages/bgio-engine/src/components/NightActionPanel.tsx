@@ -19,6 +19,7 @@ import {
   Empty,
   Divider,
   theme,
+  Modal,
 } from "antd";
 import {
   MoonOutlined,
@@ -38,6 +39,7 @@ interface NightActionPanelProps {
   isWitch: boolean;
   hasBarrier: boolean;
   witchKillerAvailable: boolean;
+  isImprisoned: boolean;
   killMagicAvailable: number;
   onUseCard: (cardId: string, targetId: string) => void;
   onPass: () => void;
@@ -48,6 +50,7 @@ export function NightActionPanel({
   players,
   currentPlayerId,
   isWitch,
+  isImprisoned,
   hasBarrier,
   witchKillerAvailable,
   killMagicAvailable,
@@ -79,6 +82,13 @@ export function NightActionPanel({
     : null;
 
   const handleUseCard = () => {
+    if (isImprisoned) {
+      Modal.warning({
+        title: "囚禁中",
+        content: "你已被囚禁，无法进行行动。",
+      });
+      return;
+    }
     if (selectedCardId) {
       // 结界不需要目标
       const targetId =
@@ -91,6 +101,10 @@ export function NightActionPanel({
 
   return (
     <Card
+      classNames={{
+        root: "size-full flex flex-col",
+        body: "size-full overflow-auto flex flex-col",
+      }}
       title={
         <Space>
           <MoonOutlined />
@@ -98,12 +112,45 @@ export function NightActionPanel({
           {hasBarrier && <Tag color="success">受结界保护</Tag>}
         </Space>
       }
+      actions={[
+        <Button
+          type="primary"
+          size="large"
+          onClick={handleUseCard}
+          disabled={
+            !selectedCard ||
+            (selectedCard.type !== "barrier" && !selectedTargetId)
+          }
+          icon={<CheckOutlined />}
+        >
+          使用卡牌
+        </Button>,
+        <Button size="large" disabled={isImprisoned} onClick={onPass}>
+          放弃行动
+        </Button>,
+      ]}
     >
-      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+      <Space
+        orientation="vertical"
+        size="middle"
+        classNames={{
+          root: "size-full overflow-hidden",
+          item: "overflow-hidden",
+        }}
+      >
+        {isImprisoned && (
+          <Alert
+            title="囚禁中"
+            description="你已被囚禁，无法进行行动。"
+            type="warning"
+            showIcon
+            icon={<WarningOutlined />}
+          />
+        )}
         {isWitch && (
           <Alert
-            title="你是魔女"
-            description="你已连续击杀，今晚必须再次击杀，否则将残骸化死亡！"
+            title="你已经魔女化了"
+            description="今晚必须再次击杀，否则将残骸化死亡！"
             type="warning"
             showIcon
             icon={<WarningOutlined />}
@@ -131,18 +178,22 @@ export function NightActionPanel({
         {/* 卡牌选择 */}
         <Card
           type="inner"
-          title="选择要使用的卡牌"
+          title={isImprisoned ? "要试着使用卡牌吗？" : "选择要使用的卡牌"}
           size="small"
           extra={
             usableCards.length > 0 && (
               <Badge count={usableCards.length} showZero />
             )
           }
+          classNames={{
+            root: "size-full flex flex-col",
+            body: "overflow-auto",
+          }}
         >
           {usableCards.length === 0 ? (
             <Empty description="没有可用的卡牌" />
           ) : (
-            <Space orientation="vertical" style={{ width: "100%" }}>
+            <Space orientation="vertical" className="w-full">
               {usableCards.map((cardRef) => {
                 // 获取卡牌的完整信息用于显示
                 const card = getCardDefinition(cardRef);
@@ -152,23 +203,19 @@ export function NightActionPanel({
                     type={selectedCardId === cardRef.id ? "primary" : "default"}
                     onClick={() => setSelectedCardId(cardRef.id)}
                     icon={getCardIcon(cardRef.type, token)}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      height: "auto",
-                      padding: "12px 16px",
+                    classNames={{
+                      root: "w-full justify-start!",
                     }}
+                    size="large"
                   >
-                    <Space orientation="vertical" size={0} align="start">
-                      <Space>
-                        <span style={{ fontWeight: 500 }}>{card.name}</span>
-                        {cardRef.type === "kill" && (
-                          <Badge
-                            count={killMagicAvailable}
-                            color={token.colorError}
-                          />
-                        )}
-                      </Space>
+                    <Space align="start">
+                      <span style={{ fontWeight: 500 }}>{card.name}</span>
+                      {cardRef.type === "kill" && (
+                        <Badge
+                          count={killMagicAvailable}
+                          color={token.colorError}
+                        />
+                      )}
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         {card.description}
                       </Text>
@@ -205,27 +252,6 @@ export function NightActionPanel({
             showIcon
           />
         )}
-
-        <Divider />
-
-        {/* 操作按钮 */}
-        <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <Button
-            type="primary"
-            size="large"
-            onClick={handleUseCard}
-            disabled={
-              !selectedCard ||
-              (selectedCard.type !== "barrier" && !selectedTargetId)
-            }
-            icon={<CheckOutlined />}
-          >
-            使用卡牌
-          </Button>
-          <Button size="large" onClick={onPass}>
-            放弃行动
-          </Button>
-        </Space>
       </Space>
     </Card>
   );

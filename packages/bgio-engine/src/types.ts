@@ -191,10 +191,8 @@ export interface NightAction {
   id: string;
   /** 行动玩家ID */
   playerId: string;
-  /** 使用的卡牌ID */
-  cardId: string;
-  /** 使用的卡牌类型 */
-  cardType: CardType;
+  /** 使用的卡牌（null 表示弃权） */
+  card: CardRef | null;
   /** 目标玩家ID（可选） */
   targetId?: string;
   /** 行动产生的时间戳 */

@@ -61,6 +61,7 @@ interface GameContextValue {
   killMagicQuota: number;
   isCurrentPlayerWitchKillerHolder: boolean;
   hasPlayerVoted: boolean;
+  isImprisoned: boolean;
 
   // 聊天消息
   chatMessages: {
@@ -108,7 +109,6 @@ export function GameProvider({
 
   // 派生状态计算
   const derivedState = useMemo(() => {
-    console.log(G);
     const currentPhase = G.status;
     const currentRound = G.round;
     const currentPlayer = playerId ? G.players[playerId] : null;
@@ -130,7 +130,7 @@ export function GameProvider({
     const hasPlayerVoted = playerId
       ? Selectors.hasPlayerVoted(G, playerId)
       : false;
-
+    console.log(G);
     return {
       currentPhase,
       currentRound,
@@ -146,6 +146,9 @@ export function GameProvider({
       killMagicQuota,
       isCurrentPlayerWitchKillerHolder,
       hasPlayerVoted,
+      isImprisoned: playerId
+        ? Selectors.isPlayerImprisoned(G, playerId)
+        : false,
     };
   }, [G, ctx, playerId]);
 

@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Space, Typography, Statistic, theme, Button } from "antd";
 import type { GamePhase } from "../types";
 import { getPhaseName } from "../utils";
-import { PhaseBadge, getPhaseConfig } from "./ui/PhaseBadge";
+import { PhaseBadge } from "./ui/PhaseBadge";
 
 const { Text } = Typography;
 
@@ -40,7 +40,7 @@ export function PhaseDisplay({
 
       if (remaining === 0) {
         clearInterval(timer);
-        handleTimeUp.current?.();
+        // handleTimeUp.current?.();
       }
     }, 1000);
 
@@ -50,12 +50,11 @@ export function PhaseDisplay({
   const showTimer = remainingTime > 0 && phase !== "ended"; // && phase !== "resolution";
 
   return (
-    <Space size="middle" align="center">
-      <PhaseBadge phase={phase} size="medium" />
-      <Space orientation="vertical" size={0}>
+    <Space size="small" align="center">
+      <PhaseBadge phase={phase} size="small" />
+      <Space size={4}>
         <Text strong style={{ fontSize: 18 }}>
           {getPhaseName(phase)} - 第 {round} 天
-          <Button onClick={() => handleTimeUp.current?.()}>强制结束</Button>
         </Text>
         {showTimer && (
           <Statistic
@@ -81,6 +80,7 @@ export function PhaseDisplay({
             }}
           />
         )}
+        <Button onClick={() => handleTimeUp.current?.()}>强制结束</Button>
       </Space>
     </Space>
   );

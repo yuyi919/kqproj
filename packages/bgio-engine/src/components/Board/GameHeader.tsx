@@ -11,14 +11,21 @@ import { Layout, Space, Typography, Tag, theme } from "antd";
 import { TeamOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { useGameContext } from "../../contexts/GameContext";
 import { getPhaseName, getPhaseColor } from "../../utils";
+import { PhaseDisplay } from "../PhaseDisplay";
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
 
 export function GameHeader(): React.ReactElement {
   const { token } = theme.useToken();
-  const { currentPhase, currentRound, alivePlayers, players } =
-    useGameContext();
+  const {
+    G,
+    handleEndPhase,
+    currentPhase,
+    currentRound,
+    alivePlayers,
+    players,
+  } = useGameContext();
 
   return (
     <Header
@@ -32,14 +39,20 @@ export function GameHeader(): React.ReactElement {
         height: 36,
       }}
     >
-      <Space>
+      <PhaseDisplay
+        phase={currentPhase}
+        round={currentRound}
+        phaseEndTime={G.phaseEndTime}
+        onTimeUp={handleEndPhase}
+      />
+      {/* <Space>
         <Title level={5} style={{ margin: 0, fontSize: 16 }}>
           魔女审判
         </Title>
         <Tag color={getPhaseColor(currentPhase)} icon={<ClockCircleOutlined />}>
           {getPhaseName(currentPhase)}
         </Tag>
-      </Space>
+      </Space> */}
       <Space size={16}>
         <Text type="secondary" style={{ fontSize: 13 }}>
           <TeamOutlined /> {alivePlayers.length}/{players.length} 存活

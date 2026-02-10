@@ -26,6 +26,7 @@ import type {
   PlayerStatus,
   DeathCause,
   GamePhase,
+  RevealedInfoType,
 } from "./types";
 
 // ==================== 计算层（Selectors）====================
@@ -76,6 +77,13 @@ export const Selectors = {
   isPlayerAlive(state: BGGameState, playerId: string): boolean {
     const privateStatus = state.secrets[playerId]?.status;
     return privateStatus === "alive" || privateStatus === "witch";
+  },
+
+  /**
+   * 检查玩家是否被囚禁（计算）
+   */
+  isPlayerImprisoned(state: BGGameState, playerId: string): boolean {
+    return state.imprisonedId === playerId;
   },
 
   /**
@@ -308,6 +316,14 @@ export const Selectors = {
       !!state.currentActions[playerId] || this.hasPlayerVoted(state, playerId)
     );
   },
+
+  /**
+   * 检查玩家本夜是否已使用卡牌（计算）
+   * 通过 nightActions 数组判断，遵循原子状态原则
+   */
+  hasPlayerUsedCardThisNight(state: BGGameState, playerId: string): boolean {
+    return state.nightActions.some((action) => action.playerId === playerId);
+  },
 };
 
 // ==================== 状态修改（Mutations）====================
@@ -415,7 +431,7 @@ export const Mutations = {
   addRevealedInfo(
     state: BGGameState,
     playerId: string,
-    type: string,
+    type: RevealedInfoType,
     content: unknown,
   ): void {
     const secret = state.secrets[playerId];

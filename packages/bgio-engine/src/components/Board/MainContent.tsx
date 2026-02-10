@@ -32,13 +32,13 @@ export function MainContent(): React.ReactElement {
   return (
     <Content className="p-3 overflow-auto flex flex-col">
       {/* 顶部：阶段显示 */}
-      <PhaseDisplay
+      {/* <PhaseDisplay
         phase={currentPhase}
         round={currentRound}
         phaseEndTime={G.phaseEndTime}
         onTimeUp={handleEndPhase}
-      />
-      <Row gutter={[12, 12]} className="h-full overflow-hidden">
+      /> */}
+      <Row gutter={6} className="h-full overflow-hidden">
         {/* 中部：三列布局 */}
         <Col xs={24} lg={14} className="h-full overflow-hidden">
           {/* 左侧主区域：聊天 */}

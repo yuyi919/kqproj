@@ -5,7 +5,7 @@
  * 用于条件逻辑分支，不抛出错误
  */
 
-import type { BGGameState } from "../types";
+import type { BGGameState, Vote } from "../types";
 import type { PlayerFullInfo } from "./types";
 
 /**
@@ -29,7 +29,7 @@ export function hasKilledThisRound(G: BGGameState, playerID: string): boolean {
   return G.nightActions.some(
     (a) =>
       a.playerId === playerID &&
-      (a.cardType === "witch_killer" || a.cardType === "kill"),
+      a.card && (a.card.type === "witch_killer" || a.card.type === "kill"),
   );
 }
 
@@ -42,4 +42,15 @@ export function findExistingVoteIndex(
   playerID: string,
 ): number {
   return G.currentVotes.findIndex((v) => v.voterId === playerID);
+}
+
+/**
+ * Refinement: 检查投票是否已存在
+ * @returns 已有投票结果，不存在返回 null
+ */
+export function findExistingVote(
+  G: BGGameState,
+  playerID: string,
+): Vote | null {
+  return G.currentVotes.find((v) => v.voterId === playerID) ?? null;
 }

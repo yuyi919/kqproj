@@ -5,8 +5,8 @@
  */
 
 import { nanoid } from "nanoid";
-import type { BGGameState, ChatMessage } from "../types";
-import { getCardDefinition } from "../utils";
+import type { BGGameState, ChatMessage, PublicPlayerInfo } from "../types";
+import { Selectors, getCardDefinition } from "../utils";
 import {
   assertPhase,
   assertNotEmpty,
@@ -15,12 +15,14 @@ import {
   assertWitchKillerCardAllowed,
   assertAttackQuotaAvailable,
   assertValidMessage,
+  assertPlayerPublicAlive,
 } from "./assertions";
 import {
   isImprisoned,
   isWitch,
   hasKilledThisRound,
   findExistingVoteIndex,
+  findExistingVote,
 } from "./refinements";
 import { wrapMove } from "./wrapMove";
 import { GameLogicError } from "./errors";
@@ -46,10 +48,10 @@ const moveFunctions = {
     assertNotEmpty(targetId, "targetId");
 
     // 验证投票者存活
-    assertPlayerAlive(G, playerID);
+    const player = assertPlayerAlive(G, playerID);
 
     // 验证目标玩家存活且不是自投
-    const player = assertPlayerAlive(G, targetId);
+    const target = assertPlayerPublicAlive(G, targetId);
 
     if (playerID === targetId) {
       throw new GameLogicError("Cannot vote for yourself");
@@ -58,33 +60,44 @@ const moveFunctions = {
     console.log(`[Vote] ${playerID} votes for ${targetId}`);
 
     // 查找是否已有投票（支持改票）
-    const existingIndex = findExistingVoteIndex(G, playerID);
+    const existingVote = findExistingVote(G, playerID);
 
-    const vote = {
-      voterId: playerID,
-      targetId,
-      round: G.round,
-      timestamp: Date.now(),
-    };
-
-    if (existingIndex !== -1) {
+    if (existingVote) {
       // 更新已有投票
-      const oldTarget = G.currentVotes[existingIndex].targetId;
-      G.currentVotes[existingIndex] = vote;
+      const oldTarget = existingVote.targetId;
+      if (existingVote.targetId === targetId) {
+        return;
+      }
+      existingVote.targetId = targetId;
+      existingVote.timestamp = Date.now();
       console.log(
         `[Vote] ${playerID} changed vote from ${oldTarget} to ${targetId}`,
       );
       G.chatMessages.push(
-        makeActionMessage(playerID, player, `改变投票为 ${targetId}`),
+        makeActionMessage(
+          playerID,
+          player.public,
+          `改变投票为 玩家${target.seatNumber}`,
+        ),
       );
     } else {
+      const vote = {
+        voterId: playerID,
+        targetId,
+        round: G.round,
+        timestamp: Date.now(),
+      };
       // 新增投票
       G.currentVotes.push(vote);
       console.log(
         `[Vote] ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
       );
       G.chatMessages.push(
-        makeActionMessage(playerID, player, `投票给 ${targetId}`),
+        makeActionMessage(
+          playerID,
+          player.public,
+          `投票给 玩家${target.seatNumber}`,
+        ),
       );
     }
   }),
@@ -145,6 +158,11 @@ const moveFunctions = {
         throw new GameLogicError("Player is imprisoned");
       }
 
+      // Assertion: 每个晚上只能使用一次手牌（通过 nightActions 计算）
+      if (Selectors.hasPlayerUsedCardThisNight(G, playerID)) {
+        throw new GameLogicError("You have already used a card this night");
+      }
+
       const { index: cardIndex, card } = assertCardInHand(player, cardId);
 
       assertWitchKillerCardAllowed(player, card.type);
@@ -159,8 +177,7 @@ const moveFunctions = {
       G.nightActions.push({
         id: nanoid(),
         playerId: playerID,
-        cardId: card.id,
-        cardType: card.type,
+        card: card, // CardRef
         targetId,
         timestamp: Date.now(),
       });
@@ -184,6 +201,19 @@ const moveFunctions = {
   passNight: wrapMove(({ G, playerID }: MoveContext) => {
     assertPhase(G, "night");
     const player = assertPlayerAlive(G, playerID);
+
+    // 检查是否已使用卡牌（每晚只能行动一次）
+    if (Selectors.hasPlayerUsedCardThisNight(G, playerID)) {
+      throw new GameLogicError("You have already used a card this night");
+    }
+
+    // 记录弃权行动
+    G.nightActions.push({
+      id: nanoid(),
+      playerId: playerID,
+      card: null, // 弃权，没有使用卡牌
+      timestamp: Date.now(),
+    });
 
     // Refinement: 魔女化玩家未击杀需要累积回合
     if (isWitch(player) && !hasKilledThisRound(G, playerID)) {
@@ -231,14 +261,14 @@ function makeChatMessage(
 
 function makeActionMessage(
   playerID: string,
-  player: PlayerFullInfo,
+  player: PublicPlayerInfo,
   content: string,
 ): ChatMessage {
   return {
     id: nanoid(),
     type: "action",
     playerId: playerID,
-    playerName: `玩家${player.public.seatNumber}`,
+    playerName: `玩家${player.seatNumber}`,
     content: content.trim(),
     timestamp: Date.now(),
   };
