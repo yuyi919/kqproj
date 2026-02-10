@@ -14,17 +14,17 @@
 
 ### 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| 框架 | Next.js 16 (App Router) |
-| UI 框架 | React 19 + Ant Design 6 + Ant Design X |
-| 管理框架 | Refine (@refinedev/core) |
-| 后端 | Supabase (PostgreSQL + Auth) |
-| ORM/数据库 | Prisma 7 |
-| API 框架 | Hono 4 |
-| 实时通信 | Socket.IO 4 + Supabase Realtime |
-| 语言 | TypeScript 5 |
-| 包管理器 | pnpm |
+| 类别       | 技术                                   |
+| ---------- | -------------------------------------- |
+| 框架       | Next.js 16 (App Router)                |
+| UI 框架    | React 19 + Ant Design 6 + Ant Design X |
+| 管理框架   | Refine (@refinedev/core)               |
+| 后端       | Supabase (PostgreSQL + Auth)           |
+| ORM/数据库 | Prisma 7                               |
+| API 框架   | Hono 4                                 |
+| 实时通信   | Socket.IO 4 + Supabase Realtime        |
+| 语言       | TypeScript 5                           |
+| 包管理器   | pnpm                                   |
 
 ## 架构设计
 
@@ -77,8 +77,6 @@
 │           │   ├── role.ts             # 角色类型定义
 │           │   └── user.ts             # 用户类型定义
 │           ├── lib/                    # 核心逻辑库 (详见各子目录 README)
-│           │   ├── game-engine/        # 魔女审判游戏引擎 (Legacy)
-│           │   ├── bgio-engine/        # BoardGame.io 游戏引擎 (Active)
 │           │   ├── clerk-router/       # 自定义路由库
 │           │   └── utils/              # 工具函数
 │           ├── middleware.ts           # Next.js 认证中间件
@@ -100,6 +98,12 @@
 │           │   ├── api/rpc.ts          # Hono RPC 客户端
 │           │   └── supabase/           # Supabase 客户端工具
 │           └── generated/prisma/       # Prisma 生成的客户端
+├── packages/
+│   └── bgio-engine/            # BoardGame.io 游戏引擎 (Active)
+│       ├── src/
+│       │   ├── game/           # 核心逻辑
+│       │   ├── components/     # UI 组件
+│       │   └── legacy-core/    # 原始算法复用 (Legacy Core)
 ├── prisma/
 │   ├── schema.prisma           # 数据库 Schema
 │   └── config.ts               # Prisma 配置
@@ -207,12 +211,12 @@ GAME_NIGHT_DURATION=60
 
 ### 关键配置文件
 
-| 文件 | 用途 |
-|------|------|
-| `next.config.mjs` | Next.js 配置（standalone 输出、启用 turbopack） |
-| `tsconfig.json` | TypeScript 路径别名（`@*` → `./src/*`） |
-| `prisma.config.ts` | Prisma 配置（环境变量解析） |
-| `pnpm-workspace.yaml` | pnpm 工作区配置 |
+| 文件                  | 用途                                            |
+| --------------------- | ----------------------------------------------- |
+| `next.config.mjs`     | Next.js 配置（standalone 输出、启用 turbopack） |
+| `tsconfig.json`       | TypeScript 路径别名（`@*` → `./src/*`）         |
+| `prisma.config.ts`    | Prisma 配置（环境变量解析）                     |
+| `pnpm-workspace.yaml` | pnpm 工作区配置                                 |
 
 ## 代码规范
 
@@ -231,7 +235,7 @@ GAME_NIGHT_DURATION=60
 
 3. **纯注解**：对无副作用的构造函数调用使用 `/*#__PURE__*/`
    ```typescript
-   export const app = /*#__PURE__*/ new Hono()
+   export const app = /*#__PURE__*/ new Hono();
    ```
 
 ### 组件约定
@@ -244,6 +248,7 @@ GAME_NIGHT_DURATION=60
 ### API 约定
 
 1. **RFC 7807 问题详情**：API 错误使用标准格式
+
    ```typescript
    {
      type: "ErrorType",
@@ -264,11 +269,10 @@ GAME_NIGHT_DURATION=60
 
 ### 游戏引擎说明
 
-游戏引擎核心逻辑位于 `apps/web/src/lib/` 下。为了保持文档简洁，详细的使用说明和 API 文档已移动到各子目录的 `README.md` 中：
+游戏引擎核心逻辑位于 `packages/bgio-engine/` 下。为了保持文档简洁，详细的使用说明和 API 文档已移动到各子目录的 `README.md` 中：
 
-- **[Game Engine (Legacy)](../apps/web/src/lib/game-engine/README.md)**: 原版自定义游戏引擎
-- **[BoardGame.io Engine (Active)](../apps/web/src/lib/bgio-engine/README.md)**: 基于 BoardGame.io 的新版引擎
-- **[Clerk Router](../apps/web/src/lib/clerk-router/README.md)**: 自定义路由库
+- **[BoardGame.io Engine (Active)](packages/bgio-engine/README.md)**: 基于 BoardGame.io 的新版引擎
+- **[Game Engine (Legacy)](packages/bgio-engine/src/legacy-core/README.md)**: 原版自定义游戏引擎适配版本
 
 ## Socket.IO 事件定义
 
@@ -276,32 +280,32 @@ GAME_NIGHT_DURATION=60
 
 ```typescript
 // 房间相关
-'room:join'      // 加入房间
-'room:leave'     // 离开房间
-'room:ready'     // 准备/取消准备
+"room:join"; // 加入房间
+"room:leave"; // 离开房间
+"room:ready"; // 准备/取消准备
 
 // 游戏相关
-'game:start'     // 开始游戏（房主）
-'game:action'    // 玩家行动（投票、技能）
-'game:chat'      // 发送聊天消息
+"game:start"; // 开始游戏（房主）
+"game:action"; // 玩家行动（投票、技能）
+"game:chat"; // 发送聊天消息
 ```
 
 ### 服务器 → 客户端
 
 ```typescript
 // 房间广播
-'room:updated'   // 房间状态更新
-'player:joined'  // 玩家加入
-'player:left'    // 玩家离开
-'player:ready'   // 玩家准备状态变化
+"room:updated"; // 房间状态更新
+"player:joined"; // 玩家加入
+"player:left"; // 玩家离开
+"player:ready"; // 玩家准备状态变化
 
 // 游戏广播
-'game:started'   // 游戏开始
-'game:phase'     // 阶段变化（昼夜切换）
-'game:action'    // 玩家行动结果
-'game:result'    // 回合结果
-'game:ended'     // 游戏结束
-'game:chat'      // 接收聊天消息
+"game:started"; // 游戏开始
+"game:phase"; // 阶段变化（昼夜切换）
+"game:action"; // 玩家行动结果
+"game:result"; // 回合结果
+"game:ended"; // 游戏结束
+"game:chat"; // 接收聊天消息
 ```
 
 ## 测试说明
@@ -369,7 +373,7 @@ GAME_NIGHT_DURATION=60
 # 构建命令
 docker build -t whole-ends-kneel .
 
-# 运行命令  
+# 运行命令
 docker run -p 3000:3000 whole-ends-kneel
 ```
 
@@ -385,7 +389,7 @@ docker run -p 3000:3000 whole-ends-kneel
 
 1. **Socket.IO 初始化**：Socket.IO 服务器通过 `/api/socket` 端点（Pages Router）初始化，但应用主要使用 App Router。
 
-2. **游戏引擎位置**：游戏核心逻辑位于 `src/lib/game-engine/`，与 UI 分离，便于单元测试。
+2. **游戏引擎位置**：游戏核心逻辑位于 `packages/bgio-engine/src/`，与 UI 分离，便于单元测试。
 
 3. **实时同步策略**：游戏状态使用 Socket.IO 进行实时同步，聊天消息可选择使用 Supabase Realtime 作为备选。
 
@@ -405,53 +409,58 @@ docker run -p 3000:3000 whole-ends-kneel
 
 ### 核心机制
 
-| 机制 | 说明 |
-|------|------|
-| **胜利条件** | 存活至最后（标准游戏7日，存活玩家剩1人时提前结束） |
-| **手牌系统** | 5种卡牌：魔女杀手(唯一/不消耗)、结界魔法、杀人魔法、探知魔法、检定魔法 |
-| **魔女化** | 持有【魔女杀手】或使用【杀人魔法】成功击杀后获得，连续2夜未击杀则残骸化死亡 |
+| 机制         | 说明                                                                              |
+| ------------ | --------------------------------------------------------------------------------- |
+| **胜利条件** | 存活至最后（标准游戏7日，存活玩家剩1人时提前结束）                                |
+| **手牌系统** | 5种卡牌：魔女杀手(唯一/不消耗)、结界魔法、杀人魔法、探知魔法、检定魔法            |
+| **魔女化**   | 持有【魔女杀手】或使用【杀人魔法】成功击杀后获得，连续2夜未击杀则残骸化死亡       |
 | **攻击上限** | 每晚最多3人可发动攻击；魔女杀手持有者发动攻击时占1名额，不发动则杀人魔法有3个名额 |
-| **监禁投票** | 夜间阶段进行，得票最高者当夜无法使用手牌（但可被攻击） |
-| **手牌遗落** | 死者手牌由击杀者/尸体第一发现者分配，魔女杀手击杀时击杀者无法获取手牌 |
+| **监禁投票** | 夜间阶段进行，得票最高者当夜无法使用手牌（但可被攻击）                            |
+| **手牌遗落** | 死者手牌由击杀者/尸体第一发现者分配，魔女杀手击杀时击杀者无法获取手牌             |
 
 ### 关键规则确认
 
 #### 攻击上限规则
+
 - 魔女杀手持有者**不发动攻击**：当晚最多3个杀人魔法攻击名额
 - 魔女杀手持有者**发动攻击**：当晚最多2个杀人魔法攻击名额
 
 #### 探知魔法时机
+
 - 优先结算，以目标**使用手牌前**的状态为准
 - 可看到目标**即将使用的那张牌**
 
 #### 魔女杀手持有者的绝对限制
+
 - **只能**使用魔女杀手 或 放弃行动
 - **不能**使用杀人魔法、结界、探知、检定等其他手牌（即使手牌中有）
 
 #### 攻击落空定义
+
 - 目标被其他人**先行击杀** → 算落空，杀人魔法**消耗**
 
 #### 魔女杀手转移
+
 - **残骸化死亡**：随机分配给存活玩家
 - **被杀人魔法击杀**：转移给击杀者
 
 ### 游戏卡牌说明
 
-| 卡牌名称 | 数量 | 消耗 | 效果 |
-|----------|------|------|------|
-| **魔女杀手** | 1张 | 否 | 对目标发动攻击（优先度最高），持有者魔女化 |
-| **结界魔法** | 约人数×2 | 是 | 保护自身当夜免受攻击，成功防御时通知 |
-| **杀人魔法** | 若干 | 是 | 对目标发动攻击（优先度低于魔女杀手），成功击杀后魔女化 |
-| **探知魔法** | 若干 | 是 | 探知目标手牌总数并随机获悉其中一张名称 |
-| **检定魔法** | 若干 | 是 | 查验已死亡玩家的死因是否为魔女杀手所致 |
+| 卡牌名称     | 数量     | 消耗 | 效果                                                   |
+| ------------ | -------- | ---- | ------------------------------------------------------ |
+| **魔女杀手** | 1张      | 否   | 对目标发动攻击（优先度最高），持有者魔女化             |
+| **结界魔法** | 约人数×2 | 是   | 保护自身当夜免受攻击，成功防御时通知                   |
+| **杀人魔法** | 若干     | 是   | 对目标发动攻击（优先度低于魔女杀手），成功击杀后魔女化 |
+| **探知魔法** | 若干     | 是   | 探知目标手牌总数并随机获悉其中一张名称                 |
+| **检定魔法** | 若干     | 是   | 查验已死亡玩家的死因是否为魔女杀手所致                 |
 
 ### 推荐牌池配置
 
-| 人数 | 魔女杀手 | 结界 | 探知 | 检定 | 杀人 |
-|------|----------|------|------|------|------|
-| 七人局 | 1 | 15 | 5 | 4 | 3 |
-| 八人局 | 1 | 18 | 5 | 4 | 4 |
-| 九人局 | 1 | 20 | 6 | 4 | 5 |
+| 人数   | 魔女杀手 | 结界 | 探知 | 检定 | 杀人 |
+| ------ | -------- | ---- | ---- | ---- | ---- |
+| 七人局 | 1        | 15   | 5    | 4    | 3    |
+| 八人局 | 1        | 18   | 5    | 4    | 4    |
+| 九人局 | 1        | 20   | 6    | 4    | 5    |
 
 ### 详细规则文档
 

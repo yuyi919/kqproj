@@ -2,304 +2,423 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Repository Overview
 
-This is a **multiplayer online party game platform** (similar to Werewolf/Mafia) called "Killerqueen" (魔女审判/Witch Trial), built as a full-stack application with admin panel. The project uses a monorepo structure with pnpm workspaces.
+**Project Type:** Monorepo with a single Next.js application
+**Primary App:** `apps/web` - A full-stack web application featuring a multiplayer "Witch Trial" board game
+**Package Manager:** pnpm (workspace monorepo)
+**Runtime:** Node.js 20+, Bun (for testing and WebSocket server)
 
-**Core Features:**
-- Real-time multiplayer card game with day/night cycles, voting, and special abilities
-- Game room management (create, join, leave, ready status, start game)
-- Chat system with real-time messaging (day/night channels)
-- Admin panel for user management and data monitoring (Refine-based)
-- i18n support (English/Chinese)
-- Full authentication via Supabase
+## Architecture
 
-## Tech Stack
+### Tech Stack
 
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript 5
-- **Admin UI**: Refine framework with Ant Design 6
-- **Backend**: Hono 4 (running within Next.js API routes)
-- **Database**: Supabase (PostgreSQL with Row Level Security)
-- **ORM**: Prisma 7 + Zero sync
-- **Real-time**: Socket.IO 4 + Supabase Realtime
-- **Game Engine**: Custom boardgame.io-based engine
-- **Styling**: Tailwind CSS 4 + Ant Design
-- **Testing**: Bun test
-- **Package Manager**: pnpm
+- **Framework:** Next.js 16 with App Router
+- **UI Framework:** Refine (admin/b2b framework) + Ant Design v6
+- **Game Engine:** boardgame.io for real-time multiplayer game logic
+- **Database:** PostgreSQL with Prisma ORM + ROCICORP Zero (real-time sync)
+- **Authentication:** Supabase (with Clerk router integration for custom auth)
+- **Real-time Communication:** Socket.IO with Postgres adapter
+- **API:** Hono (lightweight web framework) for edge-compatible API routes
+- **Internationalization:** next-intl (English + Chinese)
+- **Styling:** Tailwind CSS v4 + Ant Design
+- **State Management:** TanStack React Query (server state), Zustand (client state implied by dependencies)
+- **Validation:** Zod
 
-## Monorepo Structure
+### High-Level Architecture
 
 ```
-whole-ends-kneel-monorepo/
-├── apps/
-│   └── web/                    # Main Next.js application
-├── packages/                   # Shared packages (currently empty)
-├── AGENTS.md                   # Detailed project documentation (IMPORTANT)
-├── package.json               # Root package.json with workspace scripts
-└── pnpm-workspace.yaml        # pnpm workspace configuration
+┌─────────────────────────────────────────────────────────────┐
+│                     Next.js 16 App Router                   │
+│  apps/web/src/app/                                          │
+│  ├── (auth)/       → Login, Register, Password Reset       │
+│  ├── (protected)/  → Protected pages (blog, users, chat)   │
+│  ├── api/          → Hono API routes (via Vercel adapter)  │
+│  ├── game/         → Main game page                        │
+│  ├── lobby/        → Game room lobby                       │
+│  └── room/[id]/    → Individual game room                  │
+└─────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌───────────────┐  ┌─────────────────┐  ┌──────────────┐
+│  Refine Core  │  │  boardgame.io   │  │  Socket.IO   │
+│  + Ant Design │  │  Game Engine    │  │  (Real-time) │
+└───────────────┘  └─────────────────┘  └──────────────┘
+        │                   │                   │
+        └───────────────────┼───────────────────┘
+                            ▼
+                  ┌──────────────────┐
+                  │  Data Providers  │
+                  │  (Refine patterns)│
+                  └──────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Prisma     │   │   Zero Sync  │   │  PostgreSQL  │
+│  + Postgres  │   │  (Real-time) │   │   (Supabase) │
+└──────────────┘   └──────────────┘   └──────────────┘
 ```
 
-## Key Architecture Patterns
+### Key Directories
 
-### 1. Next.js App Router + Refine Integration
+- `apps/web/src/app/` - Next.js App Router pages and layouts
+- `packages/bgio-engine/src/` - Boardgame.io game implementation (Witch Trial game)
+- `apps/web/src/providers/` - Refine providers (auth, data, live, i18n)
+- `apps/web/src/contexts/` - React contexts (color mode, server auth)
+- `apps/web/src/components/` - Reusable UI components
+- `apps/web/prisma/` - Database schema
+- `apps/web/src/generated/` - Generated code (Prisma client, Zero types)
+- `apps/web/src/hooks/` - Custom hooks (auth, socket, app)
+- `apps/web/src/i18n/` - Internationalization (locales: en, zh-CN)
 
-The app combines Next.js App Router with Refine for admin functionality:
+### Game Architecture (boardgame.io)
 
-- **Root Layout** (`src/app/layout.tsx`): Wraps entire app with providers:
-  - AntdRegistry (Ant Design)
-  - NextIntlClientProvider (i18n)
-  - RefineKbarProvider (keyboard shortcuts)
-  - ColorModeContextProvider (dark/light mode)
-  - ServerAuthProvider (server-side auth state)
-  - RefineProvider (Refine core)
+The core game logic is in `packages/bgio-engine/src/`:
 
-- **Route Groups**:
-  - `(auth)/` - Login, register, forgot password pages
-  - `(protected)/` - Admin panel (blog posts, categories, users, settings)
-  - Public routes: `game/`, `lobby/`, `room/[id]/`, `debug/socket/`
+- `game/` - Game definition, moves, phases, resolutions
+- `components/` - React UI components for the game board
+- `hooks/` - Custom hooks for game state management
+- `contexts/` - React context for game state
+- `utils.ts` - Selectors (computed state) and utility functions
+- `types.ts` - TypeScript type definitions
 
-### 2. Backend API Layer (Hono)
+Pattern: Uses boardgame.io's reducer pattern with explicit `moveFunctions`, `phaseConfigs`, and `resolveNightActions`.
 
-The backend uses Hono mounted at `/api` via Next.js route handlers:
-
-- **Entry**: `src/server/api/app.ts` - Hono app with middleware
-- **Middleware**: `supabase.ts` - Attaches Supabase client to request context
-- **Routes**:
-  - `/api/auth` - Authentication endpoints
-  - `/api/data` - Generic CRUD for all tables (dynamic resource routing)
-  - `/api/users` - User-specific operations
-  - `/api/game` - Game room management (create, join, leave, ready, start)
-  - `/api/live` - SSE-based real-time subscriptions using Supabase Realtime
-
-**Key Pattern**: The data provider (`src/providers/data-provider/api.ts`) translates Refine's data operations into Hono RPC calls using generated types from `@utils/api/rpc`.
-
-### 3. Real-time Communication
-
-Two real-time systems work together:
-
-- **Socket.IO** (`src/server/api/socket-io.ts`):
-  - Game state synchronization
-  - Chat messaging
-  - Player actions/events
-  - Uses PostgreSQL adapter for multi-instance scaling
-  - Authenticates via Supabase session cookies
-
-- **Supabase Realtime** (`src/providers/live-provider/`):
-  - CRUD change notifications for Refine LiveProvider
-  - SSE endpoint at `/api/live/subscribe`
-  - Supports catch-up for missed events
-
-### 4. Game Engine (Boardgame.io)
-
-Located in `src/lib/bgio-engine/`:
-
-- **Core Types**: `types.ts` - Game state, phases, player status, cards, actions
-- **Game Definition**: `game/index.ts` - `WitchTrialGame` object with setup, phases, moves, endIf
-- **Phases**: `phases.ts` - Configuration for morning, day, voting, night, resolution phases
-- **Moves**: `moves.ts` - All game actions (vote, use card, ready, etc.)
-- **Selectors**: `utils/selectors.ts` - Pure functions for deriving state
-- **Components**: `components/` - React UI for board, hand, voting, etc.
-- **Hook**: `hooks/useWitchTrial` - Client-side game state management
-
-**Game Flow**: The game implements a social deduction card game with:
-- 5 card types: Witch Killer, Barrier Magic, Kill Magic, Detect Magic, Check Magic
-- Day phase: voting to imprison players
-- Night phase: players use abilities
-- Win conditions: survive as witch or eliminate all witches
-
-### 5. Database Layer
-
-**Prisma Schema** (`apps/web/prisma/schema.prisma`):
-
-Key tables:
-- `users` - User profiles (extends Supabase auth)
-- `groups` - Chat groups
-- `group_members` - Group membership
-- `messages` - Chat messages
-- `game_rooms` - Game room metadata
-- `game_players` - Players in rooms (with seat numbers, status)
-- `game_rounds` - Round history (if implemented)
-
-**Row Level Security**: Many models have RLS enabled (see Prisma schema comments).
-
-### 6. Authentication & Authorization
-
-- **Provider**: Supabase Auth with custom JWT session handling
-- **Client**: `src/utils/supabase/client.ts`
-- **Server**: `src/providers/auth-provider/` - Both client and server implementations
-- **Middleware**: `src/middleware.ts` - Updates session on each request
-- **Refine Integration**: `authProviderClient` / `authProviderServer` adapt Supabase to Refine's auth interface
-
-### 7. Internationalization (i18n)
-
-- **Library**: next-intl
-- **Config**: `src/i18n/config.ts`
-- **Locales**: `src/i18n/locales/` (en.ts, zh-CN.ts)
-- Messages loaded server-side via `getMessages()` in layout
-
-## Important Directories
-
-```
-apps/web/src/
-├── app/                    # Next.js App Router pages & layouts
-├── components/             # React components (including Refine overrides)
-│   ├── RefineProvider.tsx  # Main Refine provider setup
-│   └── ...
-├── contexts/               # React contexts (color-mode, server-auth, game)
-├── hooks/                  # Custom hooks (useSocket, useUser)
-├── interfaces/             # TypeScript type definitions (socket, game, user)
-├── lib/                    # Core libraries
-│   ├── bgio-engine/       # Active boardgame.io game engine (Witch Trial)
-│   ├── game-engine/       # Legacy engine (may be deprecated)
-│   ├── utils/             # Utility functions (api/rpc.ts, supabase/)
-│   └── ...
-├── providers/             # Refine providers (auth, data, live, i18n, devtools)
-│   ├── auth-provider/
-│   ├── data-provider/
-│   ├── i18n-provider/
-│   └── live-provider/
-├── server/                # Backend code
-│   └── api/
-│       ├── app.ts         # Hono app entry
-│       ├── middleware/    # Supabase middleware
-│       ├── routes/        # API endpoints
-│       ├── socket-io.ts   # Socket.io setup
-│       └── ...
-├── i18n/                  # Internationalization config & translations
-├── middleware.ts          # Next.js middleware for auth session
-└── generated/             # Generated code (Prisma client, etc.)
-```
-
-## Common Development Commands
+## Development Commands
 
 ### Root Level (monorepo)
 
 ```bash
-pnpm install              # Install all dependencies
-pnpm dev                  # Start all dev servers
-pnpm build                # Build all packages/apps
-pnpm start                # Start all production servers
-pnpm lint                 # Lint all packages/apps
-pnpm test                 # Run tests in all packages/apps
+pnpm dev          # Start all apps in development mode
+pnpm build        # Build all apps
+pnpm start        # Start all apps in production mode
+pnpm lint         # Lint all apps
+pnpm test         # Run tests in all apps
 ```
 
-### Within `apps/web`
+### App-Specific (apps/web)
 
 ```bash
-pnpm dev                  # Start Next.js dev server (with increased memory)
-pnpm build               # Build for production
-pnpm start               # Start production server
-pnpm lint                # Run Next.js ESLint
-pnpm test                # Run Bun tests
-pnpm test:watch          # Run tests in watch mode
-pnpm db:pull             # Pull schema from Supabase
-pnpm db:gen              # Generate Prisma client
-pnpm db:migrate          # Run migrations (if schema changes)
-pnpm refine              # Open Refine DevTools
+pnpm ---filter @whole-ends-kneel/web dev     # Start development server
+pnpm --filter @whole-ends-kneel/web build    # Build for production
+pnpm --filter @whole-ends-kneel/web start    # Start production server
+pnpm --filter @whole-ends-kneel/web lint     # Run ESLint
+pnpm --filter @whole-ends-kneel/web test     # Run Bun test suite
+pnpm --filter @whole-ends-kneel/web test:watch  # Watch mode
 ```
-
-**Note**: The dev script uses `cross-env NODE_OPTIONS=--max_old_space_size=4096` to increase Node memory limit.
 
 ### Database Commands
 
 ```bash
-cd apps/web
-pnpm db:pull    # Sync schema from database
-pnpm db:gen     # Generate TypeScript types and client
+pnpm --filter @whole-ends-kneel/web db:pull   # Pull schema from database
+pnpm --filter @whole-ends-kneel/web db:gen    # Generate Prisma client
 ```
 
-## Testing Strategy
+### WebSocket/Chat Server
 
-- **Runner**: Bun's built-in test runner (no Jest/Vitest config)
-- **Location**: Tests co-located with code in `__tests__/` directories
-- **Game Engine Tests**: `src/lib/bgio-engine/__tests__/`
-  - `utils.test.ts` - 31 tests for selectors, mutations, utilities
-  - `game.test.ts` - 18 tests for game setup, voting, night phases, end conditions
-- **Pattern**: Mock random functions for deterministic tests, use `as any` assertions to simplify complex boardgame.io types
-- **Run single test**: `bun test src/lib/bgio-engine/__tests__/utils.test.ts`
+The `bot.ts` file in `apps/web/` is a standalone Bun WebSocket server for the chat functionality. Run with:
+
+```bash
+cd apps/web && bun run bot.ts
+```
+
+Server runs on port 3000 by default (configurable via `PORT` env var).
+
+## Configuration Files
+
+- `pnpm-workspace.yaml` - Workspace configuration (apps/_, packages/_)
+- `apps/web/next.config.mjs` - Next.js config with next-intl plugin, standalone output
+- `apps/web/tsconfig.json` - TypeScript config with path aliases (`@/*`)
+- `apps/web/.eslintrc.json` - Extends `next/core-web-vitals`
+- `apps/web/.env` - Environment variables (NEVER commit sensitive data)
+- `apps/web/prisma/schema.prisma` - Database schema with Zero generator
 
 ## Environment Variables
 
-See `.env` in `apps/web/` for required configuration. Minimum required:
-- `DATABASE_URL` - Supabase pooler connection
+Located in `apps/web/.env`:
+
+- `DATABASE_URL` - Pooled PostgreSQL connection (Supabase)
 - `DIRECT_URL` - Direct connection for migrations
-- `ZERO_UPSTREAM_DB` - Zero sync database (optional)
-- `DB_PWD` - Database password (used by Socket.IO adapter)
+- `ZERO_UPSTREAM_DB` - Zero sync database URL
+- `DB_PWD` - Database password (used in scripts)
 
-Supabase-specific env vars also required for auth:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+Additional variables likely needed (check code):
 
-## Code Style & Conventions
+- Supabase credentials (anon key, service role key, URL)
+- Clerk/NextAuth secrets (JWT secret, Clerk keys)
+- Socket.IO server configuration
 
-- **TypeScript**: Strict mode enabled
-- **Formatting**: Prettier (`.prettierrc` at root)
-- **Linting**: ESLint with Next.js config (`.eslintrc.json` in apps/web)
-- **Components**: Functional components with hooks
-- **Server Components**: Use `"use client"` directive when needed
-- **API Routes**: Use Hono with Zod validation (`zValidator`)
-- **Game Logic**: Pure functions where possible (Selectors, Mutations)
-- **State Management**: Boardgame.io for game state; React Context for UI state; TanStack Query not used
+## Testing
 
-## Important Notes
+Testing uses **Bun's built-in test runner**.
 
-1. **Route Groups**: The protected admin routes use route groups `(protected)/` and `(auth)/`. These are URL-optional (don't appear in URLs).
+Test files are co-located with source files using `__tests__/` pattern or `.test.ts` extension.
 
-2. **Refine Resources**: Defined in `src/components/RefineProvider.tsx`. Current resources:
-   - `groups` (maps to blog-posts in UI)
-   - `messages` (maps to rooms)
-   - `users`
-   - `categories`
+Examples:
 
-3. **Dynamic Imports**: Some packages transpiled in `next.config.mjs`:
-   - `@refinedev/antd`
-   - `@stackframe/stack-shared`
+```bash
+# Run all tests
+pnpm test
 
-4. **Socket.IO + PostgreSQL**: Uses `@socket.io/postgres-adapter` for horizontal scaling. Requires PostgreSQL connection pool.
+# Run tests for specific app
+pnpm --filter @whole-ends-kneel/web test
 
-5. **Game State Persistence**: Game state is NOT persisted to database yet (in-memory only via Socket.IO rooms). Consider implementing state snapshots if needed.
+# Watch mode
+pnpm --filter @whole-ends-kneel/web test:watch
 
-6. **RLS**: Database uses Row Level Security. Ensure Supabase policies are properly configured.
+# Run specific test file
+bun test packages/bgio-engine/src/__tests__/game.test.ts
+```
 
-7. **Zero Sync**: Prisma Zero generator configured but may not be active. Check `prisma-zero` dependency.
+Test structure: Uses `describe`, `it`, `expect` from `bun:test`. Mock functions are used for game logic testing.
 
-## Useful Skills
+## Code Style
 
-This repository benefits from these Claude Code skills:
-- `antd-v6-best-practices` - For Ant Design component questions
-- `react-dev` / `react-patterns` - For React component design
-- `typescript-strict-migrator` - If upgrading TypeScript
-- `i18n-frontend-implementer` - For adding translations
-- `state-ux-flow-builder` - For loading/error states
-- `table-builder` - For admin panel table components
-- `form-wizard-builder` - For multi-step forms
-- `unit-test-generator` - For adding game logic tests
+- TypeScript with `strict: true`
+- ESLint extends `next/core-web-vitals`
+- Prettier config in `.prettierrc`
+- Uses path aliases: `@/*` → `apps/web/src/*`
+- Conventional Commit messages recommended (though not enforced yet)
+- `.npmrc` sets `legacy-peer-dependencies=true` and `strict-peer-dependencies=false` (needed for dependency resolution)
 
-## Troubleshooting
+## Database Schema
 
-**Socket.IO connection issues**:
-- Check DB_PWD is set correctly
-- Verify PostgreSQL connection pool is accessible
-- Check Socket.IO server logs in `socket-io.ts`
+### Primary Models
 
-**Game state not updating**:
-- Game state is in-memory; server restarts lose state
-- Ensure Socket.IO connection is established
-- Check `useWitchTrial` hook for client-side sync
+- `users` - User accounts (with Supabase auth integration)
+- `groups` - User groups/teams
+- `group_members` - Many-to-many relationship between users and groups
+- `messages` - Chat messages (linked to groups)
+- `game_rooms` - Multiplayer game rooms
+- `game_players` - Players in game rooms (with status)
 
-**Refine resources not showing**:
-- Resources defined in `RefineProvider.tsx`
-- Routes must match resource list configuration
-- Check browser console for route match errors
+Key Features:
 
-**Next.js build errors**:
-- `transpilePackages` in `next.config.mjs` includes required packages
-- Some packages may need to be added if using additional Refine modules
+- Row Level Security (RLS) enabled on some tables (check Prisma schema comments)
+- UUIDs as primary keys (generated via `dbgenerated("gen_random_uuid()")`)
+- Timestamps with `@db.Timestamptz(6)` (UTC)
+- Enums: `GameRoomStatus` (WAITING, PLAYING, FINISHED, DESTROYED), `GamePlayerStatus` (JOINED, READY, LEFT)
 
-## References
+Prisma generates:
 
-- **Internal Docs**: `AGENTS.md` - Comprehensive Chinese documentation
-- **Refine Docs**: https://refine.dev/docs
-- **Boardgame.io**: https://boardgame.io/
-- **Hono**: https://hono.dev/
-- **Next.js i18n**: https://next-intl.dev/
+- Client: `apps/web/src/generated/prisma/client.ts`
+- Zero (real-time): `apps/web/src/generated/zero/schema.ts` (if generator configured)
+
+## API Architecture
+
+API routes are consolidated in `apps/web/src/app/api/[[...route]]/route.ts` using Hono.
+
+The route handler uses the Hono Vercel adapter to handle all HTTP methods (GET, POST, PATCH, DELETE).
+
+Data provider (`apps/web/src/providers/data-provider/api.ts`) implements Refine's `DataProvider` interface, calling the Hono API via `@utils/api/rpc` (auto-generated type-safe RPC client).
+
+Pattern:
+
+- Client-side uses Refine hooks (`useList`, `useCreate`, `useCustom`, etc.)
+- Data provider wraps RPC calls to Hono API
+- Hono API handles business logic and database operations via Prisma
+
+## Authentication Flow
+
+- Uses Supabase as the auth backend
+- Server-side: `auth-provider.server.ts` wraps Supabase server client
+- Client-side: `auth-provider.client.ts` wraps Supabase browser client
+- `ServerAuthProvider` context passes authenticated user from server to client
+- Access tokens stored in cookies (Supabase SSR helper)
+- `public.ts` provides a Refine-compatible auth provider wrapper
+
+## Real-time Features
+
+Two real-time systems:
+
+1. **Zero (ROCICORP)** - Database-level real-time sync (Prisma → client)
+   - Used for live data updates in Refine tables
+   - Configured via Prisma Zero generator
+
+2. **Socket.IO** - Game state synchronization
+   - Used for multiplayer game state updates
+   - `live-provider/socketio.ts` implements Refine's LiveProvider
+   - Game moves and state broadcast via Socket.IO rooms
+
+## Internationalization (i18n)
+
+- Uses `next-intl` with App Router
+- Locales: English (`en`) and Chinese (`zh-CN`)
+- Configuration in: `apps/web/src/i18n/`
+- Message files: `apps/web/src/i18n/locales/*.ts`
+- Type-safe approach with generated types (check `next.config.mjs` for plugin)
+
+Script to check i18n completeness: `apps/web/scripts/check-i18n.ts` (found in `i18n-check-results.txt`)
+
+## Games & Engine
+
+The `bgio-engine` is a custom wrapper around boardgame.io for a "Witch Trial" game (social deduction game similar to Werewolf/Mafia).
+
+Key Files:
+
+- `packages/bgio-engine/src/game/index.ts` - Main game definition (`WitchTrialGame`)
+- `packages/bgio-engine/src/types.ts` - Game state and types
+- `packages/bgio-engine/src/utils.ts` - Selectors (derived state) and utilities
+- `packages/bgio-engine/src/components/Board/` - Main game board UI
+- `packages/bgio-engine/src/components/` - Player list, hand, voting, chat, etc.
+- `packages/bgio-engine/src/hooks/useWitchTrial.ts` - Hook for game integration
+
+Game Flow:
+
+- Night phase → Day phase → Voting → Resolution
+- Roles: Witch, Hunter, villagers, etc.
+- Uses boardgame.io's turn-based multiplayer model with server authority
+
+## Important Patterns & Conventions
+
+### Refine Resources
+
+Resources configured in `RefineProvider.tsx` map to pages:
+
+- `groups` → displays at `/blog-posts` (note: name mismatch, but pages under `app/(protected)/blog-posts/`)
+- `messages` → room listing at `/room`
+- `users` → CRUD at `/users`
+- `categories` → CRUD at `/categories`
+
+### Next.js App Router
+
+- Uses React Server Components by default
+- `"use client"` directive for interactive components
+- Layouts can be grouped: `(auth)`, `(protected)` for route groups
+- Server actions not evident; uses API routes instead
+
+### Path Aliases
+
+- `@/*` → `apps/web/src/*` (configured in tsconfig.json)
+- `@providers/*`, `@components/*`, `@hooks/*`, `@lib/*`, `@utils/*`, `@contexts/*`
+
+### Socket.IO Integration
+
+- Server: Custom integration via Hono API routes (check `providers/live-provider/api.ts` and `socketio.ts`)
+- Client: Socket.IO client with access token auth
+- WebSocket endpoint: `/api/socket.io` (standard Socket.IO path)
+
+## Custom Skills Found
+
+This repository contains custom Claude Code skills:
+
+- `.agents/skills/antd-design/` - Ant Design specific guidance
+- `.agents/skills/boardgame-io-docs/` - boardgame.io documentation
+- `.agents/skills/es-toolkit-docs/` - ES Toolkit documentation
+- `.claude/skills/` - Additional standard Claude Code skills
+
+These skills provide context-aware assistance when working with those libraries.
+
+## Common Development Tasks
+
+### Starting Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server (runs on http://localhost:3000 by default)
+pnpm dev
+```
+
+### Working on the Game Engine
+
+- Game logic: `packages/bgio-engine/src/game/`
+- Game UI: `packages/bgio-engine/src/components/`
+- Tests: `packages/bgio-engine/src/__tests__/`
+
+Run tests frequently when modifying game logic.
+
+### Database Changes
+
+1. Update `apps/web/prisma/schema.prisma`
+2. Generate Prisma client: `pnpm --filter @whole-ends-kneel/web db:gen`
+3. Create and apply migration: `npx prisma migrate dev --name <name>` (in apps/web dir)
+4. Check generated types in `apps/web/src/generated/prisma/`
+
+### Adding API Endpoints
+
+- Extend Hono app in `apps/web/src/app/api/[[...route]]/route.ts` OR create new route segment
+- Follow Hono's routing pattern: `app.get('/path', handler)` etc.
+- If new resources needed, update Refine DataProvider in `providers/data-provider/api.ts`
+
+### Adding i18n Strings
+
+1. Add keys to `apps/web/src/i18n/locales/en.ts` and `zh-CN.ts`
+2. Use `useTranslation()` hook or `t('key')` in components
+3. Run `pnpm --filter @whole-ends-kneel/web exec tsx scripts/check-i18n.ts` to verify completeness
+
+### Formatting & Linting
+
+```bash
+pnpm lint          # Runs ESLint (Next.js config)
+# Prettier runs on save if IDE configured; otherwise use:
+pnpm --filter @whole-ends-kneel/write   # (if prettier installed)
+```
+
+### Debugging Socket.IO
+
+- Ensure Socket.IO server is mounted (check `socketio.ts` and API routes)
+- Browser devtools → Network → WS tab
+- Server logs in terminal where API is running
+- Chat server (`bot.ts`) is separate; used for general WebSocket examples, not the game
+
+## Deployment Notes
+
+- Next.js output: `standalone` (container-friendly)
+- Vercel compatible (uses Vercel adapter for Hono)
+- Build command: `pnpm build` (root) or `pnpm --filter @whole-ends-kneel/web build`
+- Start command: `pnpm start` or `pnpm --filter @whole-ends-kneel/web start`
+
+Environment required:
+
+- PostgreSQL database (Supabase recommended)
+- Supabase credentials for auth
+- Zero sync configured (upstream DB)
+
+## Gotchas & Important Notes
+
+- **Auth Provider Split**: `auth-provider.server.ts` and `auth-provider.client.ts` - ensure correct client vs server usage
+- **Zero Generator**: The Prisma schema has a `generator zero` but the actual Zero client may be in `@rocicorp/zero`. Generated files go to src/generated/zero/
+- **Boardgame.io Client vs Server**: The game uses both client and server components. The main match is managed by boardgame.io server (likely via separate process or serverless?). Check `packages/bgio-engine/src/example.tsx` for integration pattern.
+- **Socket.IO Transport**: The game may use Socket.IO for real-time moves. The `liveProvider` uses socketio for Refine live queries; game-specific socket may be separate.
+- **TypeScript Strict Mode**: Enabled. Be mindful of `any` types (some exist in tests/mocks).
+- **Monorepo**: Only one app currently (`web`). No internal packages yet.
+- **Chinese Locale**: i18n includes Chinese (`zh-CN`). Keep both languages in sync when adding new strings.
+- **Ant Design v6**: Using latest major version. Check `.claude/skills/antd-design/` for patterns.
+- **Next.js 16**: React 19 support. `reactStrictMode: false` in next.config (may cause double renders in dev if true).
+
+## Debugging Tips
+
+1. **Game State Issues**: Check `packages/bgio-engine/src/utils.ts` Selectors for computed state. Game logic is pure functions in `game/` directory.
+2. **Auth Errors**: Verify Supabase connection and cookie handling. Check `ServerAuthProvider` and auth provider implementations.
+3. **API Errors**: Hono routes in `app/api/[[...route]]/route.ts`. Data provider uses RPC calls. Check network tab for request/response.
+4. **Real-time Not Working**: Both Zero and Socket.IO need proper DB/WS setup. Check connections and subscriptions.
+5. **i18n Missing Keys**: Fallback to English if key missing. Use `scripts/check-i18n.ts` to find untranslated keys.
+
+## Resources
+
+- [Next.js 16 Docs](https://nextjs.org/docs)
+- [Refine Docs](https://refine.dev/docs)
+- [Ant Design v6](https://ant.design/docs/react/use-with-next)
+- [boardgame.io](https://boardgame.io/docs)
+- [Prisma](https://www.prisma.io/docs)
+- [Zero (ROCICORP)](https://zero.rocicorp.dev/docs)
+- [Hono](https://hono.dev/docs)
+- [Socket.IO](https://socket.io/docs/v4)
+- [next-intl](https://next-intl-docs.vercel.app/)
+
+## CLAUDE.md Maintenance
+
+Update this file when:
+
+- New major dependencies are added
+- Architecture changes significantly
+- Common workflows change (build, test, deploy)
+- New patterns emerge that are non-obvious
+
+Do NOT update for every minor change; keep it high-level and focused on operational knowledge.

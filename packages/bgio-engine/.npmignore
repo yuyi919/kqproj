@@ -1,0 +1,20 @@
+# Exclude source files from package
+src/
+# Exclude build config
+tsconfig.json
+# Exclude development files
+*.log
+.DS_Store
+# Exclude test files
+__tests__/
+*.test.ts
+*.test.tsx
+# Exclude typeScript cache
+*.tsbuildinfo
+# Exclude coverage
+coverage/
+# Exclude misc
+.vscode/
+.idea/
+*.md
+!README.md
