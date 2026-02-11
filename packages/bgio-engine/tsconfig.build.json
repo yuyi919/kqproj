@@ -5,14 +5,16 @@
       "react",
       "bun"
     ],
-    "tsBuildInfoFile": "./dist/__tests__/.tsbuildinfo",
-    "noEmit": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "noEmit": false,
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "src/ai",
+    "**/__tests__/**/*"
   ],
 }

@@ -11,7 +11,7 @@ import {
   Mutations,
   Selectors,
   getCardDefinition,
-  MessageBuilder,
+  TMessageBuilder,
 } from "../utils";
 
 /**
@@ -50,14 +50,13 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
         const targetPlayer = G.players[action.targetId];
         const actorPlayer = G.players[action.playerId];
         if (targetPlayer && actorPlayer) {
-          MessageBuilder.addDetectResultMessage(
-            G,
-            action.playerId,
-            actorPlayer,
-            action.targetId,
-            targetPlayer,
-            handCount,
-            seenCard,
+          G.chatMessages.push(
+            TMessageBuilder.createDetectResult(
+              action.playerId,
+              action.targetId,
+              handCount,
+              seenCard
+            )
           );
         }
 
@@ -88,14 +87,14 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
       continue;
     if (deadPlayers.has(action.targetId)) {
       // 攻击失败：目标已死亡
-      MessageBuilder.addAttackResultMessage(
-        G,
-        action.playerId,
-        actorPlayer,
-        targetPlayer,
-        action.card.type,
-        false,
-        "target_already_dead",
+      G.chatMessages.push(
+        TMessageBuilder.createAttackResult(
+          action.playerId,
+          action.targetId,
+          action.card.type,
+          "fail",
+          "target_already_dead"
+        )
       );
       Mutations.addRevealedInfo(G, action.playerId, "attack_failed", {
         targetId: action.targetId,
@@ -106,21 +105,17 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
 
     if (barrierPlayers.has(action.targetId)) {
       // 攻击失败：结界保护
-      MessageBuilder.addAttackResultMessage(
-        G,
-        action.playerId,
-        actorPlayer,
-        targetPlayer,
-        action.card.type,
-        false,
-        "barrier_protected",
+      G.chatMessages.push(
+        TMessageBuilder.createAttackResult(
+          action.playerId,
+          action.targetId,
+          action.card.type,
+          "fail",
+          "barrier_protected"
+        )
       );
-      MessageBuilder.addBarrierMessage(
-        G,
-        action.targetId,
-        targetPlayer,
-        action.playerId,
-        actorPlayer,
+      G.chatMessages.push(
+        TMessageBuilder.createBarrierApplied(action.targetId, action.playerId)
       );
 
       Mutations.addRevealedInfo(G, action.playerId, "attack_failed", {
@@ -149,32 +144,25 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
       deadPlayers.add(action.targetId);
 
       // 添加攻击成功消息
-      MessageBuilder.addAttackResultMessage(
-        G,
-        action.playerId,
-        actorPlayer,
-        targetPlayer,
-        action.card.type,
-        true,
+      G.chatMessages.push(
+        TMessageBuilder.createAttackResult(
+          action.playerId,
+          action.targetId,
+          action.card.type,
+          "success"
+        )
       );
 
-      // 添加死亡消息
-      MessageBuilder.addDeathMessage(
-        G,
-        action.targetId,
-        targetPlayer,
-        cause,
-        G.round,
+      // 添加死亡消息 (系统公告)
+      G.chatMessages.push(
+        TMessageBuilder.createSystem(`玩家${targetPlayer.seatNumber} 已死亡`)
       );
 
       if (action.card.type === "kill") {
         actorSecret.isWitch = true;
-        // 添加魔女化消息
-        MessageBuilder.addWitchTransformMessage(
-          G,
-          action.playerId,
-          actorPlayer,
-          "kill_success",
+        // 添加魔女化消息 (私密行动)
+        G.chatMessages.push(
+          TMessageBuilder.createTransformWitch(action.playerId)
         );
         Mutations.addRevealedInfo(G, action.playerId, "witch_transform", {
           reason: "kill_success",
@@ -207,16 +195,16 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
     if (!targetSecret || !targetPlayer || !actorPlayer) continue;
 
     const isWitchKiller = targetSecret.deathCause === "witch_killer";
+    const deathCause: DeathCause = targetSecret.deathCause || "wreck";
 
     // 添加检定结果消息
-    MessageBuilder.addCheckResultMessage(
-      G,
-      action.playerId,
-      actorPlayer,
-      action.targetId,
-      targetPlayer,
-      isWitchKiller,
-      targetSecret.deathCause,
+    G.chatMessages.push(
+      TMessageBuilder.createCheckResult(
+        action.playerId,
+        action.targetId,
+        isWitchKiller,
+        deathCause
+      )
     );
 
     Mutations.addRevealedInfo(G, action.playerId, "check", {
@@ -246,7 +234,7 @@ export function resolveNightActions(G: BGGameState, random: RandomAPI): void {
 
       if (secret.consecutiveNoKillRounds >= 2) {
         // 添加残骸化消息（在击杀之前）
-        MessageBuilder.addWreckMessage(G, playerId, player);
+        G.chatMessages.push(TMessageBuilder.createWreck(playerId));
 
         const result = Mutations.killPlayer(
           G,
@@ -307,18 +295,27 @@ function distributeDroppedCards(
       receivers[receiverId].push(card);
     }
   } else if (killerId) {
-    const witchKillerIndex = cards.findIndex((c) => c.type === "witch_killer");
-    if (witchKillerIndex > -1) {
-      const witchKillerCard = cards[witchKillerIndex];
-      Mutations.addCardToHand(G, killerId, witchKillerCard);
+    const killerSecret = G.secrets[killerId];
+    const killerAlreadyHasWitchKiller = killerSecret?.witchKillerHolder ?? false;
+
+    // 杀手可以自由捡走一张卡牌（如果还没有魔女杀手持有标记）
+    // 注意：killPlayer 可能已经将魔女杀手转移给杀手（如果死者持有且kill_magic）
+    // 此时 killerAlreadyHasWitchKiller 为 true，所以不再额外捡牌
+    if (!killerAlreadyHasWitchKiller && cards.length > 0) {
+      const randomIndex = Math.floor(random.Number() * cards.length);
+      const chosenCard = cards[randomIndex];
+      Mutations.addCardToHand(G, killerId, chosenCard);
       if (!receivers[killerId]) receivers[killerId] = [];
-      receivers[killerId].push(witchKillerCard);
-      cards.splice(witchKillerIndex, 1);
+      receivers[killerId].push(chosenCard);
+      cards.splice(randomIndex, 1); // 从掉落卡牌中移除
     }
 
+    // 剩余卡牌随机分配给其他存活玩家（排除杀手本人）
+    const otherAlivePlayers = alivePlayers.filter((p) => p.id !== killerId);
     for (const card of cards) {
-      const randomIndex = Math.floor(random.Number() * alivePlayers.length);
-      const receiverId = alivePlayers[randomIndex].id;
+      if (otherAlivePlayers.length === 0) break;
+      const randomIndex = Math.floor(random.Number() * otherAlivePlayers.length);
+      const receiverId = otherAlivePlayers[randomIndex].id;
 
       Mutations.addCardToHand(G, receiverId, card);
 
@@ -337,28 +334,16 @@ function distributeDroppedCards(
   // 添加卡牌分配消息
   const victimPlayer = G.players[victimId];
   if (victimPlayer && Object.keys(receivers).length > 0) {
-    // 系统消息：显示谁收到了卡牌
-    MessageBuilder.addCardDistributionMessage(
-      G,
-      victimId,
-      `玩家${victimPlayer.seatNumber}`,
-      receivers,
-    );
-
-    // 为每个接收者添加个人消息
+    // 为每个接收者添加个人消息（仅接收者和受害者可见）
     for (const [receiverId, receivedCards] of Object.entries(receivers)) {
       const receiver = G.players[receiverId];
       if (receiver) {
-        const cardNames = receivedCards
-          .map((c) => getCardDefinition(c).name)
-          .join(", ");
-        MessageBuilder.addPlayerAction(
-          G,
-          receiverId,
-          receiver,
-          "获得遗落卡牌",
-          cardNames,
-        );
+        const receiver = G.players[receiverId];
+        if (receiver) {
+          G.chatMessages.push(
+            TMessageBuilder.createCardReceived(receiverId, victimId, receivedCards)
+          );
+        }
       }
     }
   }

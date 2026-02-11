@@ -16,7 +16,7 @@ export { MessageInput } from "./MessageInput";
 
 // 类型
 export type {
-  ChatMessage,
+  TMessage,
   ChatBoxProps,
   ChatHeaderProps,
   MessageItemProps,

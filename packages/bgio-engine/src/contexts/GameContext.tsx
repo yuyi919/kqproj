@@ -13,9 +13,9 @@ import type {
   BGGameState,
   PublicPlayerInfo,
   PrivatePlayerInfo,
-  ChatMessage,
+  TMessage,
 } from "../types";
-import { Selectors } from "../utils";
+import { Selectors, TMessageBuilder } from "../utils";
 import { PlayerID } from "boardgame.io";
 
 // 扩展 BoardProps 类型以匹配 useWitchTrial hook
@@ -67,13 +67,13 @@ interface GameContextValue {
   chatMessages: {
     id: string;
     sender: PlayerID;
-    payload: ChatMessage;
+    payload: TMessage;
   }[];
 
   // 操作函数
   moves: GameMoves;
   events: GameEvents;
-  sendChatMessage: (message: ChatMessage) => void;
+  sendChatMessage: (message: TMessage) => void;
 
   // 处理器
   handleVote: (targetId: string) => void;
@@ -175,18 +175,11 @@ export function GameProvider({
     (content: string) => {
       if (playerId) {
         moves.say?.(content);
-        const newMessage: ChatMessage = {
-          id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-          playerId,
-          playerName: `${G.players[playerId]?.seatNumber || "?"}号玩家`,
-          content,
-          timestamp: Date.now(),
-          type: "say",
-        };
+        const newMessage = TMessageBuilder.createSay(playerId, content);
         sendChatMessage(newMessage);
       }
     },
-    [moves, playerId, G.players, sendChatMessage],
+    [moves, playerId, sendChatMessage],
   );
 
   const handleEndPhase = useCallback(() => {

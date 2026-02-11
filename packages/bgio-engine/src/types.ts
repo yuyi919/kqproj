@@ -231,28 +231,7 @@ export interface PublicDeathInfo {
   died: true;
 }
 
-// ==================== 聊天消息 ====================
-
-/**
- * 聊天消息
- */
-export interface ChatMessage {
-  id: string;
-  /** 消息类型：说出(say)或行动(action)/系统描述(system) */
-  type: "say" | "action" | "system";
-  /** 发送者玩家ID */
-  playerId: string;
-  /** 发送者玩家名称（冗余存储方便查询） */
-  playerName?: string;
-  /** 消息内容 */
-  content: string;
-  /** 消息发送的时间戳 */
-  timestamp: number;
-  /** 是否为系统消息 */
-  isSystem?: boolean;
-}
-
-// ==================== 投票结果 ====================
+// ==================== 消息系统（DDD + CQRS）===================
 
 /**
  * 投票结果
@@ -359,7 +338,7 @@ export interface BGGameState {
 
   // === 聊天消息（公开）===
   /** 历史聊天消息列表 */
-  chatMessages: ChatMessage[];
+  chatMessages: TMessage[];
 }
 
 // ==================== 移动函数上下文 ====================
@@ -442,3 +421,174 @@ export const NINE_PLAYER_CONFIG: GameConfig = {
     check: 4,
   },
 };
+
+// ==================== 消息系统（DDD + CQRS）===================
+
+/**
+ * 基础消息接口
+ */
+interface BaseMessage {
+  id: string;
+  timestamp: number;
+}
+
+/**
+ * 消息种类：基于业务概念分类
+ */
+export type TMessage =
+  | AnnouncementMessage
+  | PublicActionMessage
+  | PrivateActionMessage
+  | WitnessedActionMessage;
+
+// ==================== 1. 公告（公开）===================
+/**
+ * 系统公告，对所有玩家公开
+ */
+type AnnouncementMessage =
+  | PhaseTransitionAnnouncement
+  | VoteSummaryAnnouncement
+  | DeathListAnnouncement
+  | SystemAnnouncement;
+
+interface PhaseTransitionAnnouncement extends BaseMessage {
+  kind: "announcement";
+  type: "phase_transition";
+  from: GamePhase;
+  to: GamePhase;
+}
+
+interface VoteSummaryAnnouncement extends BaseMessage {
+  kind: "announcement";
+  type: "vote_summary";
+  votes: Array<{ voterId: string; targetId: string }>;
+  imprisonedId: string | null;
+  isTie: boolean;
+}
+
+interface DeathListAnnouncement extends BaseMessage {
+  kind: "announcement";
+  type: "death_list";
+  deathIds: string[];
+}
+
+/**
+ * 通用系统公告（携带格式化文本）
+ * 用于无法用结构化数据表示的公告
+ */
+interface SystemAnnouncement extends BaseMessage {
+  kind: "announcement";
+  type: "system";
+  content: string;
+}
+
+// ==================== 2. 公开行动 ====================
+/**
+ * 玩家执行的、对所有人公开的行动
+ */
+type PublicActionMessage =
+  | VoteAction
+  | PassAction
+  | SayAction;
+
+interface VoteAction extends BaseMessage {
+  kind: "public_action";
+  type: "vote";
+  actorId: string;
+  targetId: string;
+}
+
+interface PassAction extends BaseMessage {
+  kind: "public_action";
+  type: "pass";
+  actorId: string;
+}
+
+interface SayAction extends BaseMessage {
+  kind: "public_action";
+  type: "say";
+  actorId: string;
+  content: string;
+}
+
+// ==================== 3. 私密行动（仅执行者可见）===================
+/**
+ * 玩家执行的、仅自己知道的行动
+ */
+type PrivateActionMessage =
+  | UseCardAction
+  | AttackResultAction
+  | TransformWitchAction
+  | WreckAction
+  | BarrierAppliedAction
+  | CheckResultAction
+  | DetectResultAction;
+
+interface UseCardAction extends BaseMessage {
+  kind: "private_action";
+  type: "use_card";
+  actorId: string;
+  cardType: CardType;
+  targetId?: string;
+}
+
+interface AttackResultAction extends BaseMessage {
+  kind: "private_action";
+  type: "attack_result";
+  actorId: string;
+  targetId: string;
+  cardType: CardType;
+  result: "success" | "fail";
+  failReason?: "barrier_protected" | "target_already_dead";
+}
+
+interface TransformWitchAction extends BaseMessage {
+  kind: "private_action";
+  type: "transform_witch";
+  actorId: string;
+}
+
+interface WreckAction extends BaseMessage {
+  kind: "private_action";
+  type: "wreck";
+  actorId: string;
+}
+
+interface BarrierAppliedAction extends BaseMessage {
+  kind: "private_action";
+  type: "barrier_applied";
+  actorId: string;
+  attackerId?: string;
+}
+
+interface CheckResultAction extends BaseMessage {
+  kind: "private_action";
+  type: "check_result";
+  actorId: string;
+  targetId: string;
+  isWitchKiller: boolean;
+  deathCause: DeathCause;
+}
+
+interface DetectResultAction extends BaseMessage {
+  kind: "private_action";
+  type: "detect_result";
+  actorId: string;
+  targetId: string;
+  handCount: number;
+  seenCard?: CardType;
+}
+
+// ==================== 4. 见证行动（actor + target 可见）===================
+/**
+ * 涉及两个玩家，双方都知情的行动
+ */
+type WitnessedActionMessage = CardReceivedAction;
+
+interface CardReceivedAction extends BaseMessage {
+  kind: "witnessed_action";
+  type: "card_received";
+  actorId: string; // 接收者
+  targetId: string; // 受害者
+  receivedCards: CardRef[];
+}

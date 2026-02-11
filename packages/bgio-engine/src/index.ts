@@ -113,7 +113,7 @@ export { VotingPanel } from "./components/VotingPanel";
 export { NightActionPanel } from "./components/NightActionPanel";
 export { PhaseDisplay } from "./components/PhaseDisplay";
 export { ChatBox } from "./components/ChatBox";
-export type { ChatMessage } from "./components/ChatBox";
+export type { TMessage } from "./components/ChatBox";
 
 // ==================== UI 展示组件 ====================
 export {

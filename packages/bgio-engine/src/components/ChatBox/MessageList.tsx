@@ -13,6 +13,7 @@ import type { MessageListProps } from "./types";
 export function MessageList({
   messages,
   currentPlayerId,
+  players,
 }: MessageListProps): React.ReactElement {
   const { token } = theme.useToken();
   const listRef = useRef<HTMLDivElement>(null);
@@ -43,15 +44,16 @@ export function MessageList({
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="暂无消息"
-          style={{ marginTop: 40 }}
+          className="mt-10"
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className="flex flex-col">
           {messages.map((msg) => (
             <MessageItem
               key={msg.id}
               message={msg}
               currentPlayerId={currentPlayerId}
+              players={players}
             />
           ))}
         </div>

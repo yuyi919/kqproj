@@ -16,16 +16,17 @@
  * - MessageInput: 消息输入框和发送按钮
  */
 
-import React from "react";
 import { Card } from "antd";
+import React from "react";
 import { ChatHeader } from "./ChatHeader";
-import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
+import { MessageList } from "./MessageList";
 import type { ChatBoxProps } from "./types";
 
 export function ChatBox({
   messages,
   currentPlayerId,
+  players,
   onSendMessage,
   placeholder,
 }: ChatBoxProps): React.ReactElement {
@@ -45,7 +46,11 @@ export function ChatBox({
       }}
     >
       {/* 消息列表 */}
-      <MessageList messages={messages} currentPlayerId={currentPlayerId} />
+      <MessageList
+        messages={messages}
+        currentPlayerId={currentPlayerId}
+        players={players}
+      />
 
       {/* 输入框 */}
       <MessageInput placeholder={placeholder} onSendMessage={onSendMessage} />
@@ -55,14 +60,14 @@ export function ChatBox({
 
 // 导出子组件和类型
 export { ChatHeader } from "./ChatHeader";
-export { MessageList } from "./MessageList";
-export { MessageItem } from "./MessageItem";
 export { MessageInput } from "./MessageInput";
+export { MessageItem } from "./MessageItem";
+export { MessageList } from "./MessageList";
 export type {
-  ChatMessage,
   ChatBoxProps,
   ChatHeaderProps,
+  MessageInputProps,
   MessageItemProps,
   MessageListProps,
-  MessageInputProps,
+  TMessage,
 } from "./types";

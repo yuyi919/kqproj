@@ -22,6 +22,7 @@ import type {
   PrivatePlayerInfo,
   GamePhase,
   PublicPlayerInfo,
+  TMessage,
 } from "../types";
 import { SEVEN_PLAYER_CONFIG } from "../types";
 import { createDeck } from "../utils";
@@ -157,11 +158,35 @@ export const WitchTrialGame: Game<BGGameState> = {
       },
     );
 
+    // 过滤消息：基于 TMessage 的可见性规则
+    const filterMessages = (messages: TMessage[], pid: string): TMessage[] => {
+      if (pid === "0") return messages; // 调试模式显示所有
+
+      return messages.filter((msg): boolean => {
+        switch (msg.kind) {
+          case "announcement":
+          case "public_action":
+            return true; // 公开消息
+          case "private_action":
+            // 私密行动：仅 actor 可见
+            return msg.actorId === pid;
+          case "witnessed_action":
+            // 见证行动：actor 或 target 可见
+            return msg.actorId === pid || msg.targetId === pid;
+          default:
+            // 使用 exhaustive check 确保所有类型都被处理
+            const _exhaustive: never = msg;
+            return false;
+        }
+      });
+    };
+
     const publicState: BGGameState = {
       ...G,
       players: publicPlayers,
       secrets: {},
       deck: [],
+      chatMessages: filterMessages(G.chatMessages, playerID || ""),
     };
 
     if (playerID) {

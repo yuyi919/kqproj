@@ -59,6 +59,7 @@ export function MainContent(): React.ReactElement {
                 G.chatMessages || chatMessages.map((msg) => msg.payload)
               }
               currentPlayerId={currentPlayerId}
+              players={G.players}
               onSendMessage={handleSendMessage}
               placeholder={
                 currentPhase === "day" ? "日间讨论..." : "输入消息..."

@@ -6,7 +6,7 @@
 
 import { nanoid } from "nanoid";
 import type { PublicPlayerInfo } from "../types";
-import { Selectors, getCardDefinition, MessageBuilder } from "../utils";
+import { Selectors, getCardDefinition, TMessageBuilder } from "../utils";
 import {
   assertPhase,
   assertNotEmpty,
@@ -74,14 +74,7 @@ const moveFunctions = {
         `[Vote] ${playerID} changed vote from ${oldTarget} to ${targetId}`,
       );
 
-      MessageBuilder.addVoteMessage(
-        G,
-        playerID,
-        player.public,
-        targetId,
-        target,
-        true,
-      );
+      G.chatMessages.push(TMessageBuilder.createVote(playerID, targetId));
     } else {
       const vote = {
         voterId: playerID,
@@ -95,14 +88,7 @@ const moveFunctions = {
         `[Vote] ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
       );
 
-      MessageBuilder.addVoteMessage(
-        G,
-        playerID,
-        player.public,
-        targetId,
-        target,
-        false,
-      );
+      G.chatMessages.push(TMessageBuilder.createVote(playerID, targetId));
     }
   }),
 
@@ -142,14 +128,14 @@ const moveFunctions = {
       console.log(
         `[Vote] ${playerID} changed vote to pass (from ${oldTarget})`,
       );
-      MessageBuilder.addPassMessage(G, playerID, player.public);
+      G.chatMessages.push(TMessageBuilder.createPass(playerID));
     } else {
       // 新增弃权票
       G.currentVotes.push(vote);
       console.log(
         `[Vote] ${playerID} passed, total votes: ${G.currentVotes.length}`,
       );
-      MessageBuilder.addPassMessage(G, playerID, player.public);
+      G.chatMessages.push(TMessageBuilder.createPass(playerID));
     }
   }),
 
@@ -196,13 +182,8 @@ const moveFunctions = {
           targetPlayer = target;
         }
       }
-      MessageBuilder.addNightActionMessage(
-        G,
-        playerID,
-        player.public,
-        card.type,
-        targetId,
-        targetPlayer,
+      G.chatMessages.push(
+        TMessageBuilder.createUseCard(playerID, card.type, targetId)
       );
 
       if (card.type === "witch_killer") {
@@ -239,7 +220,7 @@ const moveFunctions = {
     });
 
     // 添加夜间弃权消息
-    MessageBuilder.addPassMessage(G, playerID, player.public);
+    G.chatMessages.push(TMessageBuilder.createPass(playerID));
 
     // Refinement: 魔女化玩家未击杀需要累积回合
     if (isWitch(player) && !hasKilledThisRound(G, playerID)) {
@@ -253,8 +234,7 @@ const moveFunctions = {
     const player = assertPlayerAlive(G, playerID);
     assertValidMessage(content);
 
-    const message = MessageBuilder.createSay(playerID, player.public, content);
-    MessageBuilder.addMessage(G, message);
+    G.chatMessages.push(TMessageBuilder.createSay(playerID, content));
   }),
 };
 
