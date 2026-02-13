@@ -10,96 +10,41 @@ import {
   getPhaseName,
 } from "../utils";
 import type { BGGameState, CardRef, GameConfig } from "../types";
-
-// 创建测试用的 mock 随机函数
-const mockShuffle = <T>(arr: T[]): T[] => [...arr].reverse();
-const mockRandom = {
-  Number: () => 0.5,
-  Shuffle: mockShuffle,
-  D4: () => 2,
-  D6: () => 3,
-  D10: () => 5,
-  D20: () => 10,
-};
+import { GamePhase } from "../types";
+import { createMockRandom, createTestState, setupPlayers } from "./testUtils";
 
 // 创建基础游戏状态
-const createMockGameState = (): BGGameState => ({
-  id: "test-game",
-  roomId: "test-room",
-  status: "night",
-  round: 1,
-  players: {
-    p1: { id: "p1", seatNumber: 1, status: "alive" },
-    p2: { id: "p2", seatNumber: 2, status: "alive" },
-    p3: { id: "p3", seatNumber: 3, status: "alive" }, // 公开状态都是 alive
-  },
-  playerOrder: ["p1", "p2", "p3"],
-  deck: [],
-  discardPile: [],
-  currentActions: {},
-  currentVotes: [],
-  nightActions: [],
-  actionHistory: [],
-  voteHistory: [],
-  deathLog: [],
-  imprisonedId: null,
-  attackQuota: { witchKillerUsed: false, killMagicUsed: 0 },
-  config: {
-    maxPlayers: 7,
-    maxRounds: 7,
-    dayDuration: 300,
-    nightDuration: 60,
-    votingDuration: 30,
-    cardPool: {
-      witch_killer: 1,
-      barrier: 5,
-      kill: 2,
-      detect: 2,
-      check: 1,
-    },
-  },
-  phaseStartTime: Date.now(),
-  phaseEndTime: Date.now() + 60000,
-  secrets: {
-    p1: {
-      status: "alive",
-      hand: [
-        { id: "c1", type: "barrier" },
-        { id: "c2", type: "detect" },
-      ],
-      isWitch: false,
-      hasBarrier: false,
-      witchKillerHolder: false,
-      lastKillRound: 0,
-      consecutiveNoKillRounds: 0,
-      revealedInfo: [],
-    },
-    p2: {
-      status: "witch", // p2 是魔女杀手持有者
-      hand: [
-        { id: "c3", type: "kill" },
-        { id: "c4", type: "witch_killer" },
-      ],
-      isWitch: true,
-      hasBarrier: true,
-      witchKillerHolder: true,
-      lastKillRound: 1,
-      consecutiveNoKillRounds: 0,
-      revealedInfo: [],
-    },
-    p3: {
-      status: "alive",
-      hand: [{ id: "c5", type: "check" }],
-      isWitch: true,
-      hasBarrier: false,
-      witchKillerHolder: false,
-      lastKillRound: 1,
-      consecutiveNoKillRounds: 1,
-      revealedInfo: [],
-    },
-  },
-  chatMessages: [],
-});
+const createMockGameState = (): BGGameState => {
+  const state = createTestState();
+  setupPlayers(state, ["p1", "p2", "p3"]);
+
+  // 设置玩家状态
+  state.secrets.p1.hand = [
+    { id: "c1", type: "barrier" },
+    { id: "c2", type: "detect" },
+  ];
+  state.secrets.p1.isWitch = false;
+  state.secrets.p1.witchKillerHolder = false;
+
+  state.secrets.p2.status = "witch";
+  state.secrets.p2.hand = [
+    { id: "c3", type: "kill" },
+    { id: "c4", type: "witch_killer" },
+  ];
+  state.secrets.p2.isWitch = true;
+  state.secrets.p2.hasBarrier = true;
+  state.secrets.p2.witchKillerHolder = true;
+  state.secrets.p2.lastKillRound = 1;
+
+  state.secrets.p3.status = "alive";
+  state.secrets.p3.hand = [{ id: "c5", type: "check" }];
+  state.secrets.p3.isWitch = true;
+  state.secrets.p3.consecutiveNoKillRounds = 1;
+
+  return state;
+};
+
+// ==================== 测试 ====================
 
 describe("Selectors", () => {
   describe("getAlivePlayers", () => {
@@ -114,7 +59,6 @@ describe("Selectors", () => {
 
     it("应排除已死亡玩家", () => {
       const state = createMockGameState();
-      // 同时更新公开状态和私有状态
       state.players.p1.status = "dead";
       state.secrets.p1.status = "dead";
       const alive = Selectors.getAlivePlayers(state);
@@ -132,7 +76,6 @@ describe("Selectors", () => {
 
     it("应正确判断死亡玩家", () => {
       const state = createMockGameState();
-      // 同时更新公开状态和私有状态
       state.players.p1.status = "dead";
       state.secrets.p1.status = "dead";
       expect(Selectors.isPlayerAlive(state, "p1")).toBe(false);
@@ -218,7 +161,6 @@ describe("Selectors", () => {
   describe("isGameOver", () => {
     it("只剩1人时应结束游戏", () => {
       const state = createMockGameState();
-      // 同时更新公开状态和私有状态
       state.players.p2.status = "dead";
       state.secrets.p2.status = "dead";
       state.players.p3.status = "dead";
@@ -277,14 +219,12 @@ describe("Mutations", () => {
     it("残骸化死亡时应将状态设为 wreck", () => {
       const state = createMockGameState();
       Mutations.killPlayer(state, "p1", "wreck");
-      // 公开状态显示为 dead，私有状态为 wreck
       expect(state.players.p1.status).toBe("dead");
       expect(state.secrets.p1.status).toBe("wreck");
     });
 
     it("魔女杀手持有者被杀人魔法击杀时应转移给击杀者", () => {
       const state = createMockGameState();
-      // p2 持有魔女杀手
       const result = Mutations.killPlayer(state, "p2", "kill_magic", "p1");
       expect(result).not.toBeNull();
       expect(state.secrets.p1.witchKillerHolder).toBe(true);
@@ -293,16 +233,15 @@ describe("Mutations", () => {
 
     it("魔女杀手持有者残骸化时应随机转移", () => {
       const state = createMockGameState();
-      // p2 持有魔女杀手，残骸化死亡
+      const mockRandom = createMockRandom();
       const result = Mutations.killPlayer(
         state,
         "p2",
         "wreck",
         undefined,
-        mockRandom.Number,
+        mockRandom,
       );
       expect(result).not.toBeNull();
-      // 魔女杀手应转移给存活玩家之一
       const holders = Object.entries(state.secrets)
         .filter(([, s]) => s.witchKillerHolder)
         .map(([id]) => id);
@@ -321,6 +260,7 @@ describe("createDeck", () => {
       detect: 2,
       check: 1,
     };
+    const mockShuffle = <T>(arr: T[]): T[] => [...arr];
     const deck = createDeck(config, mockShuffle);
     expect(deck).toHaveLength(9);
   });
@@ -333,6 +273,7 @@ describe("createDeck", () => {
       detect: 0,
       check: 0,
     };
+    const mockShuffle = <T>(arr: T[]): T[] => [...arr];
     const deck = createDeck(config, mockShuffle);
     const witchKillers = deck.filter((c) => c.type === "witch_killer");
     const barriers = deck.filter((c) => c.type === "barrier");
@@ -348,8 +289,8 @@ describe("createDeck", () => {
       detect: 0,
       check: 0,
     };
+    const mockShuffle = <T>(arr: T[]): T[] => [...arr].reverse();
     const deck = createDeck(config, mockShuffle);
-    // mockShuffle 是 reverse，所以最后一张应该在第一位
     expect(deck[0].type).toBe("kill");
   });
 });
@@ -385,9 +326,10 @@ describe("UI Helpers", () => {
 
   describe("getPhaseName", () => {
     it("应返回正确的阶段名称", () => {
-      expect(getPhaseName("morning")).toBe("晨间");
-      expect(getPhaseName("night")).toBe("夜间");
-      expect(getPhaseName("voting")).toBe("投票");
+      expect(getPhaseName(GamePhase.MORNING)).toBe("晨间阶段");
+      expect(getPhaseName(GamePhase.DAY)).toBe("午间阶段");
+      expect(getPhaseName(GamePhase.NIGHT)).toBe("夜间阶段");
+      expect(getPhaseName(GamePhase.DEEP_NIGHT)).toBe("深夜阶段");
     });
   });
 });

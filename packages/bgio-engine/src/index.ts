@@ -16,7 +16,6 @@
 // ==================== 类型定义 ====================
 export type {
   // 基础类型
-  GamePhase,
   PlayerStatus,
   PublicPlayerStatus,
   DeathCause,
@@ -35,6 +34,8 @@ export type {
 
   // 游戏状态
   BGGameState,
+  MoveContext,
+  MoveResult,
 
   // 行动相关
   PlayerAction,
@@ -48,7 +49,20 @@ export type {
 
   // 配置
   GameConfig,
+
+  // 交易系统（新增）
+  TradeStatus,
+  Trade,
+  DailyTradeStatus,
+  CardSelectionState,
+  DailyTradeTracker,
+  ActiveTrade,
+
+  // 消息类型
+  TMessage,
+  Messages,
 } from "./types";
+export { GamePhase } from "./types";
 
 export {
   // 推荐配置
@@ -60,6 +74,7 @@ export {
 // ==================== 游戏定义 ====================
 export {
   WitchTrialGame,
+  TypedWitchTrialGame,
   // 子模块导出
   moveFunctions,
   phaseConfigs,
@@ -72,11 +87,6 @@ export {
   assertWitchKillerCardAllowed,
   assertAttackQuotaAvailable,
   assertValidMessage,
-  // Refinement 函数
-  isImprisoned,
-  isWitch,
-  hasKilledThisRound,
-  findExistingVoteIndex,
   // 工具
   wrapMove,
   GameLogicError,
@@ -113,7 +123,6 @@ export { VotingPanel } from "./components/VotingPanel";
 export { NightActionPanel } from "./components/NightActionPanel";
 export { PhaseDisplay } from "./components/PhaseDisplay";
 export { ChatBox } from "./components/ChatBox";
-export type { TMessage } from "./components/ChatBox";
 
 // ==================== UI 展示组件 ====================
 export {

@@ -7,13 +7,14 @@
 
 import type {
   BGGameState,
-  GamePhase,
   CardType,
   CardRef,
   PublicPlayerInfo,
+  PlayerFullInfo,
 } from "../types";
+import { GamePhase } from "../types/core";
+import { Selectors } from "../utils";
 import { GameLogicError } from "./errors";
-import type { PlayerFullInfo } from "./types";
 
 /**
  * Assertion: 验证游戏阶段
@@ -55,15 +56,14 @@ export function assertPlayerAlive(
   G: BGGameState,
   playerID: string,
 ): PlayerFullInfo {
-  const publicInfo = G.players[playerID];
-  const secret = G.secrets[playerID];
+  const publicInfo = Selectors.getPlayer(G, playerID);
+  const secret = Selectors.getPlayerSecrets(G, playerID);
 
   if (!publicInfo || !secret) {
     throw new GameLogicError(`Player ${playerID} not found`);
   }
 
-  const isAlive = secret.status === "alive" || secret.status === "witch";
-  if (!isAlive) {
+  if (!Selectors.isPlayerAlive(G, playerID)) {
     throw new GameLogicError(`Player ${playerID} is not alive`);
   }
 
@@ -130,22 +130,17 @@ export function assertWitchKillerCardAllowed(
 
 /**
  * Assertion: 验证攻击名额
- * @throws GameLogicError 名额不足时抛出
+ * 注意：对于 kill magic，超额时允许提交但在结算时处理
+ * @throws GameLogicError 名额不足时抛出（仅 witch_killer）
  */
 export function assertAttackQuotaAvailable(
   G: BGGameState,
   cardType: CardType,
 ): void {
-  if (cardType === "witch_killer" || cardType === "kill") {
-    if (cardType === "witch_killer") {
-      if (G.attackQuota.witchKillerUsed) {
-        throw new GameLogicError("Witch killer quota already used");
-      }
-    } else {
-      const maxKillMagic = G.attackQuota.witchKillerUsed ? 2 : 3;
-      if (G.attackQuota.killMagicUsed >= maxKillMagic) {
-        throw new GameLogicError("Kill magic quota exceeded");
-      }
+  if (cardType === "witch_killer") {
+    const quota = Selectors.computeRemainingAttackQuota(G);
+    if (!quota.witchKiller) {
+      throw new GameLogicError("Witch killer quota already used");
     }
   }
 }

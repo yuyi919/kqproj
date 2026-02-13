@@ -1,42 +1,87 @@
 # CLAUDE.md
 
-本文档为在该代码库中使用 Claude Code (claude.ai/code) 的开发提供指导。
+> **IMPORTANT: Read project instructions first!** This file provides essential guidance for Claude Code. When working on this project, prioritize project-specific instructions below over generic skills or external documentation.
 
-## 仓库概览
+## Project Instructions Priority
 
-**项目类型：** 单工作区单体仓库（Monorepo），包含一个 Next.js 应用
-**主应用：** `apps/web` - 一个全栈 Web 应用，特色是多人"女巫审判"桌游
-**包管理器：** pnpm（工作区单体仓库）
-**运行时：** Node.js 20+，Bun（用于测试和 WebSocket 服务器）
+When working with this repository, ALWAYS prioritize these project-specific instruction files:
 
-## 架构
+| File | Scope | When to Use |
+|------|-------|-------------|
+| **`AGENTS.md`** | Project-wide | All general development tasks, architecture decisions, game rules, and workflows |
+| **`packages/bgio-engine/CLAUDE.md`** | Game Engine Package | Any work on the boardgame.io game engine, moves, phases, or game logic |
+| **`.claude/settings.local.json`** | Claude Settings | MCP server configuration and permissions |
 
-### 技术栈
+## Key Principles
 
-- **框架：** Next.js 16（App Router）
-- **UI 框架：** Refine（管理/B2B 框架）+ Ant Design v6
-- **游戏引擎：** boardgame.io（实时多人游戏逻辑）
-- **数据库：** PostgreSQL + Prisma ORM + ROCICORP Zero（实时同步）
-- **认证：** Supabase（集成 Clerk Router 实现自定义认证）
-- **实时通信：** Socket.IO + Postgres 适配器
-- **API：** Hono（轻量级 Web 框架，兼容边缘函数）
-- **国际化：** next-intl（支持英文和中文）
-- **样式：** Tailwind CSS v4 + Ant Design
-- **状态管理：** TanStack React Query（服务器状态），Zustand（客户端状态，根据依赖推断）
-- **验证：** Zod
+1. **Check `AGENTS.md` first** - It contains the most comprehensive project documentation including game rules, database schema, API conventions, and development workflows
+2. **For game engine work** - Use `packages/bgio-engine/CLAUDE.md` for patterns specific to boardgame.io implementation
+3. **When in doubt** - Re-read these instruction files before consulting external documentation or skills
+4. **Skills are secondary** - Custom skills in `.claude/skills/` and `.agents/skills/` provide supplementary context but should not override project-specific instructions
+5. **Use PowerShell syntax** - All commands in this project assume Windows PowerShell environment. Replace `&&` with `;` for command chaining.
 
-### 高层架构
+## 自定义技能s
+
+Custom Claude Code skills for this project:
+
+| Skill | Purpose | Invoke |
+|-------|---------|--------|
+| **`/witch-trial`** | Unified CLI + core + extensions | Use for all project tasks |
+| `/witch-trial-maintenance` | 维护 (legacy) | Use for verification tasks |
+| `/witch-trial-development` | 开发 (legacy) | Use for adding game features |
+| `/witch-trial-self-improving` | Documentation (legacy) | Use for preserving decisions |
+
+**Recommended:** Use `/witch-trial` for all operations via unified CLI.
+
+## Environment
+
+- **Platform:** Windows 11
+- **Shell:** PowerShell (default)
+- **Package Manager:** pnpm (workspace monorepo)
+- **Runtime:** Node.js 20+, Bun (for testing and WebSocket server)
+
+All command examples use PowerShell syntax. Key differences from bash:
+- Environment variables: `$env:VAR_NAME = "value"`
+- Command chaining: `;` instead of `&&`
+- Command substitution: `$()` works the same
+
+## Repository Overview
+
+**Project Type:** Monorepo with a single Next.js application
+**Primary App:** `apps/web` - A full-stack web application featuring a multiplayer "女巫审判" board game
+**Platform:** Windows 11 (PowerShell)
+**Package Manager:** pnpm
+**Node.js:** >= 20
+**Test Runner:** Bun
+
+## Architecture
+
+### Tech Stack
+
+- **Framework:** Next.js 16 with App Router
+- **UI Framework:** Refine (admin/b2b framework) + Ant Design v6
+- **Game Engine:** boardgame.io for real-time multiplayer game logic
+- **Database:** PostgreSQL with Prisma ORM + ROCICORP Zero (real-time sync)
+- **Authentication:** Supabase (with Clerk router integration for custom auth)
+- **Real-time Communication:** Socket.IO with Postgres adapter
+- **API:** Hono (lightweight web framework) for edge-compatible API routes
+- **Internationalization:** next-intl (English + Chinese)
+- **Styling:** Tailwind CSS v4 + Ant Design
+- **State Management:** TanStack React Query (server state), Zustand (client state implied by dependencies)
+- **Validation:** Zod
+
+### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Next.js 16 App Router                   │
 │  apps/web/src/app/                                          │
-│  ├── (auth)/       → 登录、注册、密码重置                   │
-│  ├── (protected)/  → 受保护页面（博客、用户、聊天）         │
-│  ├── api/          → Hono API 路由（通过 Vercel 适配器）   │
-│  ├── game/         → 主游戏页面                            │
-│  ├── lobby/        → 游戏房间大厅                          │
-│  └── room/[id]/    → 独立游戏房间                          │
+│  ├── (auth)/       → Login, Register, Password Reset       │
+│  ├── (protected)/  → Protected pages (blog, users, chat)   │
+│  ├── api/          → Hono API routes (via Vercel adapter)  │
+│  ├── game/         → Main game page                        │
+│  ├── lobby/        → Game room lobby                       │
+│  └── room/[id]/    → Individual game room                  │
 └─────────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┼───────────────────┐
@@ -44,14 +89,14 @@
         ▼                   ▼                   ▼
 ┌───────────────┐  ┌─────────────────┐  ┌──────────────┐
 │  Refine Core  │  │  boardgame.io   │  │  Socket.IO   │
-│  + Ant Design │  │  Game Engine    │  │  (实时)      │
+│  + Ant Design │  │  Game Engine    │  │  (Real-time) │
 └───────────────┘  └─────────────────┘  └──────────────┘
         │                   │                   │
         └───────────────────┼───────────────────┘
                             ▼
                   ┌──────────────────┐
                   │  Data Providers  │
-                  │  (Refine 模式)   │
+                  │  (Refine patterns)│
                   └──────────────────┘
                             │
         ┌───────────────────┼───────────────────┐
@@ -59,351 +104,404 @@
         ▼                   ▼                   ▼
 ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
 │   Prisma     │   │   Zero Sync  │   │  PostgreSQL  │
-│  + Postgres  │   │  (实时)      │   │   (Supabase) │
+│  + Postgres  │   │  (Real-time) │   │   (Supabase) │
 └──────────────┘   └──────────────┘   └──────────────┘
 ```
 
-### 关键目录
+### Key Directories
 
-- `apps/web/src/app/` - Next.js App Router 页面和布局
-- `packages/bgio-engine/src/` - boardgame.io 游戏实现（女巫审判游戏）
-- `apps/web/src/providers/` - Refine 提供者（认证、数据、实时、i18n）
-- `apps/web/src/contexts/` - React 上下文（颜色模式、服务器认证）
-- `apps/web/src/components/` - 可复用 UI 组件
-- `apps/web/prisma/` - 数据库模式
-- `apps/web/src/generated/` - 生成的代码（Prisma 客户端、Zero 类型）
-- `apps/web/src/hooks/` - 自定义 Hooks（认证、Socket、应用）
-- `apps/web/src/i18n/` - 国际化（语言：英文、简体中文）
+- `apps/web/src/app/` - Next.js App Router pages and layouts
+- `packages/bgio-engine/src/` - Boardgame.io game implementation (女巫审判 game)
+- `apps/web/src/providers/` - Refine providers (auth, data, live, i18n)
+- `apps/web/src/contexts/` - React contexts (color mode, server auth)
+- `apps/web/src/components/` - Reusable UI components
+- `apps/web/prisma/` - Database schema
+- `apps/web/src/generated/` - Generated code (Prisma client, Zero types)
+- `apps/web/src/hooks/` - Custom hooks (auth, socket, app)
+- `apps/web/src/i18n/` - Internationalization (locales: en, zh-CN)
 
-### 游戏架构（boardgame.io）
+### Game Architecture (boardgame.io)
 
-核心游戏逻辑位于 `packages/bgio-engine/src/`：
+The core game logic is in `packages/bgio-engine/src/`:
 
-- `game/` - 游戏定义、移动操作、阶段、夜间行动结算
-- `components/` - 游戏板 UI 的 React 组件
-- `hooks/` - 游戏状态管理的自定义 Hooks
-- `contexts/` - 游戏状态的 React Context
-- `utils.ts` - Selectors（派生状态）和工具函数
-- `types.ts` - TypeScript 类型定义
+- `game/` - Game definition, moves, phases, resolutions
+- `components/` - React UI components for the game board
+- `hooks/` - Custom hooks for game state management
+- `contexts/` - React context for game state
+- `utils.ts` - 选择器s (computed state) and utility functions
+- `types.ts` - TypeScript type definitions
 
-模式：使用 boardgame.io 的 Reducer 模式，包含明确的 `moveFunctions`、`phaseConfigs` 和 `resolveNightActions`。
+模式: Uses boardgame.io's reducer pattern with explicit `moveFunctions`, `phaseConfigs`, and `resolve夜间阶段Actions`.
 
-## 开发命令
+## 开发 Commands
 
-### 根目录（单体仓库）
+> **Environment:** Windows PowerShell (default shell for this project)
+> - All commands should use PowerShell syntax
+> - Use `Invoke-Expression` or direct script execution where needed
+> - Environment variables: `$env:VAR_NAME = "value"` format
 
-```bash
-pnpm dev          # 启动所有应用的开发模式
-pnpm build        # 构建所有应用
-pnpm start        # 以生产模式启动所有应用
-pnpm lint         # 对所有应用进行 Lint 检查
-pnpm test         # 在所有应用中运行测试
-```
+### Root Level (monorepo) - Run from repository root
 
-### 应用特定（apps/web）
+```powershell
+# Install dependencies
+pnpm install
 
-```bash
-pnpm ---filter @whole-ends-kneel/web dev     # 启动开发服务器
-pnpm --filter @whole-ends-kneel/web build    # 构建生产版本
-pnpm --filter @whole-ends-kneel/web start    # 启动生产服务器
-pnpm --filter @whole-ends-kneel/web lint     # 运行 ESLint
-pnpm --filter @whole-ends-kneel/web test     # 运行 Bun 测试套件
-pnpm --filter @whole-ends-kneel/web test:watch  # 监听模式
-```
+# Start all apps in development mode
+pnpm dev
 
-### 数据库命令
+# Build all apps for production
+pnpm build
 
-```bash
-pnpm --filter @whole-ends-kneel/web db:pull   # 从数据库拉取模式
-pnpm --filter @whole-ends-kneel/web db:gen    # 生成 Prisma 客户端
-```
+# Start all apps in production mode
+pnpm start
 
-### WebSocket/聊天服务器
+# Lint all apps
+pnpm lint
 
-`apps/web/` 目录下的 `bot.ts` 文件是一个独立的 Bun WebSocket 服务器，用于聊天功能。运行方式：
-
-```bash
-cd apps/web && bun run bot.ts
-```
-
-服务器默认在 3000 端口运行（可通过 `PORT` 环境变量配置）。
-
-## 配置文件
-
-- `pnpm-workspace.yaml` - 工作区配置（apps/_, packages/_）
-- `apps/web/next.config.mjs` - Next.js 配置，包含 next-intl 插件和独立输出
-- `apps/web/tsconfig.json` - TypeScript 配置，包含路径别名（`@/*`）
-- `apps/web/.eslintrc.json` - 继承自 `next/core-web-vitals`
-- `apps/web/.env` - 环境变量（切勿提交敏感数据）
-- `apps/web/prisma/schema.prisma` - 数据库模式（包含 Zero 生成器）
-
-## 环境变量
-
-位于 `apps/web/.env`：
-
-- `DATABASE_URL` - PostgreSQL 连接池地址（Supabase）
-- `DIRECT_URL` - 迁移使用的直接连接
-- `ZERO_UPSTREAM_DB` - Zero 同步数据库地址
-- `DB_PWD` - 数据库密码（脚本中使用）
-
-可能需要其他变量（检查代码）：
-
-- Supabase 凭证（匿名密钥、服务角色密钥、URL）
-- Clerk/NextAuth 密钥（JWT 密钥、Clerk 密钥）
-- Socket.IO 服务器配置
-
-## 测试
-
-测试使用 **Bun 内置测试运行器**。
-
-测试文件与源文件共存，使用 `__tests__/` 模式或 `.test.ts` 扩展名。
-
-示例：
-
-```bash
-# 运行所有测试
+# Run tests in all apps
 pnpm test
+```
 
-# 运行特定应用的测试
+### App-Specific (apps/web) - Run from repository root
+
+```powershell
+# Start development server (requires ~4GB memory for Next.js)
+pnpm --filter @whole-ends-kneel/web dev
+
+# Build for production
+pnpm --filter @whole-ends-kneel/web build
+
+# Start production server
+pnpm --filter @whole-ends-kneel/web start
+
+# Run ESLint
+pnpm --filter @whole-ends-kneel/web lint
+
+# Run Bun test suite
 pnpm --filter @whole-ends-kneel/web test
 
-# 监听模式
+# Run tests in watch mode
 pnpm --filter @whole-ends-kneel/web test:watch
+```
 
-# 运行特定测试文件
+### Database Commands - Run from repository root
+
+```powershell
+# Pull schema from database
+pnpm --filter @whole-ends-kneel/web db:pull
+
+# Generate Prisma client
+pnpm --filter @whole-ends-kneel/web db:gen
+
+# Create and apply migration (run inside apps/web directory)
+cd apps/web; npx prisma migrate dev --name <migration_name>
+```
+
+### Game Engine Tests - Run from repository root
+
+```powershell
+# Run specific test file
 bun test packages/bgio-engine/src/__tests__/game.test.ts
 ```
 
-测试结构：使用 `bun:test` 中的 `describe`, `it`, `expect`。游戏逻辑测试使用模拟函数。
+### WebSocket/Chat Server
 
-## 代码风格
+The `bot.ts` file in `apps/web/` is a standalone Bun WebSocket server. Run with:
 
-- TypeScript 严格模式：`strict: true`
-- ESLint 继承自 `next/core-web-vitals`
-- Prettier 配置在 `.prettierrc`
-- 使用路径别名：`@/*` → `apps/web/src/*`
-- 推荐使用 Conventional Commits（目前尚未强制执行）
-- `.npmrc` 设置 `legacy-peer-dependencies=true` 和 `strict-peer-dependencies=false`（依赖解析所需）
+```powershell
+cd apps/web; bun run bot.ts
+```
 
-## 数据库模式
+Server runs on port 3000 by default (configurable via `$env:PORT = "3000"`).
 
-### 主要模型
+## Configuration Files
 
-- `users` - 用户账户（集成 Supabase 认证）
-- `groups` - 用户群组/团队
-- `group_members` - 用户与群组的多对多关系
-- `messages` - 聊天消息（关联到群组）
-- `game_rooms` - 多人游戏房间
-- `game_players` - 游戏房间中的玩家（带状态）
+- `pnpm-workspace.yaml` - Workspace configuration (apps/_, packages/_)
+- `apps/web/next.config.mjs` - Next.js config with next-intl plugin, standalone output
+- `apps/web/tsconfig.json` - TypeScript config with path aliases (`@/*`)
+- `apps/web/.eslintrc.json` - Extends `next/core-web-vitals`
+- `apps/web/.env` - Environment variables (NEVER commit sensitive data)
+- `apps/web/prisma/schema.prisma` - Database schema with Zero generator
 
-关键特性：
+## Environment Variables
 
-- 某些表启用了行级安全（RLS）（查看 Prisma 模式注释）
-- UUID 作为主键（通过 `dbgenerated("gen_random_uuid()")` 生成）
-- 带有 `@db.Timestamptz(6)` 的时间戳（UTC）
-- 枚举：`GameRoomStatus`（WAITING, PLAYING, FINISHED, DESTROYED），`GamePlayerStatus`（JOINED, READY, LEFT）
+Located in `apps/web/.env`:
 
-Prisma 生成：
+```powershell
+# Set environment variable in PowerShell
+$env:DATABASE_URL = "postgresql://..."
 
-- 客户端：`apps/web/src/generated/prisma/client.ts`
-- Zero（实时）：`apps/web/src/generated/zero/schema.ts`（如果配置了生成器）
+# Pooled PostgreSQL connection (Supabase)
+DATABASE_URL="postgresql://...:6543/postgres?pgbouncer=true"
 
-## API 架构
+# Direct connection (for migrations)
+DIRECT_URL="postgresql://...:5432/postgres"
 
-API 路由集中在 `apps/web/src/app/api/[[...route]]/route.ts`，使用 Hono。
+# Zero sync database URL
+ZERO_UPSTREAM_DB="postgresql://...:5432/postgres"
 
-路由处理器使用 Hono Vercel 适配器处理所有 HTTP 方法（GET, POST, PATCH, DELETE）。
+# Database password
+DB_PWD="your-password"
+```
 
-数据提供者（`apps/web/src/providers/data-provider/api.ts`）实现 Refine 的 `DataProvider` 接口，通过 `@utils/api/rpc` 调用 Hono API（自动生成的类型安全 RPC 客户端）。
+## Testing
 
-模式：
+Testing uses **Bun's built-in test runner**.
 
-- 客户端使用 Refine Hooks（`useList`, `useCreate`, `useCustom` 等）
-- 数据提供者封装对 Hono API 的 RPC 调用
-- Hono API 通过 Prisma 处理业务逻辑和数据库操作
+Test files are co-located with source files using `__tests__/` pattern or `.test.ts` extension.
 
-## 认证流程
+Examples:
 
-- 使用 Supabase 作为认证后端
-- 服务端：`auth-provider.server.ts` 包装 Supabase 服务端客户端
-- 客户端：`auth-provider.client.ts` 包装 Supabase 浏览器客户端
-- `ServerAuthProvider` 上下文将服务端认证用户传递到客户端
-- 访问令牌存储在 Cookie 中（Supabase SSR 辅助函数）
-- `public.ts` 提供 Refine 兼容的认证提供者封装
+```powershell
+# Run all tests
+pnpm test
 
-## 实时功能
+# Run tests for specific app
+pnpm --filter @whole-ends-kneel/web test
 
-两个实时系统：
+# Watch mode
+pnpm --filter @whole-ends-kneel/web test:watch
 
-1. **Zero (ROCICORP)** - 数据库级实时同步（Prisma → 客户端）
-   - 用于 Refine 表格的实时数据更新
-   - 通过 Prisma Zero 生成器配置
+# Run specific test file
+bun test packages/bgio-engine/src/__tests__/game.test.ts
+```
 
-2. **Socket.IO** - 游戏状态同步
-   - 用于多人游戏状态更新
-   - `live-provider/socketio.ts` 实现 Refine 的 LiveProvider
-   - 游戏移动和状态通过 Socket.IO 房间广播
+Test structure: Uses `describe`, `it`, `expect` from `bun:test`. Mock functions are used for game logic testing.
 
-## 国际化（i18n）
+## Code Style
 
-- 使用 `next-intl` 配合 App Router
-- 语言：英语（`en`）和简体中文（`zh-CN`）
-- 配置位置：`apps/web/src/i18n/`
-- 消息文件：`apps/web/src/i18n/locales/*.ts`
-- 类型安全方法（`next.config.mjs` 中有插件配置）
+- TypeScript with `strict: true`
+- ESLint extends `next/core-web-vitals`
+- Prettier config in `.prettierrc`
+- Uses path aliases: `@/*` → `apps/web/src/*`
+- Conventional Commit messages recommended (though not enforced yet)
+- `.npmrc` sets `legacy-peer-dependencies=true` and `strict-peer-dependencies=false` (needed for dependency resolution)
 
-检查 i18n 完整性的脚本：`apps/web/scripts/check-i18n.ts`（结果在 `i18n-check-results.txt`）
+## Database Schema
 
-## 游戏与引擎
+### Primary Models
 
-`bgio-engine` 是围绕 boardgame.io 的封装，用于"女巫审判"游戏（类似狼人杀/杀人游戏的社交推理游戏）。
+- `users` - User accounts (with Supabase auth integration)
+- `groups` - User groups/teams
+- `group_members` - Many-to-many relationship between users and groups
+- `messages` - Chat messages (linked to groups)
+- `game_rooms` - Multiplayer game rooms
+- `game_players` - Players in game rooms (with status)
 
-关键文件：
+Key Features:
 
-- `packages/bgio-engine/src/game/index.ts` - 主游戏定义（`WitchTrialGame`）
-- `packages/bgio-engine/src/types.ts` - 游戏状态和类型
-- `packages/bgio-engine/src/utils.ts` - Selectors（派生状态）和工具函数
-- `packages/bgio-engine/src/components/Board/` - 主游戏板 UI
-- `packages/bgio-engine/src/components/` - 玩家列表、手牌、投票、聊天等
-- `packages/bgio-engine/src/hooks/useWitchTrial.ts` - 游戏集成的 Hook
+- Row Level Security (RLS) enabled on some tables (check Prisma schema comments)
+- UUIDs as primary keys (generated via `dbgenerated("gen_random_uuid()")`)
+- Timestamps with `@db.Timestamptz(6)` (UTC)
+- Enums: `GameRoomStatus` (WAITING, PLAYING, FINISHED, DESTROYED), `GamePlayerStatus` (JOINED, READY, LEFT)
 
-游戏流程：
+Prisma generates:
 
-- 夜间阶段 → 白天阶段 → 投票 → 结算
-- 角色：女巫、猎人、村民等
-- 使用 boardgame.io 的基于回合的多人模型，服务器权威
+- Client: `apps/web/src/generated/prisma/client.ts`
+- Zero (real-time): `apps/web/src/generated/zero/schema.ts` (if generator configured)
 
-## 重要模式和约定
+## API Architecture
 
-### Refine 资源
+API routes are consolidated in `apps/web/src/app/api/[[...route]]/route.ts` using Hono.
 
-`RefineProvider.tsx` 中配置的资源映射到页面：
+The route handler uses the Hono Vercel adapter to handle all HTTP methods (GET, POST, PATCH, DELETE).
 
-- `groups` → 显示在 `/blog-posts`（注意：名称不匹配，但页面在 `app/(protected)/blog-posts/`）
-- `messages` → 房间列表在 `/room`
-- `users` → CRUD 在 `/users`
-- `categories` → CRUD 在 `/categories`
+Data provider (`apps/web/src/providers/data-provider/api.ts`) implements Refine's `DataProvider` interface, calling the Hono API via `@utils/api/rpc` (auto-generated type-safe RPC client).
+
+模式:
+
+- Client-side uses Refine hooks (`useList`, `useCreate`, `useCustom`, etc.)
+- Data provider wraps RPC calls to Hono API
+- Hono API handles business logic and database operations via Prisma
+
+## Authentication Flow
+
+- Uses Supabase as the auth backend
+- Server-side: `auth-provider.server.ts` wraps Supabase server client
+- Client-side: `auth-provider.client.ts` wraps Supabase browser client
+- `ServerAuthProvider` context passes authenticated user from server to client
+- Access tokens stored in cookies (Supabase SSR helper)
+- `public.ts` provides a Refine-compatible auth provider wrapper
+
+## Real-time Features
+
+Two real-time systems:
+
+1. **Zero (ROCICORP)** - Database-level real-time sync (Prisma → client)
+   - Used for live data updates in Refine tables
+   - Configured via Prisma Zero generator
+
+2. **Socket.IO** - Game state synchronization
+   - Used for multiplayer game state updates
+   - `live-provider/socketio.ts` implements Refine's LiveProvider
+   - Game moves and state broadcast via Socket.IO rooms
+
+## Internationalization (i18n)
+
+- Uses `next-intl` with App Router
+- Locales: English (`en`) and Chinese (`zh-CN`)
+- Configuration in: `apps/web/src/i18n/`
+- Message files: `apps/web/src/i18n/locales/*.ts`
+- Type-safe approach with generated types (check `next.config.mjs` for plugin)
+
+Script to check i18n completeness: `apps/web/scripts/check-i18n.ts` (found in `i18n-check-results.txt`)
+
+## Games & Engine
+
+The `bgio-engine` is a custom wrapper around boardgame.io for a "女巫审判" game (social deduction game similar to Werewolf/Mafia).
+
+Key Files:
+
+- `packages/bgio-engine/src/game/index.ts` - Main game definition (`WitchTrialGame`)
+- `packages/bgio-engine/src/types.ts` - Game state and types
+- `packages/bgio-engine/src/utils.ts` - 选择器s (derived state) and utilities
+- `packages/bgio-engine/src/components/Board/` - Main game board UI
+- `packages/bgio-engine/src/components/` - Player list, hand, voting, chat, etc.
+- `packages/bgio-engine/src/hooks/useWitchTrial.ts` - Hook for game integration
+
+Game Flow:
+
+- 夜间阶段 phase → 午间阶段 phase → Voting → 结算阶段
+- Roles: Witch, Hunter, villagers, etc.
+- Uses boardgame.io's turn-based multiplayer model with server authority
+
+## Important 模式s & Conventions
+
+### Refine Resources
+
+Resources configured in `RefineProvider.tsx` map to pages:
+
+- `groups` → displays at `/blog-posts` (note: name mismatch, but pages under `app/(protected)/blog-posts/`)
+- `messages` → room listing at `/room`
+- `users` → CRUD at `/users`
+- `categories` → CRUD at `/categories`
 
 ### Next.js App Router
 
-- 默认使用 React Server Components
-- 交互式组件使用 `"use client"` 指令
-- 布局可以分组：`(auth)`、`(protected)` 用于路由组
-- 未明显使用 Server Actions；改用 API 路由
+- Uses React Server Components by default
+- `"use client"` directive for interactive components
+- Layouts can be grouped: `(auth)`, `(protected)` for route groups
+- Server actions not evident; uses API routes instead
 
-### 路径别名
+### Path Aliases
 
-- `@/*` → `apps/web/src/*`（在 tsconfig.json 中配置）
+- `@/*` → `apps/web/src/*` (configured in tsconfig.json)
 - `@providers/*`, `@components/*`, `@hooks/*`, `@lib/*`, `@utils/*`, `@contexts/*`
 
-### Socket.IO 集成
+### Socket.IO Integration
 
-- 服务端：通过 Hono API 路由的自定义集成（查看 `providers/live-provider/api.ts` 和 `socketio.ts`）
-- 客户端：Socket.IO 客户端，带访问令牌认证
-- WebSocket 端点：`/api/socket.io`（标准 Socket.IO 路径）
+- Server: Custom integration via Hono API routes (check `providers/live-provider/api.ts` and `socketio.ts`)
+- Client: Socket.IO client with access token auth
+- WebSocket endpoint: `/api/socket.io` (standard Socket.IO path)
 
-## 自定义技能
+## Supplemental Resources
 
-此仓库包含定制的 Claude Code 技能：
+This repository contains custom Claude Code skills that provide **supplementary context** when working with specific libraries:
 
-- `.agents/skills/antd-design/` - Ant Design 特定指导
-- `.agents/skills/boardgame-io-docs/` - boardgame.io 文档
-- `.agents/skills/es-toolkit-docs/` - ES Toolkit 文档
-- `.claude/skills/` - 额外的标准 Claude Code 技能
+- `.claude/skills/` - Standard Claude Code skills for common patterns
+- `.agents/skills/` - Ant Design, boardgame.io, and ES Toolkit specific guidance
 
-这些技能在使用这些库时提供上下文感知的辅助。
+**Note:** These skills should be used alongside project-specific instructions, not as a replacement. Always cross-reference with `AGENTS.md` and `packages/bgio-engine/CLAUDE.md` for project-specific patterns.
 
-## 常见开发任务
+## Common 开发 Tasks
 
-### 开始开发
+### Starting 开发
 
-```bash
-# 安装依赖
+```powershell
+# Install dependencies
 pnpm install
 
-# 启动开发服务器（默认在 http://localhost:3000）
+# Start development server (runs on http://localhost:3000 by default)
 pnpm dev
 ```
 
-### 开发游戏引擎
+### Working on the Game Engine
 
-- 游戏逻辑：`packages/bgio-engine/src/game/`
-- 游戏 UI：`packages/bgio-engine/src/components/`
-- 测试：`packages/bgio-engine/src/__tests__/`
+- Game logic: `packages/bgio-engine/src/game/`
+- Game UI: `packages/bgio-engine/src/components/`
+- Tests: `packages/bgio-engine/src/__tests__/`
 
-修改游戏逻辑时频繁运行测试。
+Run tests frequently when modifying game logic.
 
-### 数据库变更
+### Database Changes
 
-1. 更新 `apps/web/prisma/schema.prisma`
-2. 生成 Prisma 客户端：`pnpm --filter @whole-ends-kneel/web db:gen`
-3. 创建并应用迁移：在 apps/web 目录运行 `npx prisma migrate dev --name <名称>`
-4. 检查 `apps/web/src/generated/prisma/` 中的生成类型
+1. Update `apps/web/prisma/schema.prisma`
+2. Generate Prisma client: `pnpm --filter @whole-ends-kneel/web db:gen`
+3. Create and apply migration (in apps/web directory):
+   ```powershell
+   cd apps/web; npx prisma migrate dev --name <name>
+   ```
+4. Check generated types in `apps/web/src/generated/prisma/`
 
-### 添加 API 端点
+### Adding API Endpoints
 
-- 在 `apps/web/src/app/api/[[...route]]/route.ts` 中扩展 Hono 应用或创建新的路由段
-- 遵循 Hono 的路由模式：`app.get('/path', handler)` 等
-- 如果需要新资源，更新 `providers/data-provider/api.ts` 中的 Refine DataProvider
+- Extend Hono app in `apps/web/src/app/api/[[...route]]/route.ts` OR create new route segment
+- Follow Hono's routing pattern: `app.get('/path', handler)` etc.
+- If new resources needed, update Refine DataProvider in `providers/data-provider/api.ts`
 
-### 添加 i18n 字符串
+### Adding i18n Strings
 
-1. 在 `apps/web/src/i18n/locales/en.ts` 和 `zh-CN.ts` 中添加键
-2. 在组件中使用 `useTranslation()` hook 或 `t('key')`
-3. 运行 `pnpm --filter @whole-ends-kneel/write exec tsx scripts/check-i18n.ts` 验证完整性
+1. Add keys to `apps/web/src/i18n/locales/en.ts` and `zh-CN.ts`
+2. Use `use翻译()` hook or `t('key')` in components
+3. Verify completeness:
+   ```powershell
+   pnpm --filter @whole-ends-kneel/web exec tsx scripts/check-i18n.ts
+   ```
 
-### 格式化与 Lint
+### Formatting & Linting
 
-```bash
-pnpm lint          # 运行 ESLint（Next.js 配置）
-# 如果 IDE 配置了 Prettier，保存时自动运行；否则使用：
-pnpm --filter @whole-ends-kneel/write   #（如果安装了 prettier）
+```powershell
+# Run ESLint
+pnpm lint
+
+# Format with Prettier (if configured)
+pnpm --filter @whole-ends-kneel/web exec prettier --write .
 ```
 
-### Socket.IO 调试
+### Debugging Socket.IO
 
-- 确保挂载了 Socket.IO 服务器（检查 `socketio.ts` 和 API 路由）
-- 浏览器开发工具 → Network → WS 标签
-- 服务器日志在运行 API 的终端中
-- 聊天服务器（`bot.ts`）是独立的；用于一般 WebSocket 示例，不是游戏用的
+- Ensure Socket.IO server is mounted (check `socketio.ts` and API routes)
+- Browser devtools → Network → WS tab
+- Server logs in terminal where API is running
+- Chat server (`bot.ts`) is separate; used for general WebSocket examples, not the game
 
-## 部署说明
+## Deployment Notes
 
-- Next.js 输出：`standalone`（容器友好）
-- Vercel 兼容（使用 Vercel 适配器用于 Hono）
-- 构建命令：`pnpm build`（根目录）或 `pnpm --filter @whole-ends-kneel/web build`
-- 启动命令：`pnpm start` 或 `pnpm --filter @whole-ends-kneel/web start`
+- Next.js output: `standalone` (container-friendly)
+- Vercel compatible (uses Vercel adapter for Hono)
+- Build command: `pnpm build` (root) or `pnpm --filter @whole-ends-kneel/web build`
+- Start command: `pnpm start` or `pnpm --filter @whole-ends-kneel/web start`
 
-所需环境：
+Environment required:
 
-- PostgreSQL 数据库（推荐 Supabase）
-- Supabase 认证凭证
-- 配置了 Zero 同步（上游数据库）
+- PostgreSQL database (Supabase recommended)
+- Supabase credentials for auth
+- Zero sync configured (upstream DB)
 
-## 注意事项与重要说明
+## Gotchas & Important Notes
 
-- **认证提供者分离**：`auth-provider.server.ts` 和 `auth-provider.client.ts` - 确保正确区分客户端和服务端使用
-- **Zero 生成器**：Prisma 模式有 `generator zero`，但实际的 Zero 客户端可能在 `@rocicorp/zero` 中。生成文件位于 src/generated/zero/
-- **boardgame.io 客户端与服务端**：游戏同时使用客户端和服务端组件。主对局由 boardgame.io 服务器管理（可能通过独立进程或无服务器函数？）。查看 `packages/bgio-engine/src/example.tsx` 了解集成模式。
-- **Socket.IO 传输**：游戏可能使用 Socket.IO 进行实时移动。`liveProvider` 使用 socketio 进行 Refine 实时查询；游戏专用的 socket 可能独立。
-- **TypeScript 严格模式**：已启用。注意 `any` 类型（测试/模拟中存在一些）。
-- **单体仓库**：目前只有一个应用（`web`）。尚无内部包。
-- **中文语言**：i18n 包含简体中文（`zh-CN`）。添加新字符串时保持两种语言同步。
-- **Ant Design v6**：使用最新主要版本。查看 `.claude/skills/antd-design/` 了解模式。
-- **Next.js 16**：支持 React 19。`next.config` 中 `reactStrictMode: false`（如果设为 true 在开发中可能引起双重渲染）。
+- **Auth Provider Split**: `auth-provider.server.ts` and `auth-provider.client.ts` - ensure correct client vs server usage
+- **Zero Generator**: The Prisma schema has a `generator zero` but the actual Zero client may be in `@rocicorp/zero`. Generated files go to src/generated/zero/
+- **Boardgame.io Client vs Server**: The game uses both client and server components. The main match is managed by boardgame.io server (likely via separate process or serverless?). Check `packages/bgio-engine/src/example.tsx` for integration pattern.
+- **Socket.IO Transport**: The game may use Socket.IO for real-time moves. The `liveProvider` uses socketio for Refine live queries; game-specific socket may be separate.
+- **TypeScript Strict Mode**: Enabled. Be mindful of `any` types (some exist in tests/mocks).
+- **Monorepo**: Only one app currently (`web`). No internal packages yet.
+- **Chinese Locale**: i18n includes Chinese (`zh-CN`). Keep both languages in sync when adding new strings.
+- **Ant Design v6**: Using latest major version. Check `.claude/skills/antd-design/` for patterns.
+- **Next.js 16**: React 19 support. `reactStrictMode: false` in next.config (may cause double renders in dev if true).
 
-## 调试技巧
+## Debugging Tips
 
-1. **游戏状态问题**：检查 `packages/bgio-engine/src/utils.ts` 中的 Selectors 了解派生状态。游戏逻辑是 `game/` 目录中的纯函数。
-2. **认证错误**：验证 Supabase 连接和 Cookie 处理。检查 `ServerAuthProvider` 和认证提供者实现。
-3. **API 错误**：Hono 路由位于 `app/api/[[...route]]/route.ts`。数据提供者使用 RPC 调用。检查网络标签中的请求/响应。
-4. **实时功能不工作**：Zero 和 Socket.IO 都需要正确的 DB/WS 设置。检查连接和订阅。
-5. **i18n 缺少键**：如果键缺失则回退到英文。使用 `scripts/check-i18n.ts` 查找未翻译的键。
+1. **Game State Issues**: Check `packages/bgio-engine/src/utils.ts` 选择器s for computed state. Game logic is pure functions in `game/` directory.
+2. **Auth Errors**: Verify Supabase connection and cookie handling. Check `ServerAuthProvider` and auth provider implementations.
+3. **API Errors**: Hono routes in `app/api/[[...route]]/route.ts`. Data provider uses RPC calls. Check network tab for request/response.
+4. **Real-time Not Working**: Both Zero and Socket.IO need proper DB/WS setup. Check connections and subscriptions.
+5. **i18n Missing Keys**: Fallback to English if key missing. Use `scripts/check-i18n.ts` to find untranslated keys.
 
-## 资源
+## Resources
 
-- [Next.js 16 文档](https://nextjs.org/docs)
-- [Refine 文档](https://refine.dev/docs)
+- [Next.js 16 Docs](https://nextjs.org/docs)
+- [Refine Docs](https://refine.dev/docs)
 - [Ant Design v6](https://ant.design/docs/react/use-with-next)
 - [boardgame.io](https://boardgame.io/docs)
 - [Prisma](https://www.prisma.io/docs)
@@ -414,11 +512,15 @@ pnpm --filter @whole-ends-kneel/write   #（如果安装了 prettier）
 
 ## CLAUDE.md 维护
 
-在以下情况更新此文件：
+Update this file when:
 
-- 添加新的主要依赖
-- 架构发生重大变化
-- 常见工作流变化（构建、测试、部署）
-- 出现非显而易见的新模式
+- New major dependencies are added
+- Architecture changes significantly
+- Common workflows change (build, test, deploy)
+- New patterns emerge that are non-obvious
 
-不要为每次微小更改更新；保持高层面并专注于操作知识。
+Do NOT update for every minor change; keep it high-level and focused on operational knowledge.
+
+**Related Files:**
+- Keep `AGENTS.md` in sync for comprehensive project documentation
+- Update `packages/bgio-engine/CLAUDE.md` when game engine patterns change

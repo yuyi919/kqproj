@@ -151,7 +151,7 @@ export function VotingPanel({
       title={
         <Space>
           <TeamOutlined />
-          <span>投票阶段</span>
+          <span>夜间阶段</span>
         </Space>
       }
       extra={
@@ -184,7 +184,8 @@ export function VotingPanel({
               <span>选择一名存活玩家监禁，被监禁的玩家夜间无法使用手牌。</span>
               {!filterDisabled && (
                 <Text type="warning" style={{ fontSize: 12 }}>
-                  <ExclamationCircleOutlined /> 灰色标签表示不可投票，点击查看原因
+                  <ExclamationCircleOutlined />{" "}
+                  灰色标签表示不可投票，点击查看原因
                 </Text>
               )}
             </Space>
@@ -212,8 +213,12 @@ export function VotingPanel({
                   const hasVotes = voteCounts[player.id] > 0;
 
                   // 提取不可选原因（如果存在）
-                  const unreason = !isSelectable ? (voteability as any).reason : undefined;
-                  const reasonText = !isSelectable ? (voteability as any).reasonText : undefined;
+                  const unreason = !isSelectable
+                    ? voteability.reason
+                    : undefined;
+                  const reasonText = !isSelectable
+                    ? voteability.reasonText
+                    : undefined;
 
                   return (
                     <Tooltip

@@ -4,10 +4,18 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@refinedev/antd", "@stackframe/stack-shared"],
+  transpilePackages: [
+    "@refinedev/antd",
+    "@stackframe/stack-shared",
+    "@whole-ends-kneel/bgio-engine",
+  ],
   output: "standalone",
   reactStrictMode: false,
-  turbopack: {},
+  turbopack: {
+    // resolveAlias: {
+    //   "@": "./src",
+    // },
+  },
   // devIndicators: true,
   experimental: {
     // browserDebugInfoInTerminal: false

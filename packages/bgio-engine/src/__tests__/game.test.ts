@@ -1,94 +1,30 @@
 import { describe, it, expect } from "bun:test";
-import { phaseConfigs, RandomAPI, WitchTrialGame } from "../game";
-import type { BGGameState } from "../types";
+import { phaseConfigs, TypedWitchTrialGame as WitchTrialGame } from "../game";
 import { Selectors } from "../utils";
-
-// Mock 随机函数
-const mockShuffle = <T>(arr: T[]): T[] => [...arr];
-const mockRandom: RandomAPI = {
-  Number: () => 0.5,
-  Shuffle: mockShuffle,
-  D4: () => 2,
-  D6: () => 3,
-  D10: () => 5,
-  D20: () => 10,
-} as RandomAPI;
-
-// 创建 mock 上下文 - 使用类型断言避免复杂的类型问题
-const createMockCtx = (playerIds: string[]) =>
-  ({
-    turn: 1,
-    currentPlayer: playerIds[0],
-    phase: "night",
-    numPlayers: playerIds.length,
-    playOrder: playerIds,
-    playOrderPos: 0,
-    _random: { seed: "test-seed" },
-    activePlayers: null,
-  }) as any;
-
-// 创建完整的 setup 上下文
-const createSetupContext = (playerIds: string[]) =>
-  ({
-    ctx: createMockCtx(playerIds),
-    random: mockRandom,
-    events: {},
-    log: [] as any[],
-  }) as any;
-
-// 创建 move 上下文
-const createMoveContext = (
-  G: BGGameState,
-  playerId: string,
-  phase: string = "night",
-) =>
-  ({
-    G,
-    ctx: { ...createMockCtx(G.playerOrder), phase },
-    playerID: playerId,
-    events: {},
-    random: mockRandom,
-  }) as any;
-
-// 创建 phase 钩子上下文
-const createPhaseContext = (G: BGGameState, phase: string = "night") =>
-  ({
-    G,
-    ctx: { ...createMockCtx(G.playerOrder), phase },
-    events: {},
-    random: mockRandom,
-  }) as any;
-
-// 创建 playerView 上下文
-const createPlayerViewContext = (G: BGGameState, playerId: string | null) =>
-  ({
-    G,
-    ctx: createMockCtx(G.playerOrder),
-    playerID: playerId,
-  }) as any;
-
-// 创建 endIf 上下文
-const createEndIfContext = (G: BGGameState) =>
-  ({
-    G,
-    ctx: createMockCtx(G.playerOrder),
-  }) as any;
-
-// 调用 move 函数的辅助函数
-const callMove = (move: any, context: any, ...args: any[]) => {
-  return move(context, ...args);
-};
+import { GamePhase } from "../types/core";
+import {
+  createMockRandom,
+  createTestState,
+  setupPlayers,
+  createMoveContext,
+  createPhaseContext,
+  createSetupContext,
+  createPlayerViewContext,
+  createEndIfContext,
+  SEVEN_PLAYER_CONFIG,
+  callMove,
+} from "./testUtils";
 
 describe("WitchTrialGame - Setup", () => {
   it("应正确初始化游戏状态", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    const G = WitchTrialGame.setup!(context, { roomId: "test-room" });
+    const G = WitchTrialGame.setup(context, { roomId: "test-room" });
 
     expect(G.id).toBeDefined();
     expect(G.roomId).toBe("test-room");
-    expect(G.status).toBe("morning");
+    expect(G.status).toBe(GamePhase.SETUP);
     expect(G.round).toBe(1);
     expect(Object.keys(G.players)).toHaveLength(3);
     expect(G.playerOrder).toEqual(playerIds);
@@ -98,7 +34,7 @@ describe("WitchTrialGame - Setup", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    const G = WitchTrialGame.setup!(context, {});
+    const G = WitchTrialGame.setup(context, {});
 
     Object.values(G.secrets).forEach((secret) => {
       expect(secret.hand).toHaveLength(4);
@@ -109,7 +45,7 @@ describe("WitchTrialGame - Setup", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    const G = WitchTrialGame.setup!(context, {});
+    const G = WitchTrialGame.setup(context, {});
 
     const holders = Object.entries(G.secrets).filter(
       ([, s]) => s.witchKillerHolder,
@@ -128,15 +64,15 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
-    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const voteMove = WitchTrialGame.phases[GamePhase.NIGHT].moves!.vote;
     expect(voteMove).toBeDefined();
 
     const result = callMove(
       voteMove,
-      createMoveContext(G, "p1", "voting"),
+      createMoveContext(G, "p1", GamePhase.NIGHT),
       "p2",
     );
 
@@ -150,13 +86,13 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
-    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const voteMove = WitchTrialGame.phases[GamePhase.NIGHT].moves!.vote;
 
-    callMove(voteMove, createMoveContext(G, "p1", "voting"), "p2");
-    callMove(voteMove, createMoveContext(G, "p1", "voting"), "p3");
+    callMove(voteMove, createMoveContext(G, "p1", GamePhase.NIGHT), "p2");
+    callMove(voteMove, createMoveContext(G, "p1", GamePhase.NIGHT), "p3");
 
     expect(G.currentVotes).toHaveLength(1);
     expect(G.currentVotes[0].targetId).toBe("p3");
@@ -166,16 +102,16 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
     // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
     G.secrets.p1.status = "dead";
 
-    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const voteMove = WitchTrialGame.phases[GamePhase.NIGHT].moves!.vote;
     const result = callMove(
       voteMove,
-      createMoveContext(G, "p1", "voting"),
+      createMoveContext(G, "p1", GamePhase.NIGHT),
       "p2",
     );
 
@@ -186,15 +122,15 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
     G.currentVotes = [
       { voterId: "p1", targetId: "p2", round: 1, timestamp: Date.now() },
       { voterId: "p3", targetId: "p2", round: 1, timestamp: Date.now() },
     ];
 
-    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+    WitchTrialGame.phases[GamePhase.NIGHT].onEnd(createPhaseContext(G, GamePhase.NIGHT));
 
     expect(G.imprisonedId).toBe("p2");
     expect(G.voteHistory).toHaveLength(1);
@@ -204,15 +140,15 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
     G.currentVotes = [
       { voterId: "p1", targetId: "p2", round: 1, timestamp: Date.now() },
       { voterId: "p2", targetId: "p3", round: 1, timestamp: Date.now() },
     ];
 
-    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+    WitchTrialGame.phases[GamePhase.NIGHT].onEnd(createPhaseContext(G, GamePhase.NIGHT));
 
     expect(G.imprisonedId).toBeNull();
     expect(G.voteHistory[0].isTie).toBe(true);
@@ -222,15 +158,15 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
-    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const voteMove = WitchTrialGame.phases[GamePhase.NIGHT].moves!.vote;
 
     // 尝试投给自己（不是通过pass）
     const result = callMove(
       voteMove,
-      createMoveContext(G, "p1", "voting"),
+      createMoveContext(G, "p1", GamePhase.NIGHT),
       "p1",
     );
 
@@ -241,16 +177,16 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
     // p2 死亡
     G.players.p2.status = "dead";
     G.secrets.p2.status = "dead";
 
-    const voteMove = WitchTrialGame.phases!.voting.moves!.vote;
+    const voteMove = WitchTrialGame.phases[GamePhase.NIGHT].moves!.vote;
     const result = callMove(
       voteMove,
-      createMoveContext(G, "p1", "voting"),
+      createMoveContext(G, "p1", GamePhase.NIGHT),
       "p2",
     );
 
@@ -261,8 +197,8 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3", "p4"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
     // p1 和 p2 投给 p3
     // p3 弃权（投给自己）
@@ -274,7 +210,7 @@ describe("WitchTrialGame - Voting Phase", () => {
       { voterId: "p4", targetId: "p2", round: 1, timestamp: Date.now() },
     ];
 
-    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+    WitchTrialGame.phases[GamePhase.NIGHT].onEnd(createPhaseContext(G, GamePhase.NIGHT));
 
     // p3 得 2 票，p2 得 1 票，p3 应该被监禁
     expect(G.imprisonedId).toBe("p3");
@@ -286,8 +222,8 @@ describe("WitchTrialGame - Voting Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "voting";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.NIGHT;
 
     // 所有人都弃权
     G.currentVotes = [
@@ -296,7 +232,7 @@ describe("WitchTrialGame - Voting Phase", () => {
       { voterId: "p3", targetId: "p3", round: 1, timestamp: Date.now() },
     ];
 
-    WitchTrialGame.phases!.voting.onEnd!(createPhaseContext(G, "voting"));
+    WitchTrialGame.phases[GamePhase.NIGHT].onEnd(createPhaseContext(G, GamePhase.NIGHT));
 
     expect(G.imprisonedId).toBeNull();
   });
@@ -307,8 +243,8 @@ describe("WitchTrialGame - Night Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
     const nonHolderId = Object.entries(G.secrets).find(
       ([, s]) => !s.witchKillerHolder,
@@ -318,10 +254,10 @@ describe("WitchTrialGame - Night Phase", () => {
     const barrierCard = { id: "barrier-test", type: "barrier" as const };
     G.secrets[nonHolderId!].hand.push(barrierCard);
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const result = callMove(
       useCardMove,
-      createMoveContext(G, nonHolderId!, "night"),
+      createMoveContext(G, nonHolderId!, GamePhase.DEEP_NIGHT),
       "barrier-test",
     );
 
@@ -334,8 +270,8 @@ describe("WitchTrialGame - Night Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
     const holderId = Object.entries(G.secrets).find(
       ([, s]) => s.witchKillerHolder,
@@ -345,10 +281,10 @@ describe("WitchTrialGame - Night Phase", () => {
     const existingCardId = G.secrets[holderId!].hand[0].id;
     G.secrets[holderId!].hand[0] = { id: existingCardId, type: "barrier" };
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const result = callMove(
       useCardMove,
-      createMoveContext(G, holderId!, "night"),
+      createMoveContext(G, holderId!, GamePhase.DEEP_NIGHT),
       existingCardId,
     );
 
@@ -359,14 +295,14 @@ describe("WitchTrialGame - Night Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
     G.imprisonedId = "p1";
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const result = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p1", GamePhase.DEEP_NIGHT),
       "some-card-id",
     );
 
@@ -377,16 +313,16 @@ describe("WitchTrialGame - Night Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
     // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
     G.secrets.p1.status = "dead";
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const result = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p1", GamePhase.DEEP_NIGHT),
       "some-card-id",
     );
 
@@ -397,8 +333,8 @@ describe("WitchTrialGame - Night Phase", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
     const nonHolderId = Object.entries(G.secrets).find(
       ([, s]) => !s.witchKillerHolder,
@@ -413,18 +349,33 @@ describe("WitchTrialGame - Night Phase", () => {
     );
     expect(targetId).toBeDefined();
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const result = callMove(
       useCardMove,
-      createMoveContext(G, nonHolderId!, "night"),
+      createMoveContext(G, nonHolderId!, GamePhase.DEEP_NIGHT),
       existingCardId,
       targetId,
     );
 
+    // 使用卡牌后立即魔女化 - 规则修改：只有成功击杀才会魔女化
     expect(result).toBeUndefined();
-    expect(G.secrets[nonHolderId!].isWitch).toBe(true);
+    // 注意：使用卡牌时不立即魔女化，结算成功后才魔女化
+
+    // 卡牌在结算前保留在手中（延迟消耗）
+    expect(G.discardPile).toHaveLength(0);
+    expect(G.secrets[nonHolderId!].hand).toHaveLength(1);
+
+    // 结算后：卡牌被消耗，且成功击杀导致魔女化
+    phaseConfigs[GamePhase.RESOLUTION].onBegin(createPhaseContext(G, GamePhase.DEEP_NIGHT));
     expect(G.discardPile).toHaveLength(1);
     expect(G.discardPile[0].type).toBe("kill");
+    expect(G.secrets[nonHolderId!].isWitch).toBe(true); // 成功击杀后魔女化
+
+    // 检查 kill 类型卡牌不在手中
+    const hasKillInHand = G.secrets[nonHolderId!].hand.some(
+      (c) => c.type === "kill",
+    );
+    expect(hasKillInHand).toBe(false);
   });
 });
 
@@ -433,7 +384,7 @@ describe("WitchTrialGame - End Game Conditions", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
     // 同时更新公开状态和私有状态
     G.players.p2.status = "dead";
     G.secrets.p2.status = "dead";
@@ -449,7 +400,7 @@ describe("WitchTrialGame - End Game Conditions", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
     G.round = 8;
 
     const gameover = WitchTrialGame.endIf!(createEndIfContext(G));
@@ -461,7 +412,7 @@ describe("WitchTrialGame - End Game Conditions", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
     // 同时更新公开状态和私有状态
     G.players.p1.status = "dead";
     G.secrets.p1.status = "dead";
@@ -481,9 +432,9 @@ describe("WitchTrialGame - Player View", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
 
-    const playerView = WitchTrialGame.playerView!(
+    const playerView = WitchTrialGame.playerView(
       createPlayerViewContext(G, "p1"),
     );
 
@@ -499,10 +450,10 @@ describe("WitchTrialGame - Player View", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
     G.deck = [{ id: "hidden", type: "barrier" }];
 
-    const playerView = WitchTrialGame.playerView!(
+    const playerView = WitchTrialGame.playerView(
       createPlayerViewContext(G, "p1"),
     );
 
@@ -515,16 +466,16 @@ describe("WitchTrialGame - Night Card Limit", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const playerId = "p1";
     const cardId = G.secrets[playerId].hand[0].id;
 
     const result = callMove(
       useCardMove,
-      createMoveContext(G, playerId, "night"),
+      createMoveContext(G, playerId, GamePhase.DEEP_NIGHT),
       cardId,
     );
 
@@ -537,10 +488,10 @@ describe("WitchTrialGame - Night Card Limit", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const playerId = "p1";
     const cardId1 = G.secrets[playerId].hand[0].id;
     const cardId2 = G.secrets[playerId].hand[1].id;
@@ -548,7 +499,7 @@ describe("WitchTrialGame - Night Card Limit", () => {
     // 使用第一张卡牌
     const result1 = callMove(
       useCardMove,
-      createMoveContext(G, playerId, "night"),
+      createMoveContext(G, playerId, GamePhase.DEEP_NIGHT),
       cardId1,
     );
     expect(result1).toBeUndefined();
@@ -557,7 +508,7 @@ describe("WitchTrialGame - Night Card Limit", () => {
     // 尝试使用第二张卡牌应该失败
     const result2 = callMove(
       useCardMove,
-      createMoveContext(G, playerId, "night"),
+      createMoveContext(G, playerId, GamePhase.DEEP_NIGHT),
       cardId2,
     );
     expect(result2).toBe("INVALID_MOVE");
@@ -567,16 +518,16 @@ describe("WitchTrialGame - Night Card Limit", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
 
     // p1 使用卡牌
     const cardId1 = G.secrets["p1"].hand[0].id;
     const result1 = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p1", GamePhase.DEEP_NIGHT),
       cardId1,
     );
     expect(result1).toBeUndefined();
@@ -586,7 +537,7 @@ describe("WitchTrialGame - Night Card Limit", () => {
     const cardId2 = G.secrets["p2"].hand[0].id;
     const result2 = callMove(
       useCardMove,
-      createMoveContext(G, "p2", "night"),
+      createMoveContext(G, "p2", GamePhase.DEEP_NIGHT),
       cardId2,
     );
     expect(result2).toBeUndefined();
@@ -597,60 +548,62 @@ describe("WitchTrialGame - Night Card Limit", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
+    let G = WitchTrialGame.setup(context, {});
 
     // 第一个晚上
-    phaseConfigs.night.onBegin(createPhaseContext(G, "morning"));
+    phaseConfigs[GamePhase.DEEP_NIGHT].onBegin(createPhaseContext(G, GamePhase.MORNING));
     expect(G.nightActions.length).toEqual(0);
 
-    const useCardMove = phaseConfigs.night.moves.useCard;
-    const cardId1 = G.secrets["p1"].hand[0].id;
+    const useCardMove = phaseConfigs[GamePhase.DEEP_NIGHT].moves.useCard;
+    // 使用 p2（不是 witch_killer 持有者）来避免继承问题
+    const cardId1 = G.secrets["p2"].hand[0].id;
     const result1 = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p2", GamePhase.DEEP_NIGHT),
       cardId1,
     );
     expect(result1).toBeUndefined();
-    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p2")).toBe(true);
+    expect(G.nightActions.length).toBe(1);
 
     // 模拟进入下一天（结算 -> 早晨 -> 晚上）
-    phaseConfigs.resolution.onBegin(createPhaseContext(G, "night"));
-    phaseConfigs.morning.onBegin(createPhaseContext(G, "resolution"));
-    phaseConfigs.night.onBegin(createPhaseContext(G, "morning"));
+    phaseConfigs[GamePhase.RESOLUTION].onBegin(createPhaseContext(G, GamePhase.DEEP_NIGHT));
+    phaseConfigs[GamePhase.MORNING].onBegin(createPhaseContext(G, GamePhase.RESOLUTION));
+    phaseConfigs[GamePhase.DEEP_NIGHT].onBegin(createPhaseContext(G, GamePhase.MORNING));
 
     // nightCardUsed 应该被重置
-    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(false);
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p2")).toBe(false);
 
-    // p1 应该能再次使用卡牌
-    const cardId2 = G.secrets["p1"].hand[0].id;
+    // p2 应该能再次使用卡牌
+    const cardId2 = G.secrets["p2"].hand[0].id;
     const result2 = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p2", GamePhase.DEEP_NIGHT),
       cardId2,
     );
     expect(result2).toBeUndefined();
-    expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
+    expect(Selectors.hasPlayerUsedCardThisNight(G, "p2")).toBe(true);
   });
 
   it("弃权也应该标记为已使用卡牌", () => {
     const playerIds = ["p1", "p2", "p3"];
     const context = createSetupContext(playerIds);
 
-    let G = WitchTrialGame.setup!(context, {});
-    G.status = "night";
+    let G = WitchTrialGame.setup(context, {});
+    G.status = GamePhase.DEEP_NIGHT;
 
-    const passMove = WitchTrialGame.phases!.night.moves!.pass;
-    const result = callMove(passMove, createMoveContext(G, "p1", "night"));
+    const passMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.pass;
+    const result = callMove(passMove, createMoveContext(G, "p1", GamePhase.DEEP_NIGHT));
 
     expect(result).toBeUndefined();
     expect(Selectors.hasPlayerUsedCardThisNight(G, "p1")).toBe(true);
 
     // 使用弃权后，应该不能再用卡牌
-    const useCardMove = WitchTrialGame.phases!.night.moves!.useCard;
+    const useCardMove = WitchTrialGame.phases[GamePhase.DEEP_NIGHT].moves.useCard;
     const cardId = G.secrets["p1"].hand[0].id;
     const result2 = callMove(
       useCardMove,
-      createMoveContext(G, "p1", "night"),
+      createMoveContext(G, "p1", GamePhase.DEEP_NIGHT),
       cardId,
     );
     expect(result2).toBe("INVALID_MOVE");

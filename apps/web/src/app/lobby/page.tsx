@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  useList,
-  useCustomMutation,
-  useGo,
-} from "@refinedev/core";
+import { useList, useCustomMutation, useGo } from "@refinedev/core";
 import {
   Table,
   Button,
@@ -102,6 +98,12 @@ export default function LobbyPage() {
     );
   };
 
+  const handleGoToRoom = (room: IGameRoom) => {
+    go({
+      to: `/room/${room.id}`,
+      type: "push",
+    });
+  };
   const handleJoinRoom = (room: IGameRoom) => {
     joinRoom(
       {
@@ -112,18 +114,12 @@ export default function LobbyPage() {
       {
         onSuccess: () => {
           message.success("Joined room!");
-          go({
-            to: `/room/${room.id}`,
-            type: "push",
-          });
+          handleGoToRoom(room);
         },
         onError: (error: any) => {
           // If already joined, just redirect
           if (error?.response?.data?.message === "Already joined") {
-            go({
-              to: `/room/${room.id}`,
-              type: "push",
-            });
+            handleGoToRoom(room);
           } else {
             message.error(
               "Failed to join room: " +
@@ -191,15 +187,24 @@ export default function LobbyPage() {
         const isWaiting = record.status === "waiting";
 
         return (
-          <Button
-            type="primary"
-            icon={<LoginOutlined />}
-            onClick={() => handleJoinRoom(record)}
-            disabled={!isWaiting || (isFull && record.host_id !== user?.id)} // Allow host to re-enter
-            loading={isJoining}
-          >
-            Join
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              onClick={() => handleJoinRoom(record)}
+              disabled={!isWaiting || (isFull && record.host_id !== user?.id)} // Allow host to re-enter
+              loading={isJoining}
+            >
+              Join
+            </Button>
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              onClick={() => handleGoToRoom(record)}
+            >
+              Enter
+            </Button>
+          </Space>
         );
       },
     },

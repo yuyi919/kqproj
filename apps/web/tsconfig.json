@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,8 +23,18 @@
       }
     ],
     "paths": {
-      "@*": ["./src/*"],
-      "@pages/*": ["./pages/*"]
+      "@*": [
+        "./src/*"
+      ],
+      "@pages/*": [
+        "./pages/*"
+      ],
+      "@whole-ends-kneel/bgio-engine/*": [
+        "../../packages/bgio-engine/src/*"
+      ],
+      "@whole-ends-kneel/bgio-engine": [
+        "../../packages/bgio-engine/src"
+      ]
     },
     "incremental": true
   },
@@ -31,5 +45,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

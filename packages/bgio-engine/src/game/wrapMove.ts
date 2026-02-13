@@ -16,8 +16,11 @@ import type { MoveContext } from "./types";
  */
 export function wrapMove<T extends unknown[]>(
   fn: (ctx: MoveContext, ...args: T) => void,
-): Move<BGGameState> {
-  return (ctx, ...args) => {
+) {
+  return ((
+    ctx: MoveContext,
+    ...args: T
+  ): void | BGGameState | typeof INVALID_MOVE => {
     try {
       fn(ctx as MoveContext, ...(args as T));
     } catch (error) {
@@ -27,5 +30,5 @@ export function wrapMove<T extends unknown[]>(
       }
       throw error;
     }
-  };
+  }) satisfies Move<BGGameState>;
 }

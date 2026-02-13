@@ -6,8 +6,10 @@
  */
 
 import React from "react";
-import { theme } from "antd";
+import { Space, theme, Divider } from "antd";
 import type { MessageItemProps, TMessage } from "./types";
+import { getCardDefinition, Refinements } from "../../utils";
+import type { CardType } from "../../types";
 
 /**
  * 格式化时间戳为 HH:MM
@@ -32,6 +34,13 @@ function getPlayerName(
   return `玩家${player.seatNumber}`;
 }
 
+const cardNames: Record<CardType, string> = {
+  witch_killer: "魔女杀手",
+  barrier: "结界魔法",
+  kill: "杀人魔法",
+  detect: "探知魔法",
+  check: "检定魔法",
+};
 /**
  * 将 TMessage 转换为可显示的文本内容
  */
@@ -45,14 +54,32 @@ function getMessageText(
         case "system":
           return msg.content;
         case "phase_transition":
-          return `阶段转换: ${msg.from} → ${msg.to}`;
+          switch (msg.to) {
+            case "morning":
+              return "☀️ 天亮了";
+            case "day":
+              return "🌤️ 午间阶段";
+            case "night":
+              return `🗳️ 入夜了，要监禁一个人吗？`;
+            case "deepNight":
+              return "🌙 夜深了，要行动吗？";
+            default:
+              return `阶段转换: ${msg.from} → ${msg.to}`;
+          }
         case "vote_summary":
-          return `投票总结: 监禁=${msg.imprisonedId || "无"}, 平票=${msg.isTie}`;
+          return `投票总结: 监禁=${msg.imprisonedId || "无"}, 平票=${
+            msg.isTie
+          }`;
         case "death_list":
           const names = msg.deathIds
             .map((id) => getPlayerName(id, players))
             .join(", ");
           return `死亡名单: ${names}`;
+        case "death_record":
+          const cardNames = msg.dropped
+            .map((c) => `【${getCardDefinition(c).name}】`)
+            .join("、");
+          return `${getPlayerName(msg.playerId, players)}浑身是血的尸体被发现了，被发现时遗留的卡牌: ${cardNames}`;
         default:
           return "未知公告";
       }
@@ -73,43 +100,51 @@ function getMessageText(
     case "private_action":
       switch (msg.type) {
         case "use_card":
-          const cardNames: Record<string, string> = {
-            witch_killer: "魔女杀手",
-            barrier: "结界魔法",
-            kill: "杀人魔法",
-            detect: "探知魔法",
-            check: "检定魔法",
-          };
           const cardName = cardNames[msg.cardType] || msg.cardType;
           if (msg.targetId) {
             const targetName = getPlayerName(msg.targetId, players);
-            return `使用 ${cardName} 针对 玩家${targetName}`;
+            if (Refinements.isAttackCard(msg.cardType)) {
+              return `使用【${cardName}】攻击${targetName}`;
+            }
+            return `对${targetName}使用【${cardName}】`;
           }
-          return `使用 ${cardName}`;
+          return `使用了【${cardName}】`;
         case "attack_result":
-          const attackerName = getPlayerName(msg.actorId, players);
+          // const attackerName = getPlayerName(msg.actorId, players);
           const attackedTargetName = getPlayerName(msg.targetId, players);
           const attackCardName =
             msg.cardType === "witch_killer" ? "魔女杀手" : "杀人魔法";
           if (msg.result === "success") {
-            return `${attackCardName}攻击成功！${attackerName} 击杀了 ${attackedTargetName}`;
+            return `你成功用【${attackCardName}】杀死了${attackedTargetName}`;
           } else {
             const reasons: Record<string, string> = {
               barrier_protected: "目标有结界保护",
               target_already_dead: "目标已经死亡",
             };
-            const reason = reasons[msg.failReason!] || "攻击失败";
-            return `${attackCardName}攻击失败：${reason}`;
+            const reason = reasons[msg.failReason!];
+            return `【${attackCardName}】的攻击失败了${reason ? `：${reason}` : ""}`;
           }
         case "transform_witch":
           return "魔女化：使用杀人魔法成功";
         case "wreck":
           return "残骸化：连续两回合未击杀，已转化为残骸";
+        case "attack_excess":
+          return "今天晩上杀气很重，还是不要行动比较好";
+        default:
+          return "未知私密行动";
+      }
+    case "private_response": {
+      switch (msg.type) {
+        case "private_message":
+          return msg.content;
         case "barrier_applied":
-          const barrierAttackerName = msg.attackerId
-            ? getPlayerName(msg.attackerId, players)
-            : "攻击者";
-          return `结界保护：成功抵御 ${barrierAttackerName} 的攻击`;
+          return `你感觉成功防御了${
+            msg.attackerId ? getPlayerName(msg.attackerId, players) : "某人"
+          }的攻击`;
+        case "dead_response":
+          return msg.attackerId
+            ? `你被${getPlayerName(msg.attackerId, players)}杀死了`
+            : `你被不知道什么人杀死了`;
         case "check_result":
           const checkTargetName = getPlayerName(msg.targetId, players);
           const causeNames: Record<string, string> = {
@@ -119,7 +154,7 @@ function getMessageText(
           };
           const causeName = causeNames[msg.deathCause] || "未知";
           const killerHint = msg.isWitchKiller ? "（持有魔女杀手）" : "";
-          return `检定结果：玩家${checkTargetName}的死因是${killerHint} ${causeName}`;
+          return `检定结果：${checkTargetName}的死因是${killerHint} ${causeName}`;
         case "detect_result":
           const detectTargetName = getPlayerName(msg.targetId, players);
           const cardTypeNames: Record<string, string> = {
@@ -129,16 +164,14 @@ function getMessageText(
             detect: "探知魔法",
             check: "检定魔法",
           };
-          let detectText = `探知：玩家${detectTargetName} 手牌数 ${msg.handCount} 张`;
+          let detectText = `探知：${detectTargetName} 手牌数 ${msg.handCount} 张`;
           if (msg.seenCard) {
             const seenCardName = cardTypeNames[msg.seenCard] || msg.seenCard;
             detectText += `，随机看到一张 ${seenCardName}`;
           }
           return detectText;
-        default:
-          return "未知私密行动";
       }
-
+    }
     case "witnessed_action":
       if (msg.type === "card_received") {
         const receiverName = getPlayerName(msg.actorId, players);
@@ -157,7 +190,7 @@ function getMessageText(
           .join(", ");
         return `获得遗落卡牌: ${cardNames}`;
       }
-      return "未知见证行动";
+      return "未知见证行动:" + JSON.stringify(msg);
 
     default:
       return "未知消息类型";
@@ -186,7 +219,10 @@ function isOwnMessage(msg: TMessage, currentPlayerId: string | null): boolean {
  * 判断是否为系统公告
  */
 function isSystemAnnouncement(msg: TMessage): boolean {
-  return msg.kind === "announcement";
+  return (
+    msg.kind === "announcement" &&
+    (msg.type === "phase_transition" || msg.type === "system")
+  );
 }
 
 export function MessageItem({
@@ -203,14 +239,14 @@ export function MessageItem({
   // 系统消息特殊渲染
   if (isSystem) {
     return (
-      <div
-        className="text-center text-xs"
-        style={{
-          color: token.colorTextSecondary,
-        }}
+      <Divider
+        orientation="horizontal"
+        className="mt-0! mb-0!"
+        classNames={{ content: "text-xs text-muted-foreground" }}
+        size="small"
       >
-        --- {text} ---
-      </div>
+        {text}
+      </Divider>
     );
   }
 
@@ -233,7 +269,6 @@ export function MessageItem({
   return (
     <div
       style={{
-        padding: "2px 0",
         wordBreak: "break-word",
         whiteSpace: "pre-wrap",
       }}

@@ -1,7 +1,36 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:ant.design)"
+      "WebFetch(domain:ant.design)",
+      "Bash(xcopy /E /I /Y \"apps\\\\web\\\\src\\\\lib\\\\bgio-engine\\\\*\" \"packages\\\\bgio-engine\\\\src\"\")",
+      "Bash(pnpm install)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm --filter @whole-ends-kneel/web typecheck)",
+      "Bash(bun test)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm test)",
+      "Bash(bun test)",
+      "Bash(bun test:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(Get-Content \"C:\\\\Users\\\\yuyi\\\\.claude\\\\projects\\\\D--workspace--yuyi919-external-whole-ends-kneel\\\\4ecaa71e-30fc-4e72-8574-b0302fc47253\\\\tool-results\\\\chatcmpl-tool-58ef4002ec3f4517b0a6d1c740809c9f.txt\" -Tail 50)",
+      "Bash(pnpm --filter @whole-ends-kneel/bgio-engine exec tsc --noEmit)",
+      "WebFetch(domain:boardgame.io)",
+      "mcp__MiniMax__web_search",
+      "WebFetch(domain:github.com)",
+      "Bash(bun typecheck:*)",
+      "Bash(bun run typecheck)",
+      "Bash(bun .claude/skills/witch-trial-maintenance/scripts/maintenance.ts status)",
+      "Bash(bun:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

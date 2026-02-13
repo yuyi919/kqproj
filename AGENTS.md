@@ -465,3 +465,15 @@ docker run -p 3000:3000 whole-ends-kneel
 ### 详细规则文档
 
 完整规则书位于 `docs/rule.md`，包含卡牌系统、游戏流程、交易机制、手牌遗落等详细规则。
+
+## 日志 (Journals)
+
+项目日志和文档记录：
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [`docs/refactoring/2026-02-13_gamephase-refactoring_ZH.md`](docs/refactoring/2026-02-13_gamephase-refactoring_ZH.md) | GamePhase 重构日志 | 2026-02-13 |
+| [`docs/refactoring/2026-02-12_skill-architecture_ZH.md`](docs/refactoring/2026-02-12_skill-architecture_ZH.md) | 技能架构重构 | 2026-02-12 |
+
+**See also:** [CLAUDE.md](CLAUDE.md) for English documentation.
+- `docs/refactoring/2026-02-12_boardgame.io_learning.md` - boardgame.io Learning

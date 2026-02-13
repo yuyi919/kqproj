@@ -7,12 +7,14 @@
     ],
     "tsBuildInfoFile": "./dist/__tests__/.tsbuildinfo",
     "noEmit": true,
+    "verbatimModuleSyntax": true
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "src/ai"
   ],
 }

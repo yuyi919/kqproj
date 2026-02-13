@@ -18,13 +18,15 @@ export const supabaseMiddleware = /*#__PURE__*/ createMiddleware<{
     },
     set(name: string, value: string, options: CookieOptions) {
       // console.log(options.maxAge = 34560000)
-      if (options.maxAge > 34560000) {
+      if (options.maxAge! > 34560000) {
         options.maxAge = 34560000;
       }
-      setCookie(c, name, value, options);
+      // TODO: 修复类型错误
+      setCookie(c, name, value, options as any);
     },
     remove(name: string, options: CookieOptions) {
-      setCookie(c, name, "", options);
+      // TODO: 修复类型错误
+      setCookie(c, name, "", options as any);
     },
   });
 

@@ -27,7 +27,7 @@ import {
   CheckOutlined,
 } from "@ant-design/icons";
 import type { CardRef, PublicPlayerInfo } from "../types";
-import { getCardDefinition } from "../utils";
+import { getCardDefinition, Refinements } from "../utils";
 import { getCardIcon } from "./ui/CardDisplay";
 
 const { Title, Text, Paragraph } = Typography;
@@ -38,6 +38,7 @@ interface NightActionPanelProps {
   currentPlayerId: string | null;
   isWitch: boolean;
   hasBarrier: boolean;
+  consecutiveNoKillRounds: number;
   witchKillerAvailable: boolean;
   isImprisoned: boolean;
   killMagicAvailable: number;
@@ -54,6 +55,7 @@ export function NightActionPanel({
   hasBarrier,
   witchKillerAvailable,
   killMagicAvailable,
+  consecutiveNoKillRounds,
   onUseCard,
   onPass,
 }: NightActionPanelProps): React.ReactElement {
@@ -64,7 +66,7 @@ export function NightActionPanel({
   // 过滤出可用的卡牌
   const usableCards = hand.filter((cardRef) => {
     // 魔女杀手持有者只能使用魔女杀手或放弃
-    if (witchKillerAvailable && cardRef.type !== "witch_killer") {
+    if (witchKillerAvailable && !Refinements.isWitchKillerCard(cardRef)) {
       return false;
     }
     return true;
@@ -89,10 +91,11 @@ export function NightActionPanel({
       });
       return;
     }
-    if (selectedCardId) {
+    if (selectedCardId && selectedCardRef) {
       // 结界不需要目标
-      const targetId =
-        selectedCard?.type === "barrier" ? "" : selectedTargetId || "";
+      const targetId = Refinements.isDefenseCard(selectedCardRef)
+        ? ""
+        : selectedTargetId || "";
       onUseCard(selectedCardId, targetId);
       setSelectedCardId(null);
       setSelectedTargetId(null);
@@ -118,8 +121,8 @@ export function NightActionPanel({
           size="large"
           onClick={handleUseCard}
           disabled={
-            !selectedCard ||
-            (selectedCard.type !== "barrier" && !selectedTargetId)
+            !selectedCardRef ||
+            (!Refinements.isDefenseCard(selectedCardRef) && !selectedTargetId)
           }
           icon={<CheckOutlined />}
         >
@@ -150,17 +153,21 @@ export function NightActionPanel({
         {isWitch && (
           <Alert
             title="你已经魔女化了"
-            description="今晚必须再次击杀，否则将残骸化死亡！"
-            type="warning"
+            description={
+              consecutiveNoKillRounds === 1
+                ? "今晚必须再次击杀，否则将残骸化死亡！"
+                : `残骸化倒计时：${2 - consecutiveNoKillRounds}天`
+            }
+            type={consecutiveNoKillRounds === 1 ? "error" : "warning"}
             showIcon
+            styles={{ root: { padding: 8 } }}
             icon={<WarningOutlined />}
           />
         )}
 
         {witchKillerAvailable && (
           <Alert
-            title="魔女杀手持有者"
-            description="作为魔女杀手持有者，你只能使用魔女杀手攻击，或选择放弃行动。"
+            title="作为魔女杀手持有者，你只能使用魔女杀手攻击，或选择放弃行动。"
             type="info"
             showIcon
           />
@@ -210,7 +217,7 @@ export function NightActionPanel({
                   >
                     <Space align="start">
                       <span style={{ fontWeight: 500 }}>{card.name}</span>
-                      {cardRef.type === "kill" && (
+                      {Refinements.isKillMagicCard(cardRef) && (
                         <Badge
                           count={killMagicAvailable}
                           color={token.colorError}
@@ -228,7 +235,7 @@ export function NightActionPanel({
         </Card>
 
         {/* 目标选择 */}
-        {selectedCard && selectedCard.type !== "barrier" && (
+        {selectedCardRef && !Refinements.isDefenseCard(selectedCardRef) && (
           <Card type="inner" title="选择目标" size="small">
             <Select
               style={{ width: "100%" }}
@@ -244,7 +251,7 @@ export function NightActionPanel({
         )}
 
         {/* 使用结界时不需要选择目标 */}
-        {selectedCard && selectedCard.type === "barrier" && (
+        {selectedCardRef && Refinements.isDefenseCard(selectedCardRef) && (
           <Alert
             title="使用结界魔法"
             description="结界魔法将保护你免受今晚的攻击，无需选择目标。"

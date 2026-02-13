@@ -21,7 +21,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
     justifyContent: "flex-end",
     alignItems: "center",
     padding: "0px 24px",
-    height: "64px",
+    height: "46px",
   };
 
   if (sticky) {

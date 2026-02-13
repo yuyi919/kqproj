@@ -8,15 +8,16 @@
  */
 
 import React, { createContext, useContext, useMemo, useCallback } from "react";
-import { BoardProps as BGBoardProps } from "boardgame.io/react";
+import type { BoardProps as BGBoardProps } from "boardgame.io/react";
 import type {
   BGGameState,
   PublicPlayerInfo,
   PrivatePlayerInfo,
   TMessage,
+  CardRef,
 } from "../types";
 import { Selectors, TMessageBuilder } from "../utils";
-import { PlayerID } from "boardgame.io";
+import type { PlayerID } from "boardgame.io";
 
 // 扩展 BoardProps 类型以匹配 useWitchTrial hook
 interface ExtendedBoardProps extends BGBoardProps<BGGameState> {
@@ -29,6 +30,8 @@ type GameMoves = {
   pass?: () => void;
   useCard?: (cardId: string, targetId: string) => void;
   say?: (content: string) => void;
+  selectDroppedCard?: (cardId: string) => void;
+  skipCardSelection?: () => void;
 };
 
 // Events 类型定义
@@ -62,6 +65,7 @@ interface GameContextValue {
   isCurrentPlayerWitchKillerHolder: boolean;
   hasPlayerVoted: boolean;
   isImprisoned: boolean;
+  isPlayerAlive: boolean;
 
   // 聊天消息
   chatMessages: {
@@ -81,6 +85,16 @@ interface GameContextValue {
   handleUseCard: (cardId: string, targetId: string) => void;
   handleSendMessage: (content: string) => void;
   handleEndPhase: () => void;
+  handleSelectCard: (cardId: string) => void;
+  handleSkipCardSelection: () => void;
+
+  // 卡牌选择状态
+  currentCardSelection: {
+    selectingPlayerId: string;
+    availableCards: CardRef[];
+    victimId: string;
+    deadline: number;
+  } | null;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -130,6 +144,13 @@ export function GameProvider({
     const hasPlayerVoted = playerId
       ? Selectors.hasPlayerVoted(G, playerId)
       : false;
+
+    // 获取当前玩家的卡牌选择状态
+    const currentCardSelection =
+      playerId && G.cardSelection?.[playerId]
+        ? G.cardSelection[playerId]
+        : null;
+
     console.log(G);
     return {
       currentPhase,
@@ -149,6 +170,8 @@ export function GameProvider({
       isImprisoned: playerId
         ? Selectors.isPlayerImprisoned(G, playerId)
         : false,
+      isPlayerAlive: playerId ? Selectors.isPlayerAlive(G, playerId) : false,
+      currentCardSelection,
     };
   }, [G, ctx, playerId]);
 
@@ -186,6 +209,17 @@ export function GameProvider({
     events.endPhase?.();
   }, [events]);
 
+  const handleSelectCard = useCallback(
+    (cardId: string) => {
+      moves.selectDroppedCard?.(cardId);
+    },
+    [moves],
+  );
+
+  const handleSkipCardSelection = useCallback(() => {
+    moves.skipCardSelection?.();
+  }, [moves]);
+
   // 构建 context 值
   const contextValue = useMemo<GameContextValue>(
     () => ({
@@ -202,6 +236,8 @@ export function GameProvider({
       handleUseCard,
       handleSendMessage,
       handleEndPhase,
+      handleSelectCard,
+      handleSkipCardSelection,
       ...derivedState,
     }),
     [
@@ -218,6 +254,8 @@ export function GameProvider({
       handleUseCard,
       handleSendMessage,
       handleEndPhase,
+      handleSelectCard,
+      handleSkipCardSelection,
       derivedState,
     ],
   );

@@ -36,6 +36,7 @@
     "@supabase/ssr": "^0.3.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-query": "^5.90.20",
+    "@whole-ends-kneel/bgio-engine": "workspace:*",
     "@ws-kit/bun": "^0.10.1",
     "@ws-kit/core": "^0.10.1",
     "@ws-kit/memory": "^0.10.1",

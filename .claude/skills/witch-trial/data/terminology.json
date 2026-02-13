@@ -1,0 +1,21 @@
+{
+  "Night": "夜间阶段",
+  "Deep Night": "深夜阶段",
+  "Morning": "晨间阶段",
+  "Day": "午间阶段",
+  "Resolution": "结算阶段",
+  "Move": "移动操作",
+  "Phase": "阶段",
+  "Selector": "选择器",
+  "Assertion": "断言",
+  "Card": "卡牌",
+  "Journal": "日记",
+  "Pattern": "模式",
+  "Guide": "指南",
+  "Witch Trial": "女巫审判",
+  "Custom Skill": "自定义技能",
+  "Maintenance": "维护",
+  "Development": "开发",
+  "Self-Improving": "自我改进",
+  "Translation": "翻译"
+}

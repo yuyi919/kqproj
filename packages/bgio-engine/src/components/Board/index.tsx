@@ -12,7 +12,7 @@
  */
 
 import React from "react";
-import { BoardProps as BGBoardProps } from "boardgame.io/react";
+import type { BoardProps as BGBoardProps } from "boardgame.io/react";
 import { Layout, theme } from "antd";
 import { GameProvider } from "../../contexts/GameContext";
 import type { BGGameState } from "../../types";

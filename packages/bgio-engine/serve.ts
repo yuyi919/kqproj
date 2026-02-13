@@ -2,15 +2,15 @@ import { Server } from "boardgame.io/server";
 import { WitchTrialGame } from "./src/game";
 
 Server({
-  games: [{ ...WitchTrialGame, seed: 0 }],
+  games: [{ ...WitchTrialGame, seed: 1 }],
   origins: ["http://localhost:3000"],
   apiOrigins: ["http://localhost:3000"],
   async authenticateCredentials(credentials: string, playerMetadata) {
-    console.log("playerMetadata", playerMetadata);
+    // console.log("playerMetadata", playerMetadata);
     return true;
   },
   async generateCredentials(ctx) {
-    ctx.log("generateCredentials");
+    // ctx.log("generateCredentials");
     return "";
   },
   //   db: {

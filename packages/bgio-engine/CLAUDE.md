@@ -59,16 +59,32 @@ BGGameState (atomic state)
 ## Game Phases
 
 ```
-lobby → setup → morning → day → voting → night → resolution → (repeat)
+lobby → setup → morning → day → NIGHT → DEEP_NIGHT → resolution → (repeat)
          ↓                                            ↑
     (game ends) ←─────────────────────────────────────┘
 ```
 
-- **morning**: Announce night deaths
+**Phase Flow:**
+- **morning**: Announce night deaths, free discussion
 - **day**: Free discussion and card trading
-- **voting**: Vote to imprison a player
-- **night**: Use cards for secret actions
+- **NIGHT**: Vote to imprison a player (uses `votingDuration`)
+- **DEEP_NIGHT**: Use cards for secret actions (uses `nightDuration`)
 - **resolution**: Process all night actions
+
+**GamePhase Enum:**
+```typescript
+export enum GamePhase {
+  LOBBY = "lobby",
+  SETUP = "setup",
+  MORNING = "morning",
+  DAY = "day",
+  NIGHT = "night",
+  DEEP_NIGHT = "deepNight",
+  RESOLUTION = "resolution",
+  CARD_SELECTION = "cardSelection",
+  ENDED = "ended",
+}
+```
 
 ## Message System (TMessage)
 
@@ -234,13 +250,19 @@ assertCardExists(G, playerId, cardId);
 
 ### Phase Transitions
 
+Use the `GamePhase` enum for type-safe phase transitions:
+
 ```typescript
+import { GamePhase } from "./types/core";
+
 // Trigger phase change from a move
-events.setPhase("night");
+events.setPhase(GamePhase.DEEP_NIGHT);
 
 // Or use endTurn/endPhase
 events.endTurn();
 ```
+
+**Important:** Never use string literals like `"night"` or `"deepNight"` directly. Always import and use `GamePhase` enum.
 
 ## Related Documentation
 

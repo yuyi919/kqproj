@@ -2,17 +2,23 @@
 
 import GameLayout from "@components/layout/GameLayout";
 import { NoSSR } from "@components/NoSSR";
-import { LocalGame, OnlineGame } from "@lib/bgio-engine/example";
-import { GameRoom, gameStyles } from "@lib/game-engine/examples";
+import { useAuthUser } from "@hooks/use-user";
+import { LocalGame, OnlineGame } from "@whole-ends-kneel/bgio-engine";
+// import { GameRoom, gameStyles } from "@whole-ends-kneel/bgio-engine/examples";
 
 export default () => {
+  const user = useAuthUser();
   return (
     <GameLayout>
       <NoSSR>
         {/* <style >{gameStyles}</style> */}
         <style>{`.bgio-client { height: 100%; }`}</style>
-        {/* <OnlineGame playerID="2" /> */}
-        <LocalGame playerID="2" />
+        <OnlineGame
+          playerID="0"
+          matchID="default"
+          credentials={user?.access_token!}
+        />
+        {/* <LocalGame playerID="2" credentials="" /> */}
       </NoSSR>
     </GameLayout>
   );

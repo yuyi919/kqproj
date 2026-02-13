@@ -50,13 +50,13 @@ export function getPhaseConfig(
         color: token.colorSuccess,
         label: "日间",
       };
-    case "voting":
+    case "night":
       return {
         icon: <CheckSquareOutlined />,
         color: token.colorInfo,
         label: "投票",
       };
-    case "night":
+    case "deepNight":
       return {
         icon: <MoonOutlined />,
         color: token.colorPrimary,
