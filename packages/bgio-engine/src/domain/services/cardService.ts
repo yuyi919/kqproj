@@ -5,7 +5,7 @@
  */
 
 import { nanoid } from "nanoid";
-import type { CardType, Card, CardRef, CardPoolConfig } from "../../types";
+import type { Card, CardPoolConfig, CardRef, CardType } from "../../types";
 import { Refinements } from "../refinements";
 
 // ==================== 卡牌定义表 ====================

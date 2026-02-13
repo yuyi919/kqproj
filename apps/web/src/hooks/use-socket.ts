@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
 import type {
+  AuthStatusPayload,
   ClientToServerEvents,
-  ServerToClientEvents,
   MessageReceivedPayload,
   RoomEventPayload,
-  AuthStatusPayload,
+  ServerToClientEvents,
 } from "@interfaces/socket";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { io, Socket } from "socket.io-client";
 
 export const useSocket = () => {
   const socketRef = useRef<Socket<

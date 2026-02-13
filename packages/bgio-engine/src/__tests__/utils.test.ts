@@ -1,16 +1,16 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+import type { BGGameState, CardRef, GameConfig } from "../types";
+import { GamePhase } from "../types";
 import {
-  Selectors,
-  Mutations,
   createCard,
   createDeck,
   getCardDefinition,
   getCardDefinitionByType,
   getCardTypeName,
   getPhaseName,
+  Mutations,
+  Selectors,
 } from "../utils";
-import type { BGGameState, CardRef, GameConfig } from "../types";
-import { GamePhase } from "../types";
 import { createMockRandom, createTestState, setupPlayers } from "./testUtils";
 
 // 创建基础游戏状态

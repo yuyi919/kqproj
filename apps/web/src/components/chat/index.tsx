@@ -6,21 +6,21 @@ import {
 } from "@ant-design/icons";
 import { Bubble, BubbleItemType } from "@ant-design/x";
 import { ChatInput } from "@components/chat/input";
-import { last } from "es-toolkit";
+import { useAuthUser } from "@hooks/use-user";
 import { IUser, UserMeta } from "@interfaces/user";
 import {
   CrudFilter,
+  type GetListResponse,
   useCreate,
   useKeys,
   useList,
   useOne,
   useShow,
-  type GetListResponse,
 } from "@refinedev/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, Skeleton, Spin, Splitter } from "antd";
+import { last } from "es-toolkit";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuthUser } from "@hooks/use-user";
 
 export type Group = {
   id: string;

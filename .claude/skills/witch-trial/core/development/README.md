@@ -26,5 +26,4 @@ bun .claude/skills/witch-trial/scripts/cli.ts dev new:test vote
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-maintenance` - Maintenance skill
+- `/witch-trial` - Core skill (unified CLI)

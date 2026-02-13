@@ -16,20 +16,23 @@ export function BaseRouter({
 }: BaseRouterProps) {
   // Simple query parsing
   const [pathWithoutQuery, queryString] = currentPath.split("?");
-  
+
   const queryParams = useMemo(() => {
-    return queryString 
+    return queryString
       ? Object.fromEntries(new URLSearchParams(queryString))
       : {};
   }, [queryString]);
 
-  const value: RouterContextType = useMemo(() => ({
-    basePath,
-    currentPath: pathWithoutQuery,
-    navigate,
-    queryParams,
-    params: {},
-  }), [basePath, pathWithoutQuery, navigate, queryParams]);
+  const value: RouterContextType = useMemo(
+    () => ({
+      basePath,
+      currentPath: pathWithoutQuery,
+      navigate,
+      queryParams,
+      params: {},
+    }),
+    [basePath, pathWithoutQuery, navigate, queryParams],
+  );
 
   return (
     <RouterContext.Provider value={value}>{children}</RouterContext.Provider>

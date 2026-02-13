@@ -1,6 +1,6 @@
 ---
 name: witch-trial-documentation
-description: Core skill for documentation patterns - CLAUDE.md, AGENTS.md, journals
+description: This skill should be used when the user asks about "documentation", "CLAUDE.md", "AGENTS.md", "journal", or needs documentation patterns for the Witch Trial project. Provides patterns for adding sections, indexing documents, and maintaining project docs.
 author: Claude Code
 version: 1.0.0
 tags: [witch-trial, documentation, core, patterns, claude]
@@ -15,22 +15,24 @@ Core skill for documentation patterns in the Witch Trial board game project.
 ```
 docs/
 ├── refactoring/
-│   ├── JOURNAL.md       # Main refactoring journal
-│   └── JOURNAL_ZH.md    # Chinese version
+│   ├── 2026-02-13_gamephase-refactoring.md
+│   └── 2026-02-13_gamephase-refactoring_ZH.md
 ├── patterns/
 │   └── *.md             # Pattern documents
-└── guides/
-    └── *.md             # Guide documents
+├── guides/
+│   └── *.md             # Guide documents
+└── learning/
+    └── *.md             # Learning notes
 ```
 
 ## Key Documentation Files
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Project instructions |
-| `CLAUDE_ZH.md` | Chinese version |
-| `AGENTS.md` | Agent workflows |
+| `CLAUDE.md` | Project instructions (English) |
+| `AGENTS.md` | Agent workflows (Chinese) |
 | `docs/rule.md` | Game rules |
+| `docs/refactoring/*.md` | Refactoring journals |
 
 ## Patterns
 
@@ -56,6 +58,6 @@ function indexDocument(file: string, title: string) {
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-self-improving` - Extension skill
-- `/witch-trial-translation` - Extension skill
+- `/witch-trial` - Core skill (all operations via unified CLI)
+  - `bun .claude/skills/witch-trial/scripts/cli.ts docs ...`
+- `/witch-trial/extensions/self-improving/` - Extension for bilingual journal creation

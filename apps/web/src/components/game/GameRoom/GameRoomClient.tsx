@@ -1,21 +1,13 @@
 "use client";
 
-import React from "react";
-import {
-  useOne,
-  useCustomMutation,
-  useGo,
-} from "@refinedev/core";
-import {
-  Button,
-  Typography,
-  Spin,
-} from "antd";
 import { NoSSR } from "@components/NoSSR";
-import { IGameRoom } from "@interfaces/game-room";
 import { useAuthUser } from "@hooks/use-user";
-import { GameLobby } from "./GameLobby";
+import { IGameRoom } from "@interfaces/game-room";
+import { useCustomMutation, useGo, useOne } from "@refinedev/core";
+import { Button, Spin, Typography } from "antd";
+import React from "react";
 import { GameBoard } from "./GameBoard";
+import { GameLobby } from "./GameLobby";
 
 const { Title } = Typography;
 
@@ -32,10 +24,7 @@ export function GameRoomClient({
   const user = useAuthUser();
 
   // 1. Fetch Room Info
-  const {
-    data: roomData,
-    isPending: isRoomLoading,
-  } = useOne<IGameRoom>({
+  const { data: roomData, isPending: isRoomLoading } = useOne<IGameRoom>({
     resource: "game_rooms",
     id: roomId,
     liveMode: "auto",
@@ -90,7 +79,7 @@ export function GameRoomClient({
 
   return (
     <NoSSR>
-      {(room.status === "WAITING" || room.status === "DESTROYED") ? (
+      {room.status === "WAITING" || room.status === "DESTROYED" ? (
         <GameLobby
           room={room}
           userId={user?.id}

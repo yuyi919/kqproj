@@ -1,6 +1,5 @@
 "use client";
 
-import { Route, Switch, useRouter, VirtualRouter } from "@/lib/clerk-router";
 import { useServerAuth } from "@contexts/server-auth";
 import { useAuthIdentity } from "@hooks/use-user";
 import { useT } from "@i18n";
@@ -11,6 +10,7 @@ import { rpc } from "@utils/api/rpc";
 import { Avatar, Button, Card, Form, Input, message, Spin, Upload } from "antd";
 import { Camera, Loader2, User } from "lucide-react";
 import { useState } from "react";
+import { Route, Switch, useRouter, VirtualRouter } from "@/lib/clerk-router";
 
 export default function SettingsPage() {
   return (

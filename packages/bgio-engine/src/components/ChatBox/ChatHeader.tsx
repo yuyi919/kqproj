@@ -5,9 +5,9 @@
  * 显示标题和消息数量
  */
 
-import React from "react";
-import { theme } from "antd";
 import { MessageOutlined } from "@ant-design/icons";
+import { theme } from "antd";
+import type React from "react";
 import type { ChatHeaderProps } from "./types";
 
 export function ChatHeader({

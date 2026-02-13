@@ -9,11 +9,11 @@
 
 "use client";
 
-import { createPathBuilder, type DeepProxy } from "../utils/pathBuilder";
-import type { Translations } from "../locales/zh-CN";
 import { useGetLocale, useTranslate } from "@refinedev/core";
-import { useMemo } from "react";
 import { useLocale } from "next-intl";
+import { useMemo } from "react";
+import type { Translations } from "../locales/zh-CN";
+import { createPathBuilder, type DeepProxy } from "../utils/pathBuilder";
 
 export type TypedTranslations = {
   (

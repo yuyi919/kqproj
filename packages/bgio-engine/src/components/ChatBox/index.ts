@@ -10,16 +10,16 @@ export { ChatBox } from "./ChatBox";
 
 // 子组件
 export { ChatHeader } from "./ChatHeader";
-export { MessageList } from "./MessageList";
-export { MessageItem } from "./MessageItem";
 export { MessageInput } from "./MessageInput";
+export { MessageItem } from "./MessageItem";
+export { MessageList } from "./MessageList";
 
 // 类型
 export type {
-  TMessage,
   ChatBoxProps,
   ChatHeaderProps,
+  MessageInputProps,
   MessageItemProps,
   MessageListProps,
-  MessageInputProps,
+  TMessage,
 } from "./types";

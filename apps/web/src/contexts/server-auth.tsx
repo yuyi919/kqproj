@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
 import { IUser } from "@interfaces/user";
+import React, { createContext, useContext } from "react";
 
 const ServerAuthContext = createContext<IUser | undefined>(undefined);
 

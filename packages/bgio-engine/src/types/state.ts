@@ -12,15 +12,15 @@
  * - MoveContext: 移动函数上下文
  */
 
-import type { GamePhase, CardType, ActionType } from "./core";
-import type { CardRef, CardPoolConfig } from "./card";
-import type { PublicPlayerInfo, PrivatePlayerInfo } from "./player";
+import type { PlayerID } from "boardgame.io";
+import type { EventsAPI, GameCtx, RandomAPI } from "../game";
+import type { CardPoolConfig, CardRef } from "./card";
+import type { GameConfig } from "./config";
+import type { ActionType, CardType, GamePhase } from "./core";
 import type { DeathRecord } from "./death";
 import type { TMessage } from "./message";
-import type { GameConfig } from "./config";
-import type { DailyTradeTracker, CardSelectionState } from "./trade";
-import type { EventsAPI, GameCtx, RandomAPI } from "../game";
-import type { PlayerID } from "boardgame.io";
+import type { PrivatePlayerInfo, PublicPlayerInfo } from "./player";
+import type { CardSelectionState, DailyTradeTracker } from "./trade";
 
 /**
  * 玩家行动

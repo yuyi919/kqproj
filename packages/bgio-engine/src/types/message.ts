@@ -10,8 +10,8 @@
  * - witnessed_action: 见证行动（执行者 + 目标可见）
  */
 
-import type { GamePhase, CardType, DeathCause } from "./core";
 import type { CardRef } from "./card";
+import type { CardType, DeathCause, GamePhase } from "./core";
 
 /**
  * 基础消息接口

@@ -1,5 +1,5 @@
-import { hc, InferRequestType, InferResponseType } from "hono/client";
 import type { AppType } from "@server/api/app";
+import { hc, InferRequestType, InferResponseType } from "hono/client";
 
 export type ApiAppType = AppType;
 

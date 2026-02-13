@@ -2,10 +2,8 @@ import React, { useEffect, useState } from "react";
 import { BaseRouter } from "./BaseRouter";
 
 export function HashRouter({ children }: { children: React.ReactNode }) {
-  const [path, setPath] = useState(() => 
-    typeof window !== "undefined" 
-      ? window.location.hash.slice(1) || "/" 
-      : "/"
+  const [path, setPath] = useState(() =>
+    typeof window !== "undefined" ? window.location.hash.slice(1) || "/" : "/",
   );
 
   useEffect(() => {

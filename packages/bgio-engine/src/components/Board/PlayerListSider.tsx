@@ -6,10 +6,10 @@
  * 左侧边栏，显示紧凑的玩家列表
  */
 
-import React from "react";
 import { Layout, theme } from "antd";
-import { PlayerList } from "../PlayerList";
+import type React from "react";
 import { useGameContext } from "../../contexts/GameContext";
+import { PlayerList } from "../PlayerList";
 
 const { Sider } = Layout;
 

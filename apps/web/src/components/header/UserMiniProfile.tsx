@@ -1,13 +1,13 @@
-"use client"
-// import { User } from "@/lib/types";
-import { useState } from "react";
-// import { useAuth } from "@clerk/nextjs";
-// import { ghqFetch } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+"use client";
+import { IUser } from "@interfaces/user";
 // import { UserSummary } from "@/server/user-summary";
 // import UserBadgeTag from "./UserBadgeTag";
 import { Popover } from "antd";
-import { IUser } from "@interfaces/user";
+// import { useAuth } from "@clerk/nextjs";
+// import { ghqFetch } from "@/lib/api";
+import { Loader2 } from "lucide-react";
+// import { User } from "@/lib/types";
+import { useState } from "react";
 
 export default function UserMiniProfile({
   user,

@@ -1,24 +1,24 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { resolveNightActions } from "../game/resolution";
+import { beforeEach, describe, expect, it } from "bun:test";
+import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import { WitchTrialGame } from "../game";
+import { resolveNightActions } from "../game/resolution";
 import type {
   BGGameState,
+  CardRef,
+  DeathRecord,
+  GameConfig,
+  NightAction,
+  PlayerStatus,
   PrivatePlayerInfo,
   PublicPlayerInfo,
-  CardRef,
-  NightAction,
-  DeathRecord,
-  PlayerStatus,
   PublicPlayerStatus,
-  GameConfig,
 } from "../types";
-import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import {
   createMockRandom,
-  createTestState,
   createPlayerViewContext,
-  setupPlayers,
+  createTestState,
   SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "./testUtils";
 
 // ==================== 测试 ====================

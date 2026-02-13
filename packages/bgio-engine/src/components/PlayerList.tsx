@@ -6,30 +6,30 @@
  * 紧凑设计：减小头像、间距，使用更小的字体
  */
 
-import React from "react";
 import {
-  List,
-  Card,
+  CrownOutlined,
+  InboxOutlined,
+  LockOutlined,
+  SafetyOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import {
   Badge,
+  Card,
+  List,
   Space,
-  Typography,
   Tag,
   Tooltip,
+  Typography,
   theme,
 } from "antd";
-import {
-  UserOutlined,
-  LockOutlined,
-  CrownOutlined,
-  SafetyOutlined,
-  InboxOutlined,
-} from "@ant-design/icons";
+import type React from "react";
 import type {
-  PublicPlayerInfo,
   DeathRecord,
   PrivatePlayerInfo,
+  PublicPlayerInfo,
 } from "../types";
-import { getPlayerStatusName, getPlayerStatusColor } from "../utils";
+import { getPlayerStatusColor, getPlayerStatusName } from "../utils";
 import { PlayerStatusIcon } from "./ui/PlayerStatusIcon";
 
 const { Text } = Typography;
@@ -92,8 +92,8 @@ export function PlayerList({
                 backgroundColor: isCurrentPlayer
                   ? token.colorPrimaryBg
                   : isImprisoned
-                  ? token.colorWarningBg
-                  : "transparent",
+                    ? token.colorWarningBg
+                    : "transparent",
                 borderLeft: isCurrentPlayer
                   ? `2px solid ${token.colorPrimary}`
                   : "none",

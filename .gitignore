@@ -34,3 +34,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.trae/skills
+.agent/skills
+.claude/skills/pauljphilp-effect-*
+.claude/skills/effect-ts
+.claude/skills/ojowwalker77-*
+.claude/skills/smithery-ai-cli
+
+/temp
+/.claude/rules

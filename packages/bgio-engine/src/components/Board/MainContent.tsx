@@ -6,13 +6,13 @@
  * 包含阶段显示、聊天区域、玩家手牌
  */
 
-import React from "react";
-import { Layout, Row, Col, Space, Alert } from "antd";
+import { Alert, Col, Layout, Row, Space } from "antd";
+import type React from "react";
+import { useGameContext } from "../../contexts/GameContext";
+import { getPhaseDescription, getPhaseName } from "../../utils";
+import { ChatBox } from "../ChatBox";
 import { PhaseDisplay } from "../PhaseDisplay";
 import { PlayerHand } from "../PlayerHand";
-import { ChatBox } from "../ChatBox";
-import { useGameContext } from "../../contexts/GameContext";
-import { getPhaseName, getPhaseDescription } from "../../utils";
 
 const { Content } = Layout;
 

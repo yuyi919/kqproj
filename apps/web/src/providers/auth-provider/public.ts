@@ -1,7 +1,7 @@
+import type { IUser, UserMeta } from "@interfaces/user";
+import type { AuthProvider, CheckResponse } from "@refinedev/core";
 import type { SupabaseClient } from "@utils/supabase/client";
 import { SupabaseHost } from "@utils/supabase/host";
-import type { AuthProvider, CheckResponse } from "@refinedev/core";
-import type { IUser, UserMeta } from "@interfaces/user";
 
 export function createPublicAuthProvider(client: SupabaseClient) {
   const host = new SupabaseHost(client);

@@ -148,17 +148,13 @@ const phaseConfigs = {
         totalAlive > 0 ? participationCount / totalAlive : 0;
 
       console.log(
-        `[VoteResult] Participation: ${(participationRate * 100).toFixed(
-          1,
-        )}%, valid: ${isValid}`,
+        `[VoteResult] Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
       );
 
       // 投票参与率验证
       if (!isValid) {
         console.log(
-          `[VoteResult] Vote invalid: participation rate ${(
-            participationRate * 100
-          ).toFixed(1)}% below minimum`,
+          `[VoteResult] Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
         );
         Mutations.msg(
           G,

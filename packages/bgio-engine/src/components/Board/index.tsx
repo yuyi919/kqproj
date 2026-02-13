@@ -11,15 +11,15 @@
  * - GameOverScreen: 游戏结束界面
  */
 
-import React from "react";
-import type { BoardProps as BGBoardProps } from "boardgame.io/react";
 import { Layout, theme } from "antd";
+import type { BoardProps as BGBoardProps } from "boardgame.io/react";
+import type React from "react";
 import { GameProvider } from "../../contexts/GameContext";
 import type { BGGameState } from "../../types";
 import { GameHeader } from "./GameHeader";
-import { PlayerListSider } from "./PlayerListSider";
-import { MainContent } from "./MainContent";
 import { GameOverScreen } from "./GameOverScreen";
+import { MainContent } from "./MainContent";
+import { PlayerListSider } from "./PlayerListSider";
 
 // 扩展 BoardProps 类型以匹配 useWitchTrial hook
 export interface ExtendedBoardProps extends BGBoardProps<BGGameState> {
@@ -55,12 +55,12 @@ export function Board(props: BoardProps): React.ReactElement {
   );
 }
 
+export { ActionPanel } from "./ActionPanel";
 // 导出子组件供外部使用
 export { GameHeader } from "./GameHeader";
-export { PlayerListSider } from "./PlayerListSider";
-export { MainContent } from "./MainContent";
-export { ActionPanel } from "./ActionPanel";
 export { GameOverScreen } from "./GameOverScreen";
+export { MainContent } from "./MainContent";
+export { PlayerListSider } from "./PlayerListSider";
 
 // 默认导出
 export default Board;

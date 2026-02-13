@@ -18,7 +18,9 @@ export function useRouter() {
   return context;
 }
 
-export function useParams<T extends Record<string, string> = Record<string, string>>(): T {
+export function useParams<
+  T extends Record<string, string> = Record<string, string>,
+>(): T {
   const { params } = useRouter();
   return params as T;
 }

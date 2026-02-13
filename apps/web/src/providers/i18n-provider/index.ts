@@ -1,9 +1,9 @@
 "use client";
 
 import type { I18nProvider } from "@refinedev/core";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { LOCALE_COOKIE_NAME } from "@/i18n/config";
 
 /**

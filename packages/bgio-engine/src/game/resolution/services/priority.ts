@@ -8,7 +8,7 @@ import { Refinements } from "../../../domain/refinements";
  * 职责：计算夜间行动的结算优先级
  */
 
-import type { NightAction, CardRef } from "../../../types";
+import type { CardRef, NightAction } from "../../../types";
 import { CARD_PRIORITY, getCardPriority } from "../types";
 
 /**

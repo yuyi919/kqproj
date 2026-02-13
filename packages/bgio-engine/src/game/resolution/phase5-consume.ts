@@ -14,9 +14,9 @@
  * - 其他失败行动（目标已死、结界等）：仍然消耗卡牌
  */
 
-import type { BGGameState, ActionFailureReason } from "../../types";
-import type { PhaseResult, ConsumptionReason, CardConsumption } from "./types";
-import { Mutations, getCardDefinition } from "../../utils";
+import type { ActionFailureReason, BGGameState } from "../../types";
+import { getCardDefinition, Mutations } from "../../utils";
+import type { CardConsumption, ConsumptionReason, PhaseResult } from "./types";
 
 /**
  * 处理卡牌消耗

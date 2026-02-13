@@ -1,6 +1,6 @@
-import { getRequestConfig } from "next-intl/server";
 import { cookies } from "next/headers";
-import { defaultLocale, locales, LOCALE_COOKIE_NAME } from "./config";
+import { getRequestConfig } from "next-intl/server";
+import { defaultLocale, LOCALE_COOKIE_NAME, locales } from "./config";
 import { localeMessages } from "./locales";
 
 export default getRequestConfig(async () => {

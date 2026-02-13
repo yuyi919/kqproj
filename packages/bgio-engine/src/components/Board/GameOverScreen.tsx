@@ -6,9 +6,9 @@
  * 显示获胜信息和重新开始按钮
  */
 
-import React from "react";
-import { Layout, Card, Space, Typography, Button, theme } from "antd";
-import { TrophyOutlined, ReloadOutlined } from "@ant-design/icons";
+import { ReloadOutlined, TrophyOutlined } from "@ant-design/icons";
+import { Button, Card, Layout, Space, Typography, theme } from "antd";
+import type React from "react";
 import { useGameContext } from "../../contexts/GameContext";
 
 const { Content } = Layout;

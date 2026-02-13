@@ -8,29 +8,30 @@
  * - 不可选目标显示原因标签
  */
 
-import React, { useState, useMemo } from "react";
 import {
-  Card,
+  BlockOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  LockOutlined,
+  SafetyOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import {
+  Alert,
   Button,
+  Card,
+  Divider,
+  Empty,
   Radio,
   Space,
-  Typography,
-  Alert,
-  Empty,
-  Divider,
-  Tag,
   Switch,
+  Tag,
   Tooltip,
+  Typography,
 } from "antd";
-import {
-  CheckCircleOutlined,
-  UserOutlined,
-  TeamOutlined,
-  LockOutlined,
-  BlockOutlined,
-  SafetyOutlined,
-  ExclamationCircleOutlined,
-} from "@ant-design/icons";
+import type React from "react";
+import { useMemo, useState } from "react";
 import type { PublicPlayerInfo } from "../types";
 import { VoteResults } from "./ui/VoteResults";
 

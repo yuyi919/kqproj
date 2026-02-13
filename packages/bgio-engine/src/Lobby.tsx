@@ -1,8 +1,8 @@
-import React from "react";
+import type { GameComponent } from "boardgame.io/dist/types/src/lobby/connection";
 import { Lobby } from "boardgame.io/react";
+import React from "react";
 import { OnlineGame } from "./example";
 import { WitchTrialGame } from "./game";
-import type { GameComponent } from "boardgame.io/dist/types/src/lobby/connection";
 
 const importedGames: GameComponent[] = [
   { game: WitchTrialGame, board: OnlineGame },

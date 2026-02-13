@@ -1,6 +1,6 @@
 ---
 name: witch-trial-maintenance
-description: Core skill for maintenance operations - tests, build, database, verification
+description: This skill should be used when the user asks to "run tests", "build project", "check types", "lint code", "database migration", or needs maintenance operations for the Witch Trial project. Provides test running, type checking, build verification, and database operations.
 author: Claude Code
 version: 1.0.0
 tags: [witch-trial, maintenance, core, testing, build, database]
@@ -44,7 +44,5 @@ Scripts are located at:
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-development` - Development skill
-- `/witch-trial-self-improving` - Self-improving skill
-- `/witch-trial-translation` - Translation skill
+- `/witch-trial` - Core skill (all operations via unified CLI)
+  - `bun .claude/skills/witch-trial/scripts/cli.ts maintenance ...`

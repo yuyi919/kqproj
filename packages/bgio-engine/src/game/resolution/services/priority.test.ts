@@ -1,11 +1,11 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import type { CardRef, NightAction } from "../../../types";
 import {
   getAttackType,
   isAttackAction,
+  isWitchKillerUsed,
   sortActionsByPriority,
   sortAttackActions,
-  isWitchKillerUsed,
 } from "../services/priority";
 
 // ==================== Priority Service Tests ====================

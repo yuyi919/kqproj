@@ -6,8 +6,8 @@
  * 显示投票统计结果，票数最高的玩家标记为 👑
  */
 
-import React from "react";
-import { Card, List, Space, Typography, Tag } from "antd";
+import { Card, List, Space, Tag, Typography } from "antd";
+import type React from "react";
 import type { PublicPlayerInfo } from "../../types";
 
 const { Text } = Typography;

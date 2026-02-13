@@ -1,13 +1,5 @@
 "use client";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@components/Avatar";
 import { Typography } from "@components/ui/typography";
 import { useApp } from "@hooks/use-app";
@@ -19,6 +11,14 @@ import { runAsynchronouslyWithAlert } from "@utils/promises";
 import { Skeleton } from "antd";
 import { CircleUser, LogIn, LogOut, SunMoon, UserPlus } from "lucide-react";
 import React, { Suspense } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function Item(props: {
   text: string;

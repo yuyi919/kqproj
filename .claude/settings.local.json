@@ -26,7 +26,18 @@
       "Bash(bun:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "Bash(smithery search:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm biome check:*)",
+      "Skill(clone-repo)",
+      "mcp__serena__list_dir",
+      "Bash(pnpm --filter @whole-ends-kneel/bgio-engine build:*)",
+      "Skill(effect-ts)"
     ]
   },
   "enableAllProjectMcpServers": true,

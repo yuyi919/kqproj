@@ -1,7 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { Server as IOServer } from "socket.io";
 import type { Server as HTTPServer } from "http";
 import type { Socket as NetSocket } from "net";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { Server as IOServer } from "socket.io";
 import { setupSocketIO } from "../../server/api/socket-io";
 
 interface SocketServer extends HTTPServer {

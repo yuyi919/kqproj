@@ -17,7 +17,7 @@
  */
 
 import { Card } from "antd";
-import React from "react";
+import type React from "react";
 import { ChatHeader } from "./ChatHeader";
 import { MessageInput } from "./MessageInput";
 import { MessageList } from "./MessageList";

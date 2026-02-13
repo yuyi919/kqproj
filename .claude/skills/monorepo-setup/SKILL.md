@@ -28,11 +28,11 @@ monorepo/
 │   ├── ui/                  # Shared UI components
 │   ├── config/              # Shared configs
 │   ├── tsconfig/            # TypeScript configs
-│   ├── eslint-config/       # ESLint configs
 │   └── utils/               # Shared utilities
 ├── tooling/
 │   ├── scripts/             # Build scripts
 │   └── docker/              # Docker configs
+├── biome.json              # Biome configuration
 ├── turbo.json
 ├── pnpm-workspace.yaml
 ├── package.json
@@ -69,14 +69,14 @@ packages:
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format": "biome format --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build --filter=./packages/* && changeset publish"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
     "@changesets/cli": "^2.27.0",
-    "prettier": "^3.2.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.0"
   }
@@ -215,7 +215,7 @@ node-linker=hoisted
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
+    "lint": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -224,7 +224,6 @@ node-linker=hoisted
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@types/react": "^18.2.0",
     "react": "^18.2.0",
@@ -358,7 +357,7 @@ export function cn(...inputs: ClassValue[]): string {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next .turbo"
   },
@@ -370,7 +369,6 @@ export function cn(...inputs: ClassValue[]): string {
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
@@ -411,66 +409,53 @@ export default function Home() {
 }
 ```
 
-## ESLint Config Package
+## Biome Configuration
+
+Biome provides linting and formatting in a single tool. Create a root configuration:
 
 ```json
-// packages/eslint-config/package.json
+// biome.json
 {
-  "name": "@repo/eslint-config",
-  "version": "0.0.0",
-  "private": true,
-  "exports": {
-    "./base": "./base.js",
-    "./next": "./next.js",
-    "./react": "./react.js",
-    "./library": "./library.js"
+  "$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
+  "root": true,
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
   },
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^14.1.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0"
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all"
+    }
   }
 }
 ```
 
-```javascript
-// packages/eslint-config/base.js
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
-  plugins: ['@typescript-eslint'],
-  env: {
-    node: true,
-    es2022: true,
-  },
-  rules: {
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
-  },
-  ignorePatterns: ['dist/', 'node_modules/', '.turbo/'],
-};
-```
+For packages that need different rules, extend the root config:
 
-```javascript
-// packages/eslint-config/next.js
-module.exports = {
-  extends: [
-    './base.js',
-    'next/core-web-vitals',
-    'plugin:react-hooks/recommended',
-  ],
-  rules: {
-    'react/react-in-jsx-scope': 'off',
-  },
-};
+```json
+// packages/ui/biome.json
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
+  "extends": ["../biome.json"],
+  "root": false,
+  "linter": {
+    "rules": {
+      "recommended": false,
+      "a11y": {
+        "useKeyWithClickEvents": "error"
+      }
+    }
+  }
+}
 ```
 
 ## CI/CD Configuration
@@ -543,7 +528,7 @@ jobs:
 ## Best Practices
 
 1. **Workspace protocol**: Use `workspace:*` for internal deps
-2. **Shared configs**: Centralize TypeScript, ESLint
+2. **Shared configs**: Centralize TypeScript, Biome
 3. **Build caching**: Enable Turborepo remote caching
 4. **Incremental builds**: Use `dependsOn` correctly
 5. **Package exports**: Use proper `exports` field
@@ -558,7 +543,7 @@ Every monorepo should include:
 - [ ] pnpm-workspace.yaml configuration
 - [ ] turbo.json with proper pipeline
 - [ ] Shared TypeScript configs
-- [ ] Shared ESLint configs
+- [ ] Biome configuration (biome.json)
 - [ ] UI component library
 - [ ] Utility package
 - [ ] Proper package.json exports

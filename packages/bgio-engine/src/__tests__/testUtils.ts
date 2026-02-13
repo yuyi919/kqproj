@@ -3,8 +3,9 @@
  *
  * 提供统一的测试辅助函数，消除测试代码中的重复代码
  */
-import type { Ctx, DefaultPluginAPIs, FnContext } from "boardgame.io";
+
 import { expect } from "bun:test";
+import type { Ctx, DefaultPluginAPIs, FnContext } from "boardgame.io";
 import type { PhaseHookContext } from "../game";
 import type {
   BGGameState,

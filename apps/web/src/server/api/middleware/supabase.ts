@@ -1,8 +1,8 @@
-import { createMiddleware } from "hono/factory";
-import { getCookie, setCookie } from "hono/cookie";
 import { type CookieOptions } from "@supabase/ssr";
-import { SupabaseHost, createSupabaseClient } from "@utils/supabase";
+import { createSupabaseClient, SupabaseHost } from "@utils/supabase";
 import type { SupabaseClient } from "@utils/supabase/client";
+import { getCookie, setCookie } from "hono/cookie";
+import { createMiddleware } from "hono/factory";
 
 export type ApiVariables = {
   supabase: SupabaseClient;

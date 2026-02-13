@@ -1,15 +1,14 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { GamePhase, type BGGameState, type RandomAPI } from "../../types";
-
-import { resolveNightActions } from "./index";
+import { beforeEach, describe, expect, it } from "bun:test";
 import {
   createMockRandom,
   createPhaseContext,
   createTestState,
-  setupPlayers,
   SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "../../__tests__/testUtils";
+import { type BGGameState, GamePhase, type RandomAPI } from "../../types";
 import { phaseConfigs } from "../phases";
+import { resolveNightActions } from "./index";
 
 // ==================== Resolution 完整流程测试 ====================
 describe("Resolution Complete Flow", () => {

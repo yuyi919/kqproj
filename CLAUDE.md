@@ -23,6 +23,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Internationalization:** next-intl (English + Chinese)
 - **Styling:** Tailwind CSS v4 + Ant Design
 - **State Management:** TanStack React Query (server state), Zustand (client state implied by dependencies)
+
+## Custom Skills
+
+This project includes custom Claude Code skills:
+
+| Skill | Purpose |
+|-------|---------|
+| `/witch-trial` | Unified CLI + core skills + extensions |
+
+**Recommended:** Use `/witch-trial` for all project operations via unified CLI.
+
+### Skill Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`.claude/skills/witch-trial/SKILL.md`](.claude/skills/witch-trial/SKILL.md) | Core skill documentation |
+| [`.claude/skills/witch-trial/scripts/cli.ts`](.claude/skills/witch-trial/scripts/cli.ts) | Unified CLI entry point |
+| [`.claude/skills/witch-trial/core/maintenance/`](.claude/skills/witch-trial/core/maintenance/) | Maintenance operations |
+| [`.claude/skills/witch-trial/core/development/`](.claude/skills/witch-trial/core/development/) | Feature development |
+| [`.claude/skills/witch-trial/extensions/self-improving/`](.claude/skills/witch-trial/extensions/self-improving/) | Self-improving documentation |
+
+**Usage:**
+```powershell
+# Create bilingual journal (auto-creates EN/ZH versions)
+bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts journal --title="Feature Name"
+```
+
+## Journals
+
+Project journals and documentation:
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [`docs/refactoring/2026-02-13_gamephase-refactoring.md`](docs/refactoring/2026-02-13_gamephase-refactoring.md) | GamePhase Refactoring Journal | 2026-02-13 |
+| [`docs/refactoring/2026-02-12_skill-architecture.md`](docs/refactoring/2026-02-12_skill-architecture.md) | Skill Architecture | 2026-02-12 |
+
+**See also:** [AGENTS.md](AGENTS.md) for Chinese documentation.
 - **Validation:** Zod
 
 ### High-Level Architecture
@@ -106,7 +143,7 @@ pnpm test         # Run tests in all apps
 pnpm ---filter @whole-ends-kneel/web dev     # Start development server
 pnpm --filter @whole-ends-kneel/web build    # Build for production
 pnpm --filter @whole-ends-kneel/web start    # Start production server
-pnpm --filter @whole-ends-kneel/web lint     # Run ESLint
+pnpm --filter @whole-ends-kneel/web lint     # Run Biome
 pnpm --filter @whole-ends-kneel/web test     # Run Bun test suite
 pnpm --filter @whole-ends-kneel/web test:watch  # Watch mode
 ```
@@ -133,7 +170,7 @@ Server runs on port 3000 by default (configurable via `PORT` env var).
 - `pnpm-workspace.yaml` - Workspace configuration (apps/_, packages/_)
 - `apps/web/next.config.mjs` - Next.js config with next-intl plugin, standalone output
 - `apps/web/tsconfig.json` - TypeScript config with path aliases (`@/*`)
-- `apps/web/.eslintrc.json` - Extends `next/core-web-vitals`
+- Biome configuration (biome.json) - Linting and formatting
 - `apps/web/.env` - Environment variables (NEVER commit sensitive data)
 - `apps/web/prisma/schema.prisma` - Database schema with Zero generator
 
@@ -179,8 +216,7 @@ Test structure: Uses `describe`, `it`, `expect` from `bun:test`. Mock functions 
 ## Code Style
 
 - TypeScript with `strict: true`
-- ESLint extends `next/core-web-vitals`
-- Prettier config in `.prettierrc`
+- Biome for linting and formatting
 - Uses path aliases: `@/*` → `apps/web/src/*`
 - Conventional Commit messages recommended (though not enforced yet)
 - `.npmrc` sets `legacy-peer-dependencies=true` and `strict-peer-dependencies=false` (needed for dependency resolution)
@@ -313,6 +349,32 @@ This repository contains custom Claude Code skills:
 
 These skills provide context-aware assistance when working with those libraries.
 
+## When to Use Subagents
+
+**Proactively use the Task tool with subagents for complex tasks:**
+
+| Task Characteristic | Recommended Agent |
+|--------------------|-------------------|
+| Multi-file search across modules | `Explore` |
+| Architecture/planning required | `Plan` |
+| Multi-step independent tasks | `General-purpose` (parallel calls) |
+| Research/exploration > 3 queries | `Explore` (thoroughness: "very thorough") |
+
+**Trigger conditions for subagent use:**
+
+- Task involves >3 files across different packages/modules
+- Requires exploring unfamiliar code areas
+- Multiple independent searches needed
+- Implementation planning needed before coding
+- Codebase-wide refactoring analysis
+
+**Example:**
+```
+User: "Search for all uses of GamePhase and update them"
+→ Spawn Explore agent to find all usages first
+→ Then make targeted edits
+```
+
 ## Common Development Tasks
 
 ### Starting Development
@@ -355,9 +417,9 @@ Run tests frequently when modifying game logic.
 ### Formatting & Linting
 
 ```bash
-pnpm lint          # Runs ESLint (Next.js config)
-# Prettier runs on save if IDE configured; otherwise use:
-pnpm --filter @whole-ends-kneel/write   # (if prettier installed)
+pnpm lint          # Runs Biome (root)
+# Or per package:
+cd packages/bgio-engine && bun run lint
 ```
 
 ### Debugging Socket.IO
@@ -399,6 +461,43 @@ Environment required:
 3. **API Errors**: Hono routes in `app/api/[[...route]]/route.ts`. Data provider uses RPC calls. Check network tab for request/response.
 4. **Real-time Not Working**: Both Zero and Socket.IO need proper DB/WS setup. Check connections and subscriptions.
 5. **i18n Missing Keys**: Fallback to English if key missing. Use `scripts/check-i18n.ts` to find untranslated keys.
+
+## Agent Memory Management (claude-mem Plugin)
+
+This project uses the **claude-mem** plugin for cross-session agent memory.
+
+### Memory Storage
+
+| Type | Location | Use For |
+|------|----------|---------|
+| **claude-mem database** | Plugin storage | Cross-session learnings, patterns, decisions |
+| **CLAUDE.md** | Version controlled | Project-wide guidelines, architecture |
+| **Agent prompts** | `.claude/agents/*.md` | Agent-specific instructions |
+
+### Saving Memories
+
+When you discover stable patterns or learnings:
+
+```bash
+# Search for existing memories first
+mcp__plugin_claude-mem_mcp-search__search --query "testing patterns game"
+
+# Save new memory
+mcp__plugin_claude-mem_mcp-search__save_memory --text "..." --title "..."
+```
+
+### What to Save
+
+- **DO save**: Patterns, conventions, decisions, troubleshooting insights
+- **DON'T save**: Session-specific context, incomplete observations
+
+### Reading Memories
+
+Before starting work, search for relevant memories:
+
+```
+mcp__plugin_claude-mem_mcp-search__search --query "<task keywords>"
+```
 
 ## Resources
 

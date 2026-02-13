@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import type { BGGameState, CardRef } from "../../../types";
+import { beforeEach, describe, expect, it } from "bun:test";
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
-import {
-  distributeWreckCards,
-  distributeSkipKiller,
-  applyDistributions,
-  recordCardReceivers,
-  notifyExcessIfNeeded,
-  applyPendingDistributions,
-} from "./cardDistribution";
 import {
   createMockRandom,
   createTestState,
-  setupPlayers,
   SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "../../../__tests__/testUtils";
+import type { BGGameState, CardRef } from "../../../types";
+import {
+  applyDistributions,
+  applyPendingDistributions,
+  distributeSkipKiller,
+  distributeWreckCards,
+  notifyExcessIfNeeded,
+  recordCardReceivers,
+} from "./cardDistribution";
 
 // ==================== Card Distribution Service Tests ====================
 describe("Card Distribution Service", () => {

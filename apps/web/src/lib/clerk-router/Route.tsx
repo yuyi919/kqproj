@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from "react";
-import { RouterContext } from "./RouteContext";
 import { matchPath } from "./pathToRegexp";
+import { RouterContext } from "./RouteContext";
 
 export interface RouteProps {
   path?: string;
@@ -9,13 +9,18 @@ export interface RouteProps {
   component?: React.ComponentType<any>;
 }
 
-export function Route({ path, index, children, component: Component }: RouteProps) {
+export function Route({
+  path,
+  index,
+  children,
+  component: Component,
+}: RouteProps) {
   const context = useContext(RouterContext);
-  
+
   const match = useMemo(() => {
     if (!context) return null;
     const { currentPath } = context;
-    const pattern = index ? "/" : (path || "*");
+    const pattern = index ? "/" : path || "*";
     return matchPath(currentPath, pattern);
   }, [context, path, index]);
 

@@ -6,11 +6,11 @@
  * 显示游戏标题、当前阶段、存活人数、回合数
  */
 
-import React from "react";
-import { Layout, Space, Typography, Tag, theme } from "antd";
-import { TeamOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined, TeamOutlined } from "@ant-design/icons";
+import { Layout, Space, Tag, Typography, theme } from "antd";
+import type React from "react";
 import { useGameContext } from "../../contexts/GameContext";
-import { getPhaseName, getPhaseColor } from "../../utils";
+import { getPhaseColor, getPhaseName } from "../../utils";
 import { PhaseDisplay } from "../PhaseDisplay";
 
 const { Header } = Layout;

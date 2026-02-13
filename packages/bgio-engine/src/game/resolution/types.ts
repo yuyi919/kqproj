@@ -8,10 +8,10 @@
  */
 
 import type {
+  ActionFailureReason,
   BGGameState,
   CardRef,
   NightAction,
-  ActionFailureReason,
 } from "../../types";
 
 // ============================================================================

@@ -1,5 +1,5 @@
-import type { AuthProvider, CheckResponse } from "@refinedev/core";
 import type { IUser } from "@interfaces/user";
+import type { AuthProvider, CheckResponse } from "@refinedev/core";
 import { rpc } from "@utils/api/rpc";
 
 /**

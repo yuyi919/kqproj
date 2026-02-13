@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
-import { Refine } from "@refinedev/core";
-import { RefineKbar } from "@refinedev/kbar";
-import { useNotificationProvider } from "@refinedev/antd";
-import routerProvider from "@refinedev/nextjs-router";
 import { authProviderClient } from "@providers/auth-provider/auth-provider.client";
 import { dataProvider, liveProvider } from "@providers/data-provider";
 import { useRefineI18nProvider } from "@providers/i18n-provider";
+import { useNotificationProvider } from "@refinedev/antd";
+import { Refine } from "@refinedev/core";
+import { RefineKbar } from "@refinedev/kbar";
+import routerProvider from "@refinedev/nextjs-router";
+import React from "react";
 
 interface RefineProviderProps {
   children: React.ReactNode;

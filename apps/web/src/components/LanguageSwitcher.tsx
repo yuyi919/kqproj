@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Select } from 'antd';
-import { GlobalOutlined } from '@ant-design/icons';
-import { useLocale } from 'next-intl';
-import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
-import { locales, localeNames, LOCALE_COOKIE_NAME, type Locale } from '@/i18n/config';
+import { GlobalOutlined } from "@ant-design/icons";
+import { Select } from "antd";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import React from "react";
+import {
+  LOCALE_COOKIE_NAME,
+  type Locale,
+  localeNames,
+  locales,
+} from "@/i18n/config";
 
 export function LanguageSwitcher() {
   const currentLocale = useLocale() as Locale;
@@ -16,7 +21,7 @@ export function LanguageSwitcher() {
     // Set cookie
     Cookies.set(LOCALE_COOKIE_NAME, newLocale, {
       expires: 365,
-      path: '/',
+      path: "/",
     });
 
     // Refresh to apply new locale

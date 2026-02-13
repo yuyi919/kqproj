@@ -6,9 +6,9 @@
  * 根据玩家状态显示对应的图标
  */
 
-import React from "react";
+import { CloseCircleOutlined, CrownOutlined } from "@ant-design/icons";
 import { Badge, theme } from "antd";
-import { CrownOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import type React from "react";
 import type { PlayerStatus } from "../../types";
 
 export interface PlayerStatusIconProps {

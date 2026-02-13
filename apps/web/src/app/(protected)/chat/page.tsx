@@ -1,7 +1,7 @@
 "use client";
 
-import { Group } from "@components/chat";
 import { MemberAvatars } from "@components/Avatar";
+import { Group } from "@components/chat";
 import {
   DateField,
   DeleteButton,

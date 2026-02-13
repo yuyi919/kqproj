@@ -1,5 +1,5 @@
-import { PlayerID, State } from "boardgame.io";
-import { Simulate, Bot } from "boardgame.io/ai";
+import type { PlayerID, State } from "boardgame.io";
+import { Bot, Simulate } from "boardgame.io/ai";
 import type { BotAction } from "boardgame.io/dist/types/src/ai/bot";
 
 class MyCustomBot extends Bot {
@@ -22,7 +22,7 @@ class MyCustomBot extends Bot {
       action: {
         type: "MAKE_MOVE",
         payload: {
-          //@ts-ignore
+          //@ts-expect-error
           move: "move1",
         },
       },

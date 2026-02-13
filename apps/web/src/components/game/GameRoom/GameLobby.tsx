@@ -1,27 +1,27 @@
 "use client";
 
-import React from "react";
-import { useCustomMutation } from "@refinedev/core";
 import {
-  Card,
-  Button,
-  Avatar,
-  List,
-  Tag,
-  Typography,
-  Space,
-  message,
-  Tooltip,
-} from "antd";
-import {
-  UserOutlined,
-  LogoutOutlined,
-  PlayCircleOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CopyOutlined,
+  LogoutOutlined,
+  PlayCircleOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-import { IGameRoom, IGamePlayer } from "@interfaces/game-room";
+import { IGamePlayer, IGameRoom } from "@interfaces/game-room";
+import { useCustomMutation } from "@refinedev/core";
+import {
+  Avatar,
+  Button,
+  Card,
+  List,
+  message,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
+import React from "react";
 
 const { Title, Text } = Typography;
 
@@ -32,11 +32,16 @@ interface GameLobbyProps {
   isLeaving: boolean;
 }
 
-export function GameLobby({ room, userId, onLeave, isLeaving }: GameLobbyProps) {
+export function GameLobby({
+  room,
+  userId,
+  onLeave,
+  isLeaving,
+}: GameLobbyProps) {
   const players = room.players || [];
   // Sort players by seat_number
   const sortedPlayers = [...players].sort(
-    (a, b) => (a.seat_number || 0) - (b.seat_number || 0)
+    (a, b) => (a.seat_number || 0) - (b.seat_number || 0),
   );
 
   const isHost = room.host_id === userId;

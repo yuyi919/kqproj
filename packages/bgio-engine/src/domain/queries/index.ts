@@ -6,17 +6,17 @@
  * 从原子状态计算派生状态的纯函数集合
  */
 
+import { countBy, groupBy, mapValues, maxBy } from "es-toolkit";
 import type {
   BGGameState,
-  PublicPlayerInfo,
-  PrivatePlayerInfo,
   CardRef,
-  VoteResult,
-  Vote,
-  TMessage,
   DeathRecord,
+  PrivatePlayerInfo,
+  PublicPlayerInfo,
+  TMessage,
+  Vote,
+  VoteResult,
 } from "../../types";
-import { countBy, groupBy, mapValues, maxBy } from "es-toolkit";
 import { Refinements } from "../refinements";
 
 // ==================== 计算层（Selectors）====================
@@ -433,6 +433,6 @@ export const Selectors = {
   },
 };
 
+import type { PlayerID } from "boardgame.io";
 // 导入需要的函数（放在底部避免循环引用）
 import { getCardDefinition } from "../services/cardService";
-import type { PlayerID } from "boardgame.io";

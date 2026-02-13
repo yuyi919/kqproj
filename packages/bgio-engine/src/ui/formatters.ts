@@ -11,8 +11,8 @@
  * - 时间格式化
  */
 
+import type { CardType, DeathCause, PlayerStatus } from "../types";
 import { GamePhase } from "../types";
-import type { CardType, PlayerStatus, DeathCause } from "../types";
 
 // ==================== 卡牌格式化 ====================
 
@@ -191,9 +191,7 @@ export function getDeathCauseName(cause: DeathCause): string {
 export function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs
-    .toString()
-    .padStart(2, "0")}`;
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
 /**

@@ -5,13 +5,14 @@
  * Usage: bun scripts/improve.ts <command> [options]
  *
  * Commands:
- *   journal  - Create a new journal entry
- *   index   - Index a document
- *   sync    - Sync all indexes
- *   capture - Capture user guidance (legacy, appends to single file)
+ *   journal  - Create a new journal entry (smart directory detection)
+ *   index    - Index a document
+ *   sync     - Sync all indexes
+ *   capture  - Capture user guidance (appends to single file)
+ *   update   - Update documentation with new section
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, lstatSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, lstatSync, readdirSync } from "fs";
 import { execSync } from "child_process";
 
 const PROJECT_ROOT = process.cwd();
@@ -21,7 +22,7 @@ const AGENTS = `${PROJECT_ROOT}/AGENTS.md`;
 
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
-const blue = (s: string) => `\x1b[34m${s}\x1b[0m`;
+const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
 function log(msg: string) {
   console.log(msg);
@@ -65,33 +66,117 @@ function toSnakeCase(str: string): string {
     .toLowerCase();
 }
 
+/**
+ * Smart category detection based on title and description
+ */
+function detectCategory(title: string, description: string): string {
+  const text = `${title} ${description}`.toLowerCase();
+
+  // Category keywords mapping
+  const categoryKeywords: Record<string, string[]> = {
+    refactoring: ["refactor", "重构", "architecture", "架构", "restructure", "重组织"],
+    patterns: ["pattern", "模式", "design", "设计", "pattern", "惯例"],
+    guides: ["guide", "指南", "tutorial", "教程", "how-to", "入门"],
+    learning: ["learn", "学习", "study", "研究", "understanding", "理解", "explore", "探索"],
+  };
+
+  // Check for existing directories in docs/
+  const existingDirs = getExistingDirs();
+
+  // First, check if explicitly mentioned in text
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    if (keywords.some(keyword => text.includes(keyword))) {
+      // Check if directory exists
+      if (existingDirs.includes(category)) {
+        return category;
+      }
+    }
+  }
+
+  // If no keyword match, use most recently modified directory
+  const recentDir = getMostRecentDir(existingDirs);
+  if (recentDir) {
+    return recentDir;
+  }
+
+  // Default to refactoring if nothing matches
+  return "refactoring";
+}
+
+/**
+ * Get list of existing directories in docs/
+ */
+function getExistingDirs(): string[] {
+  if (!existsSync(DOCS_ROOT)) return [];
+  try {
+    return readdirSync(DOCS_ROOT).filter(dir => {
+      const path = `${DOCS_ROOT}/${dir}`;
+      return existsSync(path) && lstatSync(path).isDirectory();
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get the most recently modified directory based on file timestamps
+ */
+function getMostRecentDir(dirs: string[]): string | null {
+  let mostRecent: { dir: string; time: number } | null = null;
+
+  for (const dir of dirs) {
+    const dirPath = `${DOCS_ROOT}/${dir}`;
+    try {
+      const files = readdirSync(dirPath).filter(f => f.endsWith(".md"));
+      for (const file of files) {
+        const filePath = `${dirPath}/${file}`;
+        const stat = lstatSync(filePath);
+        if (!mostRecent || stat.mtimeMs > mostRecent.time) {
+          mostRecent = { dir, time: stat.mtimeMs };
+        }
+      }
+    } catch {
+      // Skip directories we can't read
+    }
+  }
+
+  return mostRecent ? mostRecent.dir : null;
+}
+
 const command = Bun.argv[2];
 const args = parseArgs(Bun.argv.slice(3));
 
 switch (command) {
   case "journal": {
-    // Create a new journal entry with auto Chinese translation
+    // Create a new journal entry with smart directory detection
     const title = args.title;
     const description = args.description || "";
-    const category = args.category || "refactoring";
+    const forceCategory = args.category;
     const content = args.content || "";
 
     if (!title) {
       console.log(`
-${blue("Create a new journal entry")}
+${cyan("📝 Create a new journal entry")}
 
-Usage: bun scripts/improve.ts journal --title <title> [--description <text>] [--category <category>] [--content <text>]
+Usage: bun scripts/improve.ts journal --title <title> [--description <text>] [--category <category>]
+
+Features:
+  • Auto-detects best directory based on content
+  • Auto-creates Chinese version
+  • Auto-indexes in CLAUDE.md and AGENTS.md
+
+Available directories: refactoring, patterns, guides, learning
 
 Examples:
-  # Create a new journal (auto-creates Chinese version, saved to docs/refactoring/)
-  bun scripts/improve.ts journal --title="GamePhase Refactoring" --description="Converting string literals to enum"
-
-  # Create with different category
-  bun scripts/improve.ts journal --title="API Design" --category="patterns" --content="Initial design"
+  bun scripts/improve.ts journal --title="GamePhase Refactoring" --description="Enum conversion"
+  bun scripts/improve.ts journal --title="boardgame.io Learning" --description="Study notes"
+  bun scripts/improve.ts journal --title="API Design" --category="patterns"
 `);
       process.exit(0);
     }
 
+    // Smart category detection
+    const category = forceCategory || detectCategory(title, description);
     const date = new Date().toISOString().split("T")[0];
     const topic = toSnakeCase(title);
     const filename = `${date}_${topic}.md`;
@@ -101,6 +186,11 @@ Examples:
 
     // Ensure directory exists
     mkdirSync(`${DOCS_ROOT}/${category}`, { recursive: true });
+
+    // Show which directory was chosen
+    if (!forceCategory) {
+      log(`${cyan(`📁 Detected category: ${category}`)}`);
+    }
 
     // Create English journal
     const journalContent = `# ${title}
@@ -117,7 +207,7 @@ ${content || "## Summary\n\nTODO: Add summary\n\n## Details\n\nTODO: Add details
 
     writeFile(filepath, journalContent);
     gitAdd(filepath);
-    log(`${green(`Created: ${filepath}`)}`);
+    log(`${green(`✓ Created: ${filepath}`)}`);
 
     // Create Chinese journal automatically
     const zhTitle = `${title}（中文）`;
@@ -138,7 +228,7 @@ ${zhContent}
 `;
     writeFile(zhFilepath, zhJournalContent);
     gitAdd(zhFilepath);
-    log(`${green(`Created: ${zhFilepath}`)}`);
+    log(`${green(`✓ Created: ${zhFilepath}`)}`);
 
     // Auto-index English version in CLAUDE.md
     const entry = `| [\`${title}\`](${filepath}) | ${description || category} | ${date} |`;
@@ -160,7 +250,7 @@ ${zhContent}
     if (newClaueContent !== claudeContent) {
       writeFile(CLAUDE, newClaueContent);
       gitAdd(CLAUDE);
-      log(`${green(`Indexed in CLAUDE.md: ${title}`)}`);
+      log(`${green(`✓ Indexed in CLAUDE.md`)}`);
     }
 
     // Auto-index Chinese version in AGENTS.md
@@ -184,11 +274,11 @@ ${zhContent}
       if (newAgentsContent !== agentsContent) {
         writeFile(AGENTS, newAgentsContent);
         gitAdd(AGENTS);
-        log(`${green(`Indexed in AGENTS.md: ${zhTitle}`)}`);
+        log(`${green(`✓ Indexed in AGENTS.md`)}`);
       }
     }
 
-    log(`${green(`\n✅ Created bilingual journal: ${title} / ${title}（中文）`)}`);
+    log(`${green(`\n✅ Done! Created bilingual journal in: ${category}/`)}`);
     break;
   }
 
@@ -236,7 +326,7 @@ ${zhContent}
 
     if (!file || !title) {
       console.log(`
-${blue("Index a document")}
+${cyan("Index a document")}
 
 Usage: bun scripts/improve.ts index --file <path> --title <name> [--description <text>]
 `);
@@ -288,32 +378,37 @@ Usage: bun scripts/improve.ts index --file <path> --title <name> [--description 
   }
 
   case "sync": {
-    log(`${blue("Syncing documentation indexes...")}\n`);
+    log(`${cyan("🔄 Syncing documentation indexes...")}\n`);
 
-    const categories = ["refactoring", "patterns", "guides"];
+    const existingDirs = getExistingDirs();
     let count = 0;
 
-    for (const category of categories) {
+    for (const category of existingDirs) {
       const dir = `${DOCS_ROOT}/${category}`;
       if (!existsSync(dir)) continue;
 
       try {
-        const files = execSync(`ls -1 "${dir}"`, { cwd: PROJECT_ROOT, encoding: "utf-8" });
-        for (const line of files.trim().split("\n")) {
-          if (!line || !line.endsWith(".md") || line.includes("INDEX")) continue;
-          if (line.includes("_ZH.md")) continue; // Skip Chinese versions (indexed separately)
-
+        const files = readdirSync(dir).filter(f => f.endsWith(".md") && !f.includes("_ZH.md"));
+        for (const file of files) {
           // Extract title from filename
-          const title = line
+          const title = file
             .replace(".md", "")
             .replace(/^\d{4}-\d{2}-\d{2}_/, "") // Remove date prefix
             .replace(/_/g, " ") // Replace underscores with spaces
             .replace(/\b\w/g, (c) => c.toUpperCase()); // Capitalize
 
-          const file = `${dir}/${line}`;
+          const filePath = `${dir}/${file}`;
+
+          // Skip if already indexed
+          const claudeContent = readFile(CLAUDE);
+          if (claudeContent.includes(`(${filePath})`)) {
+            continue;
+          }
+
           try {
-            execSync(`bun scripts/improve.ts index --file=${file} --title="${title}"`, { cwd: PROJECT_ROOT });
+            execSync(`bun scripts/improve.ts index --file=${filePath} --title="${title}"`, { cwd: PROJECT_ROOT });
             count++;
+            log(`${green(`+ ${category}/${file}`)}`);
           } catch {
             // Ignore errors
           }
@@ -323,18 +418,18 @@ Usage: bun scripts/improve.ts index --file <path> --title <name> [--description 
       }
     }
 
-    log(`${green(`Synced ${count} documents!`)}`);
+    log(`${green(`\n✅ Synced ${count} documents!`)}`);
     break;
   }
 
   case "capture": {
-    // Legacy command - appends to single file
+    // Appends guidance to single journal file
     const guidance = args.guidance;
     const context = args.context || "";
 
     if (!guidance) {
       console.log(`
-${blue("Capture user guidance (legacy)")}
+${cyan("Capture user guidance")}
 
 Usage: bun scripts/improve.ts capture --guidance <text> [--context <text>]
 
@@ -374,7 +469,7 @@ ${context ? `**Context:** ${context}\n` : ""}
 
     if (!file || !section || !content) {
       console.log(`
-${blue("Update documentation")}
+${cyan("Update documentation")}
 
 Usage: bun scripts/improve.ts update --file <path> --section <name> --content <text>
 `);
@@ -396,7 +491,7 @@ Usage: bun scripts/improve.ts update --file <path> --section <name> --content <t
 
   default:
     console.log(`
-${blue("📝 Documentation Improvement Tool")}
+${cyan("📝 Documentation Improvement Tool")}
 
 Usage: bun scripts/improve.ts <command> [options]
 
@@ -404,7 +499,7 @@ Commands:
   journal  - Create a new journal file (RECOMMENDED)
   index    - Index an existing document
   sync     - Sync all documentation indexes
-  capture  - Capture user guidance (legacy, appends to single file)
+  capture  - Capture user guidance (appends to single file)
   update   - Update documentation with new section
 
 Examples:
@@ -417,7 +512,7 @@ Examples:
   # Sync all indexes
   bun scripts/improve.ts sync
 
-  # Legacy: append to single file
+  # Appends to single file
   bun scripts/improve.ts capture --guidance="Use enum values"
 `);
 }

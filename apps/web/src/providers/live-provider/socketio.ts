@@ -1,12 +1,12 @@
-import type { LiveProvider, LiveEvent, CrudFilter } from "@refinedev/core";
-import { io, Socket } from "socket.io-client";
 import type {
   ClientToServerEvents,
-  ServerToClientEvents,
   ResourceEventPayload,
+  ServerToClientEvents,
 } from "@interfaces/socket";
-import { rpc } from "@utils/api/rpc";
 import { dataProvider } from "@providers/data-provider";
+import type { CrudFilter, LiveEvent, LiveProvider } from "@refinedev/core";
+import { rpc } from "@utils/api/rpc";
+import { io, Socket } from "socket.io-client";
 
 type Sub = Socket<ServerToClientEvents, ClientToServerEvents>;
 

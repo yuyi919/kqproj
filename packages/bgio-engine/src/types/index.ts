@@ -14,61 +14,56 @@
  * - trade.ts: 交易系统类型（Trade, DailyTradeStatus, CardSelectionState）
  */
 
+// 卡牌相关
+export type { Card, CardPoolConfig, CardRef } from "./card";
+// 配置
+export type { GameConfig } from "./config";
+export {
+  EIGHT_PLAYER_CONFIG,
+  NINE_PLAYER_CONFIG,
+  SEVEN_PLAYER_CONFIG,
+} from "./config";
 export type {
+  ActionType,
+  CardType,
+  DeathCause,
   PlayerStatus,
   PublicPlayerStatus,
-  DeathCause,
-  CardType,
-  ActionType,
   RevealedInfoType,
 } from "./core";
 // 基础类型（GamePhase 需要同时作为值导出，因为它是 enum）
 export { GamePhase } from "./core";
 
-// 卡牌相关
-export type { CardRef, Card, CardPoolConfig } from "./card";
-
-// 玩家相关
-export type {
-  PublicPlayerInfo,
-  PrivatePlayerInfo,
-  RevealedInfoItem,
-  PlayerFullInfo,
-} from "./player";
-
-// 状态相关
-export type {
-  PlayerAction,
-  Vote,
-  NightAction,
-  VoteResult,
-  ActionFailureReason,
-} from "./state";
-
 // 死亡记录
 export type { DeathRecord, PublicDeathInfo } from "./death";
-
-// 消息类型
-export type { TMessage } from "./message";
 // 所有消息类型子类型和联合类型
 export type * as Messages from "./message";
-
-// 配置
-export type { GameConfig } from "./config";
-export {
-  SEVEN_PLAYER_CONFIG,
-  EIGHT_PLAYER_CONFIG,
-  NINE_PLAYER_CONFIG,
-} from "./config";
+// 消息类型
+export type { TMessage } from "./message";
+// 玩家相关
+export type {
+  PlayerFullInfo,
+  PrivatePlayerInfo,
+  PublicPlayerInfo,
+  RevealedInfoItem,
+} from "./player";
+// 状态相关
+export type {
+  ActionFailureReason,
+  NightAction,
+  PlayerAction,
+  Vote,
+  VoteResult,
+} from "./state";
 
 // 交易系统
 export type {
-  TradeStatus,
-  Trade,
-  DailyTradeStatus,
-  CardSelectionState,
-  DailyTradeTracker,
   ActiveTrade,
+  CardSelectionState,
+  DailyTradeStatus,
+  DailyTradeTracker,
+  Trade,
+  TradeStatus,
 } from "./trade";
 
 // ==================== BGGameState (重新导出) ====================

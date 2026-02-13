@@ -3,27 +3,28 @@
  *
  * 提供可复用的游戏场景设置，消除测试中的重复代码
  */
+
+import { beforeEach, describe, expect, it } from "bun:test";
 import type {
   BGGameState,
-  PrivatePlayerInfo,
+  CardRef,
+  NightAction,
   PlayerStatus,
+  PrivatePlayerInfo,
   PublicPlayerStatus,
 } from "../types";
-import type { CardRef } from "../types";
-import type { NightAction } from "../types";
+import { GamePhase } from "../types/core";
 import {
-  createTestState,
-  setupPlayers,
   createMockRandom,
-  SEVEN_PLAYER_CONFIG,
   createNightAction,
   createPlayerWithHand,
-  createWitchPlayer,
+  createTestState,
   createWitchKillerHolder,
+  createWitchPlayer,
   type PlayerSetup,
+  SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "./testUtils";
-import { GamePhase } from "../types/core";
-import { describe, it, expect, beforeEach } from "bun:test";
 
 // ==================== 场景接口 ====================
 

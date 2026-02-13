@@ -310,11 +310,12 @@ GAME_NIGHT_DURATION=60
 
 ## 测试说明
 
-目前项目未配置自动化测试，主要通过以下方式测试：
+项目使用 Bun 作为测试运行器：
 
-1. **开发服务器**：`pnpm dev` 进行手动测试
-2. **类型检查**：TypeScript 编译时验证
-3. **ESLint**：`pnpm lint` 代码质量检查
+```bash
+# 运行所有测试
+pnpm test
+```
 
 ### 手动测试场景
 
@@ -325,6 +326,30 @@ GAME_NIGHT_DURATION=60
 - 投票和结算测试
 - 聊天系统测试
 - 多客户端并发测试
+
+### 代码检查
+
+项目统一使用 **Biome** 作为 lint 和格式化工具：
+
+```bash
+# 整个项目
+pnpm lint    # Biome check --write
+pnpm format  # Biome format --write
+
+# 仅 bgio-engine
+cd packages/bgio-engine
+bun run lint    # Biome check --write
+bun run format  # Biome format --write
+```
+
+### bgio-engine 测试
+
+游戏引擎包有独立的测试配置：
+
+```bash
+cd packages/bgio-engine
+bun test          # 运行所有测试
+bun test --watch  # 监视模式
 
 ## 安全考虑
 
@@ -384,6 +409,66 @@ docker run -p 3000:3000 whole-ends-kneel
 3. 执行数据库迁移
 4. 使用 `pnpm build` 构建
 5. 使用 `pnpm start` 启动
+
+## 项目代理 (Agents)
+
+本项目包含自定义 Claude Code 代理，位于 `.claude/agents/`：
+
+| 代理 | 用途 | 使用场景 |
+|------|------|----------|
+| `test-generator` | 生成单元测试 | 为新功能编写测试、添加回归测试、提高测试覆盖率 |
+| `fp-refactor-expert` | 代码简化与函数式重构 | 简化复杂代码、用 es-toolkit 替换自定义工具函数、应用函数式模式 |
+
+### 使用代理
+
+```
+用户: "使用 test-generator 为这个函数编写测试"
+→ 启动 test-generator agent 创建测试覆盖
+
+用户: "使用 fp-refactor-expert 重构这段代码"
+→ 启动 fp-refactor-expert agent 进行分析和简化
+```
+
+### 自然语言触发
+
+直接用自然语言对话即可触发代理：
+
+**test-generator:**
+- "为这个文件写测试"
+- "为新功能添加单元测试"
+- "我需要这个模块的测试覆盖率"
+- "写一些测试"
+
+**fp-refactor-expert:**
+- "简化这段代码"
+- "用函数式模式重构"
+- "这段代码太复杂了"
+- "用 es-toolkit 替换这些工具函数"
+
+## 子代理使用指南
+
+对于复杂任务，**主动使用子代理**：
+
+| 任务特征 | 推荐代理 |
+|----------|----------|
+| 跨模块文件搜索 | `Explore` |
+| 需要架构/规划 | `Plan` |
+| 多步骤独立任务 | `General-purpose`（并行调用）|
+| 研究/探索 > 3 个查询 | `Explore`（thoroughness: "very thorough"）|
+
+**触发条件：**
+- 任务涉及超过 3 个文件或不同包/模块
+- 需要探索不熟悉的代码区域
+- 需要多次独立搜索
+- 需要在编码前进行规划
+- 需要全代码库范围的重构分析
+
+**示例工作流：**
+```
+用户：搜索所有使用 GamePhase 的位置并更新它们
+→ 启动 Explore agent 查找所有用法
+→ 然后进行有针对性的编辑
+```
 
 ## 开发者注意事项
 
@@ -474,6 +559,6 @@ docker run -p 3000:3000 whole-ends-kneel
 |----------|-------------|------|
 | [`docs/refactoring/2026-02-13_gamephase-refactoring_ZH.md`](docs/refactoring/2026-02-13_gamephase-refactoring_ZH.md) | GamePhase 重构日志 | 2026-02-13 |
 | [`docs/refactoring/2026-02-12_skill-architecture_ZH.md`](docs/refactoring/2026-02-12_skill-architecture_ZH.md) | 技能架构重构 | 2026-02-12 |
+| [`docs/learning/2026-02-12_boardgame.io_learning_ZH.md`](docs/learning/2026-02-12_boardgame.io_learning_ZH.md) | boardgame.io 学习笔记 | 2026-02-12 |
 
 **See also:** [CLAUDE.md](CLAUDE.md) for English documentation.
-- `docs/refactoring/2026-02-12_boardgame.io_learning.md` - boardgame.io Learning

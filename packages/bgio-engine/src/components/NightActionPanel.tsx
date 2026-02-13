@@ -6,26 +6,27 @@
  * 使用 CardRef 最小化存储，通过 getCardDefinition 获取完整信息
  */
 
-import React, { useState } from "react";
 import {
-  Card,
-  Select,
-  Button,
-  Space,
-  Typography,
-  Alert,
-  Badge,
-  Tag,
-  Empty,
-  Divider,
-  theme,
-  Modal,
-} from "antd";
-import {
+  CheckOutlined,
   MoonOutlined,
   WarningOutlined,
-  CheckOutlined,
 } from "@ant-design/icons";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Divider,
+  Empty,
+  Modal,
+  Select,
+  Space,
+  Tag,
+  Typography,
+  theme,
+} from "antd";
+import type React from "react";
+import { useState } from "react";
 import type { CardRef, PublicPlayerInfo } from "../types";
 import { getCardDefinition, Refinements } from "../utils";
 import { getCardIcon } from "./ui/CardDisplay";

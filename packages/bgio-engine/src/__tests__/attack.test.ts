@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { moveFunctions } from "../game/moves";
-import type { BGGameState } from "../types";
-import type { RandomAPI } from "../game";
-import { Selectors } from "../utils";
+import { beforeEach, describe, expect, it } from "bun:test";
 import { INVALID_MOVE } from "boardgame.io/core";
+import type { RandomAPI } from "../game";
+import { moveFunctions } from "../game/moves";
 import { resolveNightActions } from "../game/resolution";
+import type { BGGameState } from "../types";
+import { Selectors } from "../utils";
 import {
   createMockRandom,
-  createTestState,
   createMoveContext,
-  setupPlayers,
-  SEVEN_PLAYER_CONFIG,
   createPlayerWithHand,
+  createTestState,
+  SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "./testUtils";
 
 // ==================== 辅助函数 ====================

@@ -6,33 +6,33 @@
  * 展示如何使用 boardgame.io 版本的游戏引擎
  */
 
-import React, { useState } from "react";
-import { Client } from "boardgame.io/react";
-import { SocketIO } from "boardgame.io/multiplayer";
-import { Local } from "boardgame.io/multiplayer";
 import {
-  Card,
-  Typography,
-  Button,
-  Row,
-  Col,
-  Space,
-  Tabs,
-  Alert,
-  Divider,
-  Tag,
-  Collapse,
-  List,
-} from "antd";
-import {
-  PlayCircleOutlined,
-  TeamOutlined,
+  CodeOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
-  CodeOutlined,
+  PlayCircleOutlined,
+  TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { WitchTrialGame, WitchTrialBoard } from "./index";
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Collapse,
+  Divider,
+  List,
+  Row,
+  Space,
+  Tabs,
+  Tag,
+  Typography,
+} from "antd";
+import { Local, SocketIO } from "boardgame.io/multiplayer";
+import { Client } from "boardgame.io/react";
+import type React from "react";
+import { useState } from "react";
+import { WitchTrialBoard, WitchTrialGame } from "./index";
 
 const { Title, Paragraph, Text, Link } = Typography;
 const { Panel } = Collapse;

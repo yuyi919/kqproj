@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
 import { IGameRoom } from "@interfaces/game-room";
+import React from "react";
 
 interface GameBoardProps {
   room: IGameRoom;

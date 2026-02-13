@@ -1,6 +1,6 @@
+import { useServerAuth } from "@contexts/server-auth";
 import { IUser } from "@interfaces/user";
 import { useGetIdentity } from "@refinedev/core";
-import { useServerAuth } from "@contexts/server-auth";
 import { useMemo } from "react";
 
 export function useAuthUser() {

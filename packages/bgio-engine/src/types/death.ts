@@ -4,8 +4,8 @@
  * 死亡记录类型定义
  */
 
-import type { DeathCause } from "./core";
 import type { CardRef } from "./card";
+import type { DeathCause } from "./core";
 
 /**
  * 死亡记录（服务器端完整信息）

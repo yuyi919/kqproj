@@ -8,9 +8,9 @@
  */
 
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
-import type { BGGameState, CardRef } from "../../../types";
-import { Selectors, Mutations, TMessageBuilder } from "../../../utils";
 import { mapValues } from "es-toolkit";
+import type { BGGameState, CardRef } from "../../../types";
+import { Mutations, Selectors, TMessageBuilder } from "../../../utils";
 
 /**
  * 情境1: 残骸化分配

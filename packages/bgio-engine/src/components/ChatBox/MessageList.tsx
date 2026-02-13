@@ -5,8 +5,9 @@
  * 自动滚动到底部，显示所有消息
  */
 
-import React, { useRef, useEffect } from "react";
 import { Empty, theme } from "antd";
+import type React from "react";
+import { useEffect, useRef } from "react";
 import { MessageItem } from "./MessageItem";
 import type { MessageListProps } from "./types";
 

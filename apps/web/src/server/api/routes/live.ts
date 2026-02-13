@@ -1,9 +1,9 @@
+import { zValidator } from "@hono/zod-validator";
+import { applyPostgrestFilter, serlizeFilter } from "@utils/supabase";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
 import type { ApiVariables } from "../middleware/supabase";
-import { serlizeFilter, applyPostgrestFilter } from "@utils/supabase";
 
 /**
  * Supabase Realtime 包装路由 (SSE 方案)
@@ -155,7 +155,6 @@ export const live = /*#__PURE__*/ new Hono<{ Variables: ApiVariables }>().get(
 
         // 4. 心跳维持 (Keep-alive)
         try {
-          // eslint-disable-next-line no-constant-condition
           while (alive) {
             await stream.sleep(5000);
             console.debug("ping");

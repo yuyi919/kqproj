@@ -5,21 +5,18 @@
  * 古早匿名版风格：时间戳 + 用户名 + 内容
  */
 
-import React from "react";
-import { Space, theme, Divider } from "antd";
-import type { MessageItemProps, TMessage } from "./types";
-import { getCardDefinition, Refinements } from "../../utils";
+import { Divider, Space, theme } from "antd";
+import type React from "react";
 import type { CardType } from "../../types";
+import { getCardDefinition, Refinements } from "../../utils";
+import type { MessageItemProps, TMessage } from "./types";
 
 /**
  * 格式化时间戳为 HH:MM
  */
 function formatTime(timestamp: number): string {
   const date = new Date(timestamp);
-  return `${date.getHours().toString().padStart(2, "0")}:${date
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")}`;
+  return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
 /**
@@ -67,9 +64,7 @@ function getMessageText(
               return `阶段转换: ${msg.from} → ${msg.to}`;
           }
         case "vote_summary":
-          return `投票总结: 监禁=${msg.imprisonedId || "无"}, 平票=${
-            msg.isTie
-          }`;
+          return `投票总结: 监禁=${msg.imprisonedId || "无"}, 平票=${msg.isTie}`;
         case "death_list":
           const names = msg.deathIds
             .map((id) => getPlayerName(id, players))
@@ -138,9 +133,7 @@ function getMessageText(
         case "private_message":
           return msg.content;
         case "barrier_applied":
-          return `你感觉成功防御了${
-            msg.attackerId ? getPlayerName(msg.attackerId, players) : "某人"
-          }的攻击`;
+          return `你感觉成功防御了${msg.attackerId ? getPlayerName(msg.attackerId, players) : "某人"}的攻击`;
         case "dead_response":
           return msg.attackerId
             ? `你被${getPlayerName(msg.attackerId, players)}杀死了`
@@ -170,6 +163,8 @@ function getMessageText(
             detectText += `，随机看到一张 ${seenCardName}`;
           }
           return detectText;
+        default:
+          return "未知私密响应";
       }
     }
     case "witnessed_action":
@@ -190,7 +185,7 @@ function getMessageText(
           .join(", ");
         return `获得遗落卡牌: ${cardNames}`;
       }
-      return "未知见证行动:" + JSON.stringify(msg);
+      return `未知见证行动:${JSON.stringify(msg)}`;
 
     default:
       return "未知消息类型";

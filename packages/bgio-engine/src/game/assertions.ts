@@ -7,12 +7,12 @@
 
 import type {
   BGGameState,
-  CardType,
   CardRef,
-  PublicPlayerInfo,
+  CardType,
   PlayerFullInfo,
+  PublicPlayerInfo,
 } from "../types";
-import { GamePhase } from "../types/core";
+import type { GamePhase } from "../types/core";
 import { Selectors } from "../utils";
 import { GameLogicError } from "./errors";
 

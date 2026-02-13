@@ -9,13 +9,13 @@
  * - 其他: 等待提示
  */
 
-import React from "react";
-import { Space, Card, Typography, Alert } from "antd";
 import { FrownOutlined } from "@ant-design/icons";
-import { VotingPanel } from "../VotingPanel";
-import { NightActionPanel } from "../NightActionPanel";
-import { CardSelectionPanel } from "../CardSelectionPanel";
+import { Alert, Card, Space, Typography } from "antd";
+import type React from "react";
 import { useGameContext } from "../../contexts/GameContext";
+import { CardSelectionPanel } from "../CardSelectionPanel";
+import { NightActionPanel } from "../NightActionPanel";
+import { VotingPanel } from "../VotingPanel";
 
 const { Text } = Typography;
 

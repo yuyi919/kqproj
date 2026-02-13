@@ -1,12 +1,12 @@
-import { Loader2Icon } from "lucide-react"
 import { forwardRefIfNeeded } from "@stackframe/stack-shared/dist/utils/react";
+import { Loader2Icon } from "lucide-react";
 import React from "react";
 import { cn } from "../../lib/utils";
 
 export const Spinner = forwardRefIfNeeded<
   HTMLSpanElement,
-  React.ComponentPropsWithoutRef<'span'> & {
-    size?: number,
+  React.ComponentPropsWithoutRef<"span"> & {
+    size?: number;
   }
 >(({ size = 15, ...props }, ref) => {
   return (

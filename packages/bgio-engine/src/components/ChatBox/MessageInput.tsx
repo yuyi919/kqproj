@@ -5,9 +5,10 @@
  * 包含输入框和发送按钮
  */
 
-import React, { useState } from "react";
-import { Input, Button, theme } from "antd";
 import { SendOutlined } from "@ant-design/icons";
+import { Button, Input, theme } from "antd";
+import type React from "react";
+import { useState } from "react";
 import type { MessageInputProps } from "./types";
 
 export function MessageInput({

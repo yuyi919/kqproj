@@ -8,8 +8,8 @@
  */
 
 import type { BGGameState } from "../../types";
-import type { PhaseResult } from "./types";
 import { Mutations, TMessageBuilder } from "../../utils";
+import type { PhaseResult } from "./types";
 
 /**
  * 处理检定行动
@@ -38,7 +38,8 @@ export function processCheckActions(
     const deathCause = targetSecret.deathCause || "wreck";
 
     // 添加检定结果消息
-    Mutations.msg(G, 
+    Mutations.msg(
+      G,
       TMessageBuilder.createCheckResult(
         action.playerId,
         action.targetId,

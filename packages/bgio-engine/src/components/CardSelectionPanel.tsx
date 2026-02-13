@@ -6,9 +6,10 @@
  * 用于击杀后选择获得的遗落手牌
  */
 
-import React, { useState } from "react";
-import { Card, Button, Space, Typography, Alert, theme } from "antd";
-import { GiftOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { CloseCircleOutlined, GiftOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Space, Typography, theme } from "antd";
+import type React from "react";
+import { useState } from "react";
 import type { CardRef } from "../types";
 import { CardDisplay } from "./ui";
 
@@ -46,11 +47,7 @@ export function CardSelectionPanel({
         </Space>
       }
     >
-      <Space
-        direction="vertical"
-        size="middle"
-        style={{ width: "100%" }}
-      >
+      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <Alert
           type="info"
           showIcon
@@ -89,10 +86,7 @@ export function CardSelectionPanel({
           >
             选择此卡
           </Button>
-          <Button
-            icon={<CloseCircleOutlined />}
-            onClick={onSkip}
-          >
+          <Button icon={<CloseCircleOutlined />} onClick={onSkip}>
             放弃选择
           </Button>
         </Space>

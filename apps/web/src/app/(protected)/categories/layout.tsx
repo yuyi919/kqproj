@@ -1,8 +1,8 @@
-import React from "react";
-import { ThemedLayout } from "@refinedev/antd";
 import { Header } from "@components/header";
 import { authProviderServer } from "@providers/auth-provider/auth-provider.server";
+import { ThemedLayout } from "@refinedev/antd";
 import { redirect } from "next/navigation";
+import React from "react";
 
 export default async function Layout({ children }: React.PropsWithChildren) {
   const data = await getData();

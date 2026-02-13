@@ -14,11 +14,11 @@ Quick start for documentation patterns.
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Project instructions |
-| `AGENTS.md` | Agent workflows |
-| `docs/refactoring/JOURNAL.md` | Refactoring journal |
+| `CLAUDE.md` | Project instructions (English) |
+| `AGENTS.md` | Agent workflows (Chinese) |
+| `docs/refactoring/*.md` | Refactoring journals |
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-self-improving` - Extension skill
+- `/witch-trial` - Core skill (unified CLI)
+- `/witch-trial/extensions/self-improving/` - Bilingual journal creation

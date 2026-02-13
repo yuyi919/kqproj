@@ -1,10 +1,10 @@
 import React, { Children, isValidElement, useContext } from "react";
-import { RouterContext } from "./RouteContext";
 import { matchPath } from "./pathToRegexp";
+import { RouterContext } from "./RouteContext";
 
 export function Switch({ children }: { children: React.ReactNode }) {
   const context = useContext(RouterContext);
-  
+
   if (!context) return null;
   const { currentPath } = context;
 
@@ -14,8 +14,8 @@ export function Switch({ children }: { children: React.ReactNode }) {
   Children.forEach(children, (child) => {
     if (match == null && isValidElement(child)) {
       const { path, index } = child.props as any;
-      const pattern = index ? "/" : (path || "*");
-      
+      const pattern = index ? "/" : path || "*";
+
       const potentialMatch = matchPath(currentPath, pattern);
       if (potentialMatch) {
         match = potentialMatch;

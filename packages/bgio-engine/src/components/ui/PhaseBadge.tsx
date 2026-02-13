@@ -6,17 +6,17 @@
  * 根据游戏阶段显示对应的图标和颜色
  */
 
-import React from "react";
-import { Badge, theme } from "antd";
 import {
-  SunOutlined,
-  MessageOutlined,
   CheckSquareOutlined,
+  FlagOutlined,
+  MessageOutlined,
   MoonOutlined,
   PayCircleOutlined,
-  FlagOutlined,
   QuestionOutlined,
+  SunOutlined,
 } from "@ant-design/icons";
+import { Badge, theme } from "antd";
+import type React from "react";
 import type { GamePhase } from "../../types";
 
 export interface PhaseBadgeProps {

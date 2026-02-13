@@ -1,5 +1,5 @@
-import type { SupabaseClient } from "./client";
 import type { IUser, UserMeta } from "@interfaces/user";
+import type { SupabaseClient } from "./client";
 
 /**
  * SupabaseHost 类用于封装常用的 Supabase 操作，提供更高层级的抽象。

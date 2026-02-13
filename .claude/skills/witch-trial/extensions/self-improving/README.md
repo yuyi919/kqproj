@@ -13,18 +13,23 @@ Quick start for documentation improvement.
 ## Commands
 
 ```powershell
+# Create bilingual journal (auto-creates EN and ZH versions)
+bun .claude/skills/witch-trial/scripts/cli.ts improve journal \
+  --title="Feature Name" \
+  --description="What this feature does"
+
 # Index new document
-bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts index \
-  --file=docs/refactoring/JOURNAL.md \
-  --title="Refactoring Journal"
+bun .claude/skills/witch-trial/scripts/cli.ts improve index \
+  --file=docs/refactoring/2026-02-13_feature-name.md \
+  --title="Feature Name"
 
 # Capture guidance
-bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts capture \
+bun .claude/skills/witch-trial/scripts/cli.ts improve capture \
   --guidance="Important guidance" \
   --context="During discussion"
 
 # Sync indexes
-bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts sync
+bun .claude/skills/witch-trial/scripts/cli.ts improve sync
 ```
 
 ## Script Location
@@ -33,5 +38,4 @@ bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts sync
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-translation` - Translation skill
+- `/witch-trial` - Core skill (unified CLI)

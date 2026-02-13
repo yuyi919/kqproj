@@ -5,9 +5,9 @@
  */
 
 import type { Ctx, DefaultPluginAPIs } from "boardgame.io";
-import type { BGGameState } from "../types";
-import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import type { EventsAPI } from "boardgame.io/dist/types/src/plugins/events/events";
+import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
+import type { BGGameState } from "../types";
 
 /** Boardgame.io 扩展的 Ctx 类型 */
 export interface GameCtx extends Ctx {}

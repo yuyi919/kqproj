@@ -1,17 +1,16 @@
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { RefineKbarProvider } from "@refinedev/kbar";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
-import React, { Suspense } from "react";
-import { RefineKbarProvider } from "@refinedev/kbar";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getLocale } from "next-intl/server";
-
-import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { getLocale, getMessages } from "next-intl/server";
+import React, { Suspense } from "react";
 // import "@refinedev/antd/dist/reset.css";
 import "./globals.css";
-import { authProviderServer } from "@providers/auth-provider/auth-provider.server";
 import { ColorModeContextProvider } from "@contexts/color-mode";
 import { ServerAuthProvider } from "@contexts/server-auth";
 import { IUser } from "@interfaces/user";
+import { authProviderServer } from "@providers/auth-provider/auth-provider.server";
 import { RefineProvider } from "@/components/RefineProvider";
 
 export const metadata: Metadata = {

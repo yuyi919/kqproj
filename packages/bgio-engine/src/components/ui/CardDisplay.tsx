@@ -6,15 +6,15 @@
  * 通用卡牌展示，用于显示单张卡牌的详细信息
  */
 
-import React from "react";
-import { Typography, Tag, theme } from "antd";
 import {
-  StarFilled,
+  ExperimentOutlined,
   FireOutlined,
   SafetyOutlined,
   SearchOutlined,
-  ExperimentOutlined,
+  StarFilled,
 } from "@ant-design/icons";
+import { Tag, Typography, theme } from "antd";
+import type React from "react";
 import type { CardRef, CardType } from "../../types";
 import { getCardDefinition } from "../../utils";
 

@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import { ClearOutlined, LoginOutlined, SendOutlined } from "@ant-design/icons";
 import {
-  Card,
-  Input,
-  Button,
-  List,
   Badge,
-  Typography,
-  Space,
+  Button,
+  Card,
   Divider,
+  Input,
+  List,
+  Space,
   Tag,
+  Typography,
 } from "antd";
+import React, { useState } from "react";
 import { useSocket } from "@/hooks/use-socket";
-import { SendOutlined, LoginOutlined, ClearOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -135,10 +135,10 @@ export default function SocketDebugPage() {
                         log.type.startsWith("emit")
                           ? "blue"
                           : log.type === "system"
-                          ? "orange"
-                          : log.type === "error"
-                          ? "red"
-                          : "green"
+                            ? "orange"
+                            : log.type === "error"
+                              ? "red"
+                              : "green"
                       }
                     >
                       {log.type}

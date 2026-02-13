@@ -1,6 +1,6 @@
 ---
 name: witch-trial-development
-description: Core skill for development operations - adding moves, cards, phases
+description: This skill should be used when the user asks to "add new move", "create card", "new game phase", "add feature", or needs game development operations for the Witch Trial project. Provides templates for moves, cards, phases, and test generation.
 author: Claude Code
 version: 1.0.0
 tags: [witch-trial, development, core, game-engine, boardgame-io]
@@ -41,7 +41,5 @@ Scripts are located at:
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-maintenance` - Maintenance skill
-- `/witch-trial-self-improving` - Self-improving skill
-- `/witch-trial-translation` - Translation skill
+- `/witch-trial` - Core skill (all operations via unified CLI)
+  - `bun .claude/skills/witch-trial/scripts/cli.ts dev ...`

@@ -7,19 +7,16 @@ export interface PathMatch {
 
 export function compilePath(path: string): RegExp {
   if (path === "*") return /.*/;
-  
+
   const pattern = path
     .replace(/\/+$/, "")
     .replace(/:(\w+)/g, "(?<$1>[^/]+)")
     .replace(/\*/g, ".*");
-    
+
   return new RegExp(`^${pattern}(?:/)?$`);
 }
 
-export function matchPath(
-  pathname: string,
-  path: string
-): PathMatch | null {
+export function matchPath(pathname: string, path: string): PathMatch | null {
   if (path === "*" || path === undefined) {
     return {
       path: pathname,

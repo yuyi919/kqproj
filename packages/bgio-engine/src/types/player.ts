@@ -4,12 +4,12 @@
  * 玩家相关类型定义
  */
 
+import type { CardRef } from "./card";
 import type {
   PlayerStatus,
   PublicPlayerStatus,
   RevealedInfoType,
 } from "./core";
-import type { CardRef } from "./card";
 
 /**
  * 玩家公开信息（所有人可见）

@@ -6,9 +6,9 @@
 
 "use client";
 
+import { Button } from "antd";
 import React from "react";
 import { useTypedTranslations } from "@/i18n";
-import { Button } from "antd";
 
 export function TypeSafeI18nExample() {
   // Get the typed translations object

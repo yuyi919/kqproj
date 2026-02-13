@@ -4,22 +4,20 @@
 
 // Core
 export {
-  locales,
   defaultLocale,
-  localeNames,
   LOCALE_COOKIE_NAME,
   type Locale,
+  localeNames,
+  locales,
 } from "./config";
-
-// Locales
-export { zhCN, en, localeMessages, type Translations } from "./locales";
-
 // Hooks
 export {
-  useTypedTranslations,
-  useT,
   type TypedTranslations,
+  useT,
+  useTypedTranslations,
 } from "./hooks/useTypedTranslations";
+// Locales
+export { en, localeMessages, type Translations, zhCN } from "./locales";
 
 // Types
 export type { Path, PathValue } from "./types";

@@ -29,5 +29,4 @@ bun .claude/skills/witch-trial/scripts/cli.ts check
 
 ## Related
 
-- `/witch-trial` - Core skill
-- `/witch-trial-development` - Development skill
+- `/witch-trial` - Core skill (unified CLI)

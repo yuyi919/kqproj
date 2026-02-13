@@ -7,14 +7,14 @@
  * 使用计算层（Selectors）获取派生状态
  */
 
-import { useCallback, useMemo } from "react";
 import type { BoardProps } from "boardgame.io/react";
+import { useCallback, useMemo } from "react";
 import type {
   BGGameState,
   Card,
   CardRef,
-  PrivatePlayerInfo,
   CardType,
+  PrivatePlayerInfo,
 } from "../types";
 import { Selectors } from "../utils";
 

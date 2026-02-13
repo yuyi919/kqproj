@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import type { BGGameState, RandomAPI } from "../../types";
-import type { PhaseResult } from "./types";
-import { applyPhaseResult } from "./applyPhaseResult";
+import { beforeEach, describe, expect, it } from "bun:test";
 import {
   createMockRandom,
   createTestState,
-  setupPlayers,
   SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "../../__tests__/testUtils";
+import type { BGGameState, RandomAPI } from "../../types";
+import { applyPhaseResult } from "./applyPhaseResult";
+import type { PhaseResult } from "./types";
 
 // ==================== Apply Phase Result Tests ====================
 describe("Apply PhaseResult", () => {

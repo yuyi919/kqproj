@@ -10,7 +10,7 @@
  * 3. 记录结界状态（后续攻击阶段使用）
  */
 
-import type { RandomAPI, BGGameState } from "../../types";
+import type { BGGameState, RandomAPI } from "../../types";
 import { Mutations, Refinements, TMessageBuilder } from "../../utils";
 import type { PhaseResult } from "./types";
 

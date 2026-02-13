@@ -18,56 +18,50 @@
  * @deprecated 请使用 src/types/index.ts 或具体的子模块
  */
 
-// ==================== 基础类型 ====================
-export type * from "./types/core";
-export { GamePhase } from "./types/core";
+export type { EventsAPI } from "boardgame.io/dist/types/src/plugins/events/events";
+export type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 
 // ==================== 卡牌相关 ====================
-export type { CardRef, Card, CardPoolConfig } from "./types/card";
-
-// ==================== 玩家相关 ====================
-export type {
-  PublicPlayerInfo,
-  PrivatePlayerInfo,
-  RevealedInfoItem,
-  PlayerFullInfo,
-} from "./types/player";
-
-// ==================== 状态相关 ====================
-export type {
-  PlayerAction,
-  Vote,
-  NightAction,
-  VoteResult,
-  ActionFailureReason,
-} from "./types/state";
-
-// ==================== 死亡记录 ====================
-export type { DeathRecord, PublicDeathInfo } from "./types/death";
-
-// ==================== 消息类型 ====================
-export type { TMessage, Messages } from "./types/index";
-
+export type { Card, CardPoolConfig, CardRef } from "./types/card";
 // ==================== 配置 ====================
 export type { GameConfig } from "./types/config";
 export {
-  SEVEN_PLAYER_CONFIG,
   EIGHT_PLAYER_CONFIG,
   NINE_PLAYER_CONFIG,
+  SEVEN_PLAYER_CONFIG,
 } from "./types/config";
-
+// ==================== 基础类型 ====================
+export type * from "./types/core";
+export { GamePhase } from "./types/core";
+// ==================== 死亡记录 ====================
+export type { DeathRecord, PublicDeathInfo } from "./types/death";
+// ==================== 消息类型 ====================
+export type { Messages, TMessage } from "./types/index";
+// ==================== 玩家相关 ====================
+export type {
+  PlayerFullInfo,
+  PrivatePlayerInfo,
+  PublicPlayerInfo,
+  RevealedInfoItem,
+} from "./types/player";
+// ==================== 状态相关 ====================
+// ==================== BGGameState ====================
+export type {
+  ActionFailureReason,
+  BGGameState,
+  MoveContext,
+  MoveResult,
+  NightAction,
+  PlayerAction,
+  Vote,
+  VoteResult,
+} from "./types/state";
 // ==================== 交易系统 ====================
 export type {
-  TradeStatus,
-  Trade,
-  DailyTradeStatus,
-  CardSelectionState,
-  DailyTradeTracker,
   ActiveTrade,
+  CardSelectionState,
+  DailyTradeStatus,
+  DailyTradeTracker,
+  Trade,
+  TradeStatus,
 } from "./types/trade";
-
-// ==================== BGGameState ====================
-export type { BGGameState, MoveContext, MoveResult } from "./types/state";
-
-export type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
-export type { EventsAPI } from "boardgame.io/dist/types/src/plugins/events/events";

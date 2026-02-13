@@ -14,10 +14,10 @@
 
 import { Refinements } from "../../domain/refinements";
 import type {
-  RandomAPI,
   ActionFailureReason,
   BGGameState,
   DeathCause,
+  RandomAPI,
 } from "../../types";
 import { Mutations, TMessageBuilder } from "../../utils";
 import {

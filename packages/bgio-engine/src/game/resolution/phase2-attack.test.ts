@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import type {
-  BGGameState,
-  RandomAPI,
-  PlayerStatus,
-  PublicPlayerStatus,
-  GameConfig,
-} from "../../types";
-import type { PhaseResult } from "./types";
-import { processAttackActions } from "./phase2-attack";
+import { beforeEach, describe, expect, it } from "bun:test";
 import {
   createMockRandom,
-  createTestState,
-  setupPlayers,
-  SEVEN_PLAYER_CONFIG,
   createNightAction,
+  createTestState,
+  SEVEN_PLAYER_CONFIG,
+  setupPlayers,
 } from "../../__tests__/testUtils";
+import type {
+  BGGameState,
+  GameConfig,
+  PlayerStatus,
+  PublicPlayerStatus,
+  RandomAPI,
+} from "../../types";
+import { processAttackActions } from "./phase2-attack";
+import type { PhaseResult } from "./types";
 
 // ==================== Phase 2 Attack Tests ====================
 describe("Phase 2: Attack", () => {

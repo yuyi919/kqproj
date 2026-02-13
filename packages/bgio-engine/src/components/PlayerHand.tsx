@@ -6,19 +6,19 @@
  * 紧凑设计：水平滚动卡片，减小间距
  */
 
-import React from "react";
-import {
-  Card,
-  Badge,
-  Space,
-  Typography,
-  Tag,
-  Empty,
-  theme,
-  Popover,
-  Button,
-} from "antd";
 import { CrownOutlined, SafetyOutlined } from "@ant-design/icons";
+import {
+  Badge,
+  Button,
+  Card,
+  Empty,
+  Popover,
+  Space,
+  Tag,
+  Typography,
+  theme,
+} from "antd";
+import type React from "react";
 import type { CardRef } from "../types";
 import { CardDisplay } from "./ui/CardDisplay";
 

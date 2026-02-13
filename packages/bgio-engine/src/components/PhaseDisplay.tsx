@@ -4,8 +4,9 @@
  * 魔女审判游戏引擎 - 阶段显示组件 (Ant Design 版本)
  */
 
-import React, { useState, useEffect, useRef } from "react";
-import { Space, Typography, Statistic, theme, Button } from "antd";
+import { Button, Space, Statistic, Typography, theme } from "antd";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GamePhase } from "../types";
 import { getPhaseName } from "../utils";
 import { PhaseBadge } from "./ui/PhaseBadge";
@@ -63,11 +64,7 @@ export function PhaseDisplay({
               const secs = Number(value);
               const mins = Math.floor(secs / 60);
               const remainingSecs = secs % 60;
-              return `剩余时间: ${mins
-                .toString()
-                .padStart(2, "0")}:${remainingSecs
-                .toString()
-                .padStart(2, "0")}`;
+              return `剩余时间: ${mins.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
             }}
             styles={{
               content: {

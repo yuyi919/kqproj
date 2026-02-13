@@ -10,6 +10,8 @@ tags: [witch-trial, quick-start, core]
 
 Quick start guide for the Witch Trial board game project.
 
+**Invoke skill:** `/witch-trial` or say "Witch Trial game..."
+
 ## Quick Start
 
 ```powershell
@@ -33,8 +35,7 @@ pnpm dev
 │   ├── development/ # Feature development
 │   └── documentation/
 ├── extensions/       # Extension skills
-│   ├── self-improving/
-│   └── translation/
+│   └── self-improving/  # Documentation improvement
 └── data/            # Shared terminology
 ```
 
@@ -67,43 +68,91 @@ Use for:
 - Modifying game phases
 - Creating UI components
 
+## Project Agents
+
+This project includes custom Claude Code agents:
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `test-generator` | Generate unit tests | Writing tests for new features, adding regression tests |
+| `fp-refactor-expert` | Code simplification & FP refactoring | Simplifying complex code, replacing custom utils with es-toolkit |
+
+### Using Agents
+
+```powershell
+# Use test-generator for writing tests
+# Say: "Use test-generator to write tests for this function"
+
+# Use fp-refactor-expert for code simplification
+# Say: "Use fp-refactor-expert to refactor this code"
+```
+
+### Natural Language Triggers
+
+Just speak naturally and the agent will be invoked:
+
+**test-generator:**
+- "Write tests for this file"
+- "Add unit tests for the new function"
+- "I need test coverage for this module"
+- "为这个函数写测试"
+
+**fp-refactor-expert:**
+- "Simplify this code"
+- "Refactor this to use functional patterns"
+- "This code is too complex"
+- "Replace these utils with es-toolkit"
+- "简化这段代码"
+
 ## Extension Skills
 
 ### Self-Improving (Documentation)
 
 ```powershell
+# Create bilingual journal (auto-creates EN and ZH versions)
+bun .claude/skills/witch-trial/scripts/cli.ts improve journal \
+  --title="Feature Name" \
+  --description="What this feature does"
+
 # Index new journal
-bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts index \
-  --file=docs/refactoring/JOURNAL.md \
-  --title="Refactoring Journal"
+bun .claude/skills/witch-trial/scripts/cli.ts improve index \
+  --file=docs/refactoring/2026-02-13_feature-name.md \
+  --title="Feature Name"
 
 # Capture user guidance
-bun .claude/skills/witch-trial/extensions/self-improving/scripts/improve.ts capture \
+bun .claude/skills/witch-trial/scripts/cli.ts improve capture \
   --guidance="Use enum values" \
   --context="During refactoring"
+
+# Sync all indexes
+bun .claude/skills/witch-trial/scripts/cli.ts improve sync
 ```
 
-### Translation
-
-```powershell
-# Sync documentation
-bun .claude/skills/witch-trial/extensions/translation/scripts/translate.ts sync --bidirectional
-
-# Translate document
-bun .claude/skills/witch-trial/extensions/translation/scripts/translate.ts translate \
-  --source=docs/refactoring/JOURNAL.md \
-  --target=docs/refactoring/JOURNAL_ZH.md
-```
+Use for:
+- Creating bilingual journal entries (auto-generated EN/ZH)
+- Indexing new documentation
+- Capturing user guidance
+- Keeping CLAUDE.md and AGENTS.md synchronized
 
 ## Documentation
 
 - **[CLAUDE.md](../../../../CLAUDE.md)** - Project instructions
 - **[Game Rules](../../../../docs/rule.md)** - Game rules
-- **[Refactoring Journal](../../../../docs/refactoring/JOURNAL.md)** - Development notes
+- **[Refactoring Journal](../../../../docs/refactoring/2026-02-13_gamephase-refactoring.md)** - Development notes
 
 ## Related Skills
 
-- `/witch-trial-maintenance` - Maintenance skill
-- `/witch-trial-development` - Development skill
-- `/witch-trial-self-improving` - Self-improving skill
-- `/witch-trial-translation` - Translation skill
+This is the unified skill. All operations are available via:
+
+```powershell
+bun .claude/skills/witch-trial/scripts/cli.ts <command> [options]
+```
+
+Commands: `maintenance`, `dev`, `docs`, `improve`
+
+For detailed documentation, see **[SKILL.md](SKILL.md)**.
+
+## Related Documents
+
+- **[SKILL.md](SKILL.md)** - Core skill documentation
+- **[CLAUDE.md](../../../../CLAUDE.md)** - Project instructions

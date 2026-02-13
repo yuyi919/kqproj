@@ -1,10 +1,10 @@
 import { Hono } from "hono";
+import { type ApiVariables, supabaseMiddleware } from "./middleware/supabase";
 import { auth } from "./routes/auth";
 import { data } from "./routes/data";
+import game from "./routes/game";
 import { live } from "./routes/live";
 import users from "./routes/users";
-import game from "./routes/game";
-import { supabaseMiddleware, type ApiVariables } from "./middleware/supabase";
 
 export const app = /*#__PURE__*/ new Hono<{ Variables: ApiVariables }>()
   .basePath("/api")

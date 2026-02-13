@@ -1,15 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "types": [
-      "react",
-      "bun"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["react", "bun"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -28,16 +21,15 @@
     "composite": true,
     "incremental": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ]
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/ai"
-  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/ai"],
   "references": [
     {
       "path": "./tsconfig.build.json"

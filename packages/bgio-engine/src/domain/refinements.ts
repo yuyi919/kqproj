@@ -6,12 +6,12 @@
  */
 
 import type {
-  PrivatePlayerInfo,
-  Vote,
-  NightAction,
-  CardType,
   CardRef,
+  CardType,
+  NightAction,
+  PrivatePlayerInfo,
   PublicPlayerInfo,
+  Vote,
 } from "../types";
 
 export const Refinements = {
@@ -119,7 +119,9 @@ export const Refinements = {
   /**
    * 获取卡牌的攻击类型
    */
-  getAttackType(card?: CardRef | CardType | null): "witch_killer" | "kill" | null {
+  getAttackType(
+    card?: CardRef | CardType | null,
+  ): "witch_killer" | "kill" | null {
     if (!card) return null;
     const type = typeof card === "string" ? card : card.type;
     if (type === "witch_killer") return "witch_killer";

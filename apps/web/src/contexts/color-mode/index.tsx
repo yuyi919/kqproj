@@ -1,14 +1,14 @@
 "use client";
 
+import { RefineThemes } from "@refinedev/antd";
+import { App as AntdApp, ConfigProvider, ThemeConfig, theme } from "antd";
+import Cookies from "js-cookie";
 import React, {
-  type PropsWithChildren,
   createContext,
+  type PropsWithChildren,
   useEffect,
   useState,
 } from "react";
-import { RefineThemes } from "@refinedev/antd";
-import { ConfigProvider, App as AntdApp, theme, ThemeConfig } from "antd";
-import Cookies from "js-cookie";
 
 type ColorModeContextType = {
   mode: string;

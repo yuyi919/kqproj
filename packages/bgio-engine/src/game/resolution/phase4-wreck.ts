@@ -10,11 +10,11 @@
  */
 
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
-import type { BGGameState } from "../../types";
-import type { PhaseResult, WreckTransform } from "./types";
-import { Mutations, TMessageBuilder, Selectors } from "../../utils";
-import { distributeWreckCards } from "./services/cardDistribution";
 import { Refinements } from "../../domain/refinements";
+import type { BGGameState } from "../../types";
+import { Mutations, Selectors, TMessageBuilder } from "../../utils";
+import { distributeWreckCards } from "./services/cardDistribution";
+import type { PhaseResult, WreckTransform } from "./types";
 
 /**
  * 处理残骸化

@@ -6,11 +6,10 @@
  *
  * Commands:
  *   check              - Full verification
- *   maintenance        - Maintenance operations
- *   dev                - Development operations
- *   docs               - Documentation operations
- *   improve            - Self-improving operations
- *   translate          - Translation operations
+ *   maintenance       - Maintenance operations
+ *   dev               - Development operations
+ *   docs              - Documentation operations
+ *   improve           - Self-improving operations
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
@@ -19,7 +18,6 @@ import { execSync } from "child_process";
 const PROJECT_ROOT = process.cwd();
 const SKILLS_ROOT = `${PROJECT_ROOT}/.claude/skills/witch-trial`;
 const EXT_SELF_IMPROVING = `${SKILLS_ROOT}/extensions/self-improving`;
-const EXT_TRANSLATION = `${SKILLS_ROOT}/extensions/translation`;
 
 // ANSI colors
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
@@ -75,8 +73,7 @@ Core Commands:
   docs               Documentation operations
 
 Extension Commands:
-  improve            Self-improving operations
-  translate          Translation operations
+  improve            Self-improving operations (auto-creates bilingual journals)
 
 Examples:
   # Full check
@@ -93,11 +90,10 @@ Examples:
   # Documentation
   bun cli.ts docs update CLAUDE.md "New Section" "Content..."
 
-  # Self-improving
-  bun cli.ts improve index --file=docs/refactoring/JOURNAL.md --title="Journal"
+  # Self-improving (recommended)
+  bun cli.ts improve journal --title="Feature Name" --description="Description"
 
-  # Translation
-  bun cli.ts translate sync --bidirectional
+Note: Translation has been removed (simple string replacement is not useful for real translation).
 `);
 }
 
@@ -316,60 +312,6 @@ Examples:
   bun cli.ts improve index --file=docs/refactoring/JOURNAL.md --title="Journal"
   bun cli.ts improve capture --guidance="Important guidance" --context="Context"
   bun cli.ts improve sync
-`);
-      }
-    }
-    break;
-  }
-
-  case "translate": {
-    const operation = subCommand;
-    const SKILLS_TRANS = EXT_TRANSLATION;
-
-    switch (operation) {
-      case "sync": {
-        const direction = args.direction || "bidirectional";
-        log(`${blue(`Syncing documentation: ${direction}`)}`);
-        execSync(`bun ${SKILLS_TRANS}/scripts/translate.ts sync --direction=${direction}`, { cwd: PROJECT_ROOT });
-        break;
-      }
-      case "translate": {
-        const source = args.source;
-        const target = args.target;
-        if (source && target) {
-          log(`${blue(`Translating: ${source} -> ${target}`)}`);
-          execSync(`bun ${SKILLS_TRANS}/scripts/translate.ts translate --source=${source} --target=${target}`, { cwd: PROJECT_ROOT });
-        } else {
-          log("Usage: bun cli.ts translate translate --source=<path> --target=<path>");
-        }
-        break;
-      }
-      case "index": {
-        const file = args.file;
-        const title = args.title;
-        if (file && title) {
-          log(`${blue(`Indexing translated document: ${title}`)}`);
-          execSync(`bun ${SKILLS_TRANS}/scripts/translate.ts index --file=${file} --title="${title}"`, { cwd: PROJECT_ROOT });
-        } else {
-          log("Usage: bun cli.ts translate index --file=<path> --title=<name>");
-        }
-        break;
-      }
-      default: {
-        console.log(`
-${blue("Translation Operations")}
-
-Usage: bun cli.ts translate <operation> [options]
-
-Operations:
-  sync            Sync CLAUDE.md <-> CLAUDE_ZH.md
-  translate       Translate a document
-  index           Index translated document
-
-Examples:
-  bun cli.ts translate sync --bidirectional
-  bun cli.ts translate translate --source=docs/a.md --target=docs/b_ZH.md
-  bun cli.ts translate index --file=docs/b_ZH.md --title="中文标题"
 `);
       }
     }

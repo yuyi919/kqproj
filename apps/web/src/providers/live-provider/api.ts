@@ -1,4 +1,4 @@
-import type { LiveProvider, LiveEvent } from "@refinedev/core";
+import type { LiveEvent, LiveProvider } from "@refinedev/core";
 
 export const liveProvider = (): LiveProvider => {
   return {

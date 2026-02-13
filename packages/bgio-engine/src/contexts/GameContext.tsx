@@ -7,17 +7,18 @@
  * 避免通过 props 层层传递。
  */
 
-import React, { createContext, useContext, useMemo, useCallback } from "react";
+import type { PlayerID } from "boardgame.io";
 import type { BoardProps as BGBoardProps } from "boardgame.io/react";
+import type React from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import type {
   BGGameState,
-  PublicPlayerInfo,
-  PrivatePlayerInfo,
-  TMessage,
   CardRef,
+  PrivatePlayerInfo,
+  PublicPlayerInfo,
+  TMessage,
 } from "../types";
 import { Selectors, TMessageBuilder } from "../utils";
-import type { PlayerID } from "boardgame.io";
 
 // 扩展 BoardProps 类型以匹配 useWitchTrial hook
 interface ExtendedBoardProps extends BGBoardProps<BGGameState> {

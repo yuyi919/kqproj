@@ -1,6 +1,6 @@
-import { createSupabaseServerClient } from "@utils/supabase/server";
 import { GameRoomClient } from "@components/game/GameRoom/GameRoomClient";
 import { IGameRoom } from "@interfaces/game-room";
+import { createSupabaseServerClient } from "@utils/supabase/server";
 import { notFound } from "next/navigation";
 
 export default async function RoomPage({
@@ -32,9 +32,9 @@ export default async function RoomPage({
 
   // Cast type because we are not using generated types here yet
   return (
-    <GameRoomClient 
-      roomId={id} 
-      initialRoomData={room as unknown as IGameRoom} 
+    <GameRoomClient
+      roomId={id}
+      initialRoomData={room as unknown as IGameRoom}
     />
   );
 }
