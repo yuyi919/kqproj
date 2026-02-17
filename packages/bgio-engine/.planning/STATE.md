@@ -12,8 +12,8 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 Phase: 1 of 4 (Effect-TS 迁移)
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-17 — Roadmap created
+Status: Context gathered
+Last activity: 2026-02-17 — Context gathered
 
 Progress: [░░░░░░░░░░░] 0%
 
