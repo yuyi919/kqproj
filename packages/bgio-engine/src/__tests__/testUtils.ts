@@ -5,8 +5,8 @@
  */
 
 import { expect } from "bun:test";
-import type { Ctx, DefaultPluginAPIs, FnContext } from "boardgame.io";
-import type { PhaseHookContext } from "../game";
+import type { Ctx, DefaultPluginAPIs, FnContext, MoveFn } from "boardgame.io";
+import type { PhaseHookContext, EventsAPI } from "../game";
 import type {
   BGGameState,
   GameConfig,
@@ -603,7 +603,7 @@ export function createPhaseContext(G: BGGameState, phase?: GamePhase) {
       activePlayers: null,
     },
     random: createMockRandom(),
-    events: {} as any,
+    events: {} as EventsAPI,
     log: {},
   } as PhaseHookContext;
 }
@@ -636,7 +636,11 @@ type MockContext = Record<string, unknown> &
 /**
  * 调用 move 函数
  */
-export function callMove(move: any, context: any, ...args: unknown[]) {
+export function callMove<G extends BGGameState = BGGameState>(
+  move: MoveFn<G>,
+  context: FnContext<G> & { playerID: string },
+  ...args: unknown[]
+) {
   return move(context, ...args);
 }
 
