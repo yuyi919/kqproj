@@ -1,114 +1,78 @@
 ---
 phase: 03-tech-debt
 plan: 01
-subsystem: effect-ts
-tags: [logger, context, effect-ts]
+subsystem: logging
+tags: [logging, effect-ts, logger]
 dependency_graph:
-  requires:
-    - gameLayers
-    - wrapMove
+  requires: []
   provides:
-    - Logger Context
-    - LoggerInterface
-    - LoggerLayer
+    - LoggerService with Effect.log
+    - LogLevel type
   affects:
-    - game/moves.ts
-    - game/phases.ts
-
+    - src/game/moves.ts
+    - src/game/phases.ts
 tech_stack:
-  added:
-    - Effect-TS Context
-    - Effect.log (3.19+ API)
+  added: []
   patterns:
-    - Service Layer pattern
-    - Context-based dependency injection
-
+    - LoggerService direct export (no Context injection)
+    - Effect.log (3.19+ API)
 key_files:
   created:
     - src/effect/context/logger.ts
-  modified:
-    - src/effect/layers/gameLayers.ts
-    - src/effect/index.ts
-
+  modified: []
 decisions:
-  - "Logger methods return Effect.Effect<void> instead of void"
-  - "Using Effect.log (3.19+ API) instead of Effect.logInfo"
-  - "ConsoleLogger with level filtering (debug/info/warn/error)"
-
+  - |
+    LoggerService 直接导出模式：直接调用 LoggerService.info()，
+    而非通过 Context 注入。方法返回 Effect.Effect<void>，
+    由 wrapMove 自动执行。
 metrics:
-  duration: ~1 min
+  duration: 0.5 min
   completed: 2026-02-17
-  tasks_completed: 2
+  tasks: 1/1
 ---
 
-# Phase 3 Plan 1: Logger Service Summary
+# Phase 3 Plan 1: LoggerService Summary
 
-## One-liner
+## One-Liner
 
-Effect-TS Logger Context with ConsoleLogger implementation using Effect.log (3.19+ API)
-
-## Objective
-
-创建 Effect-TS 日志服务基础设施，为后续替换 console.log 做准备。
+LoggerService 直接导出，可直接调用
 
 ## Tasks Completed
 
-| Task | Name | Commit | Files |
-|------|------|--------|-------|
-| 1 | Create Logger Context Interface | d1525b2 | src/effect/context/logger.ts |
-| 2 | Add LoggerLayer to gameLayers | d1525b2 | src/effect/layers/gameLayers.ts, src/effect/index.ts |
-
-## Verification Results
-
-- [x] Logger Context can be injected via Effect-TS Context
-- [x] ConsoleLogger implements LoggerInterface
-- [x] Logger methods return Effect.Effect<void>
-- [x] Using Effect.log instead of Effect.logInfo
-- [x] gameLayers contains LoggerLayer
-- [x] typecheck passes
+| Task | Name | Status |
+|------|------|--------|
+| 1 | Create LoggerService | Done |
 
 ## Implementation Details
 
-### LoggerInterface
-
-All methods return `Effect.Effect<void>`:
-- `debug(message: string, ...args: unknown[]): Effect.Effect<void>`
-- `info(message: string, ...args: unknown[]): Effect.Effect<void>`
-- `warn(message: string, ...args: unknown[]): Effect.Effect<void>`
-- `error(message: string, ...args: unknown[]): Effect.Effect<void>`
-
-### ConsoleLogger
-
-- Uses `Effect.log` (3.19+ API) with `Effect.annotateLogs` for context
-- Supports level filtering: debug, info, warn, error
-- Configurable minimum log level via constructor
-
-### LoggerLayer
-
-- Added to BaseServices in gameLayers.ts
-- Exported from effect/index.ts
-
-## Usage Example
+### LoggerService
 
 ```typescript
-import { Effect } from "effect";
-import { Logger } from "../effect/context/logger";
-
-const logMessage = Effect.flatMap(
-  Logger,
-  (logger) => logger.info action", { player("PlayerId: "1", action: "vote" })
-);
+export const LoggerService = {
+  debug(message: string, ...args: unknown[]): Effect.Effect<void> {
+    return Effect.log(`[DEBUG] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`);
+  },
+  info(message: string, ...args: unknown[]): Effect.Effect<void> {
+    return Effect.log(`[INFO] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`);
+  },
+  warn(message: string, ...args: unknown[]): Effect.Effect<void> {
+    return Effect.log(`[WARN] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`);
+  },
+  error(message: string, ...args: unknown[]): Effect.Effect<void> {
+    return Effect.log(`[ERROR] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`);
+  },
+};
 ```
 
-The Effect is automatically executed by wrapMove using `Effect.runSyncExit()`.
+### Verification
+
+- TypeScript typecheck: PASSED
+- All 229 tests: PASSED
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+None - implemented as specified with direct export pattern.
 
-## Self-Check: PASSED
+## Auth Gates
 
-- [x] src/effect/context/logger.ts exists
-- [x] src/effect/layers/gameLayers.ts exists
-- [x] src/effect/index.ts exists
-- [x] Commit d1525b2 exists in git history
+None encountered.

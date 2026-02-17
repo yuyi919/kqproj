@@ -2,87 +2,64 @@
 phase: 03-tech-debt
 plan: 02
 subsystem: logging
-tags: [logging, effect-ts, console-replacement]
+tags: [logging, moves, console-replacement]
 dependency_graph:
   requires: [03-01]
   provides:
-    - Logger usage in moves.ts
-    - No console.log in moves.ts
+    - moves.ts uses LoggerService
   affects:
     - src/game/moves.ts
 tech_stack:
   added: []
   patterns:
-    - Effect.gen for generator-based logging
-    - yield* (Logger) pattern for service injection
+    - yield* LoggerService.info() in Effect.gen
 key_files:
+  created: []
   modified:
     - src/game/moves.ts
 decisions:
   - |
-    Used Effect.gen(function*() {}) to wrap move functions that use Logger.
-    This allows using yield* (Logger) and yield* (logger.info(...)) correctly.
+    使用 yield* LoggerService.info() 直接调用，
+    而非通过 Context 注入获取 logger 实例。
 metrics:
   duration: 0.5 min
   completed: 2026-02-17
   tasks: 1/1
 ---
 
-# Phase 3 Plan 2: Replace console.log in moves.ts Summary
+# Phase 3 Plan 2: moves.ts Logger Summary
 
 ## One-Liner
 
-All console.log calls replaced with Logger service using Effect.gen pattern
+moves.ts 使用 LoggerService 替换 console.log
 
 ## Tasks Completed
 
 | Task | Name | Status |
 |------|------|--------|
-| 1 | Replace console.log with Logger | Done |
+| 1 | Replace console.log with LoggerService | Done |
 
 ## Implementation Details
 
-### Fix for yield* Syntax Error
+### Usage Pattern
 
-The original code incorrectly used `yield* Logger` in non-generator functions. The fix:
-
-1. **Wrap function bodies in `Effect.gen(function*() {})`**:
 ```typescript
-// BEFORE (broken):
-vote: wrapMove(({ G, playerID }: MoveContext, targetId: string) => {
-  const logger = yield* Logger;  // ERROR
-  yield* logger.info("message");
-}),
+import { LoggerService } from "../effect/context/logger";
 
-// AFTER (fixed):
-vote: wrapMove(({ G, playerID }: MoveContext, targetId: string) => {
-  return Effect.gen(function*() {
-    const logger = yield* (Logger);
-    yield* _(logger.info("message"));
-  });
-}),
+// 在 Effect.gen 内直接调用
+yield* LoggerService.info(`vote: ${playerID} votes for ${targetId}`);
 ```
-
-2. **Removed all console.log from moves.ts**
 
 ### Verification
 
+- `grep "console.log" src/game/moves.ts` = 0 (no console.log)
 - TypeScript typecheck: PASSED
 - All 229 tests: PASSED
 
 ## Deviations from Plan
 
-None - plan executed as written.
+None - implemented as specified.
 
 ## Auth Gates
 
 None encountered.
-
-## Self-Check
-
-- [x] src/game/moves.ts has no console.log
-- [x] Logger service used via Effect.gen pattern
-- [x] Tests pass
-- [x] Typecheck passes
-
-Result: PASSED
