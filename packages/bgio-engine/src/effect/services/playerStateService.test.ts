@@ -1,19 +1,16 @@
 import { describe, expect, it } from "bun:test";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import {
   createMockRandom,
   createTestState,
   setupPlayers,
 } from "../../__tests__/testUtils";
-import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
+import { makeGameLayers } from "../layers/gameLayers";
 import { PlayerStateService } from "./playerStateService";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return Layer.provideMerge(
-    Layer.provideMerge(PlayerStateService.Default, GameStateRef.layer(state)),
-    makeGameRandomLayer(createMockRandom()),
-  );
+  return makeGameLayers({ G: state, random: createMockRandom() })
 }
 
 describe("PlayerStateService", () => {

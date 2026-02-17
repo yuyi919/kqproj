@@ -304,7 +304,7 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
                     const alivePlayers = Selectors.getAlivePlayers(state);
                     if (alivePlayers.length > 0) {
                       const randomIndex =
-                        gameRandom.Die(alivePlayers.length) - 1;
+                        (yield* gameRandom.Die(alivePlayers.length)) - 1;
                       receiverId = alivePlayers[randomIndex]?.id ?? null;
                       if (receiverId) {
                         transferMode = "passive";

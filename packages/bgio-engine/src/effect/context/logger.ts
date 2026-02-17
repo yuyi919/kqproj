@@ -19,26 +19,26 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  */
 export const LoggerService = {
   debug(message: string, ...args: unknown[]): Effect.Effect<void> {
-    return Effect.log(
-      `[DEBUG] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
+    return Effect.logDebug(
+      `${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
   },
 
   info(message: string, ...args: unknown[]): Effect.Effect<void> {
-    return Effect.log(
-      `[INFO] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
+    return Effect.logInfo(
+      `${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
   },
 
   warn(message: string, ...args: unknown[]): Effect.Effect<void> {
-    return Effect.log(
-      `[WARN] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
+    return Effect.logWarning(
+      `${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
   },
 
   error(message: string, ...args: unknown[]): Effect.Effect<void> {
-    return Effect.log(
-      `[ERROR] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
+    return Effect.logError(
+      `${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
   },
 };

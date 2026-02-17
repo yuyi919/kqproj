@@ -1,17 +1,12 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import {
   createMockRandom,
-  createNightAction,
   createTestState,
-  SEVEN_PLAYER_CONFIG,
-  setupPlayers,
+  setupPlayers
 } from "../../__tests__/testUtils";
 import type {
   BGGameState,
-  GameConfig,
-  PlayerStatus,
-  PublicPlayerStatus,
-  RandomAPI,
+  RandomAPI
 } from "../../types";
 import { processAttackActions } from "./phase2-attack";
 import type { PhaseResult } from "./types";

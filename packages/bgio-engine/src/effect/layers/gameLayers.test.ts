@@ -4,7 +4,7 @@ import { createMockRandom, createTestState, setupPlayers } from "../../__tests__
 import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { AttackResolutionService, CardService, PriorityService } from "../services";
-import { BaseGameLayers, GameLayers } from "./gameLayers";
+import { BaseGameLayers, StaticGameLayers } from "./gameLayers";
 
 describe("GameLayers", () => {
   it("provides base stateless services", () => {
@@ -45,7 +45,7 @@ describe("GameLayers", () => {
     setupPlayers(G, ["p1", "p2"]);
 
     const layer = Layer.provideMerge(
-      Layer.provideMerge(GameLayers, GameStateRef.layer(G)),
+      Layer.provideMerge(StaticGameLayers, GameStateRef.layer(G)),
       makeGameRandomLayer(createMockRandom()),
     );
     const program = Effect.gen(function* () {

@@ -3,14 +3,14 @@ import { Effect, Layer } from "effect";
 import { createMockRandom, createTestState, setupPlayers } from "../../__tests__/testUtils";
 import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
-import { GameLayers } from "../layers/gameLayers";
+import { makeGameLayers, StaticGameLayers } from "../layers/gameLayers";
 import { AttackResolutionService } from "./attackResolutionService";
 import type { PhaseResult } from "../../game/resolution/types";
 import type { BGGameState, TMessage } from "../../types";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
   return Layer.provideMerge(
-    Layer.provideMerge(GameLayers, GameStateRef.layer(state)),
+    Layer.provideMerge(StaticGameLayers, GameStateRef.layer(state)),
     makeGameRandomLayer(createMockRandom()),
   );
 }
@@ -30,7 +30,7 @@ function runPhase2AndGetState(
     yield* service.resolvePhase2(previousResult);
     const stateRef = yield* GameStateRef;
     return yield* stateRef.get();
-  }).pipe(Effect.provide(makeLayer(state)));
+  }).pipe(Effect.provide(makeGameLayers({ G: state, random: createMockRandom() })));
 
   return Effect.runSync(program);
 }
@@ -58,7 +58,7 @@ describe("AttackResolutionService", () => {
     const program = Effect.gen(function* () {
       const service = yield* AttackResolutionService;
       return yield* service.processAttackActions(new Set<string>());
-    }).pipe(Effect.provide(makeLayer(G)));
+    }).pipe(Effect.provide(makeGameLayers({ G, random: createMockRandom() })));
 
     const result = Effect.runSync(program);
 
@@ -83,7 +83,7 @@ describe("AttackResolutionService", () => {
       yield* service.processAttackActions(new Set<string>());
       const stateRef = yield* GameStateRef;
       return yield* stateRef.get();
-    }).pipe(Effect.provide(makeLayer(G)));
+    }).pipe(Effect.provide(makeGameLayers({ G, random: createMockRandom() })));
 
     const state = Effect.runSync(program);
     const messageTypes = state.chatMessages.map((m) => m.type);
@@ -112,7 +112,7 @@ describe("AttackResolutionService", () => {
       Effect.catchTag("PlayerNotFoundError", (error) =>
         Effect.succeed(`missing:${error.playerId}`),
       ),
-      Effect.provide(makeLayer(G)),
+      Effect.provide(makeGameLayers({ G, random: createMockRandom() })),
     );
 
     const result = Effect.runSync(program);
@@ -134,7 +134,7 @@ describe("AttackResolutionService", () => {
     const program = Effect.gen(function* () {
       const service = yield* AttackResolutionService;
       return yield* service.processAttackActions(new Set<string>());
-    }).pipe(Effect.provide(makeLayer(G)));
+    }).pipe(Effect.provide(makeGameLayers({ G, random: createMockRandom() })));
 
     const result = Effect.runSync(program);
 

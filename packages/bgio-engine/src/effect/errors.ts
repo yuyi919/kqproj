@@ -83,6 +83,9 @@ export type AttackError =
  * 用于服务边界：错误从 Effect-TS 服务抛出时，转换为游戏逻辑错误
  */
 export function taggedErrorToGameLogicError(error: unknown): GameLogicError {
+  if (error instanceof Error) {
+    console.error(error.message);
+  }
   if (error instanceof BaseError) {
     return new GameLogicError(error.message);
   }

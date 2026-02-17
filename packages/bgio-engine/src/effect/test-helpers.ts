@@ -118,7 +118,9 @@ export function runWithLayerExit<A, E, I, R>(
   layer: Layer.Layer<I, never, R>,
 ): Exit.Exit<A, E> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return Effect.runSyncExit(effect.pipe(Effect.provide(layer as any)) as any) as Exit.Exit<A, E>;
+  return Effect.runSyncExit(
+    effect.pipe(Effect.provide(layer as any)) as any,
+  ) as Exit.Exit<A, E>;
 }
 
 /**

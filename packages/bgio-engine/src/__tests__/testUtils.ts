@@ -6,7 +6,7 @@
 
 import { expect } from "bun:test";
 import type { Ctx, DefaultPluginAPIs, FnContext, MoveFn } from "boardgame.io";
-import type { PhaseHookContext, EventsAPI } from "../game";
+import type { EventsAPI, PhaseHookContext } from "../game";
 import type {
   BGGameState,
   GameConfig,

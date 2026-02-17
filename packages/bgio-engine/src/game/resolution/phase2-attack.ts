@@ -7,12 +7,10 @@
  * 均下沉至 AttackResolutionService.resolvePhase2。
  */
 
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import {
   AttackResolutionService,
-  GameLayers,
-  GameStateRef,
-  makeGameRandomLayer,
+  makeGameLayers,
   taggedErrorToGameLogicError,
 } from "../../effect";
 import type { BGGameState, RandomAPI } from "../../types";
@@ -34,14 +32,7 @@ function runAttackResolution(
   const program = Effect.gen(function* () {
     const service = yield* AttackResolutionService;
     return yield* service.resolvePhase2(previousResult);
-  }).pipe(
-    Effect.provide(
-      Layer.provideMerge(
-        Layer.provideMerge(GameLayers, GameStateRef.layer(G)),
-        makeGameRandomLayer(random),
-      ),
-    ),
-  );
+  }).pipe(Effect.provide(makeGameLayers({ G, random })));
 
   const exit = Effect.runSyncExit(program);
   if (exit._tag === "Failure") {

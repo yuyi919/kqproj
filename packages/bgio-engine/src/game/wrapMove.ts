@@ -6,13 +6,13 @@
 
 import type { Move } from "boardgame.io";
 import { INVALID_MOVE } from "boardgame.io/core";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { isEffect } from "effect/Effect";
 import {
-  GameLayers,
   GameRandom,
   GameStateRef,
   MessageService,
+  makeGameLayers,
   taggedErrorToGameLogicError,
 } from "../effect";
 import type { BGGameState } from "../types";
@@ -44,17 +44,9 @@ export function wrapMove<T extends unknown[]>(
       const g = fn(ctx as MoveContext, ...(args as T));
       if (g) {
         if (isEffect(g)) {
-          const program = g.pipe(
-            Effect.provide(
-              Layer.provideMerge(
-                Layer.provideMerge(GameLayers, GameStateRef.layer(ctx.G)),
-                GameRandom.layer(ctx.random),
-              ),
-            ),
-          );
+          const program = g.pipe(Effect.provide(makeGameLayers(ctx)));
           const exit = Effect.runSyncExit(program);
           if (exit._tag === "Failure") {
-            console.error(exit.cause);
             throw taggedErrorToGameLogicError(exit.cause);
           }
 
@@ -90,17 +82,9 @@ export function wrapHook<T extends unknown[]>(
       const g = fn(ctx, ...(args as T));
       if (g) {
         if (isEffect(g)) {
-          const program = g.pipe(
-            Effect.provide(
-              GameLayers.pipe(
-                Layer.provideMerge(GameStateRef.layer(ctx.G)),
-                Layer.provideMerge(GameRandom.layer(ctx.random)),
-              ),
-            ),
-          );
+          const program = g.pipe(Effect.provide(makeGameLayers(ctx)));
           const exit = Effect.runSyncExit(program);
           if (exit._tag === "Failure") {
-            console.error(exit.cause);
             throw taggedErrorToGameLogicError(exit.cause);
           }
 

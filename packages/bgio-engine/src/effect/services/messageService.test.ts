@@ -3,9 +3,10 @@ import { Effect, Layer } from "effect";
 import { createTestState, setupPlayers } from "../../__tests__/testUtils";
 import { GameStateRef } from "../context/gameStateRef";
 import { MessageService } from "./messageService";
+import { BaseGameLayers } from "../layers/gameLayers";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return Layer.provideMerge(MessageService.Default, GameStateRef.layer(state));
+  return Layer.provideMerge(MessageService.Default, GameStateRef.layer(state)).pipe(Layer.provide(BaseGameLayers));
 }
 
 describe("MessageService", () => {
