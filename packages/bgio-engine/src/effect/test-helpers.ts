@@ -102,21 +102,23 @@ export function expectFailure<E, A>(exit: Exit.Exit<A, E>): E {
  * );
  * expect(result).toBe("mock");
  */
-export function runWithLayer<A>(
+export function runWithLayer<A, I, R>(
   effect: Effect.Effect<A>,
-  layer: Layer.Layer<any>,
+  layer: Layer.Layer<I, never, R>,
 ): A {
-  return Effect.runSync(effect.pipe(Effect.provide(layer)));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return Effect.runSync(effect.pipe(Effect.provide(layer as any)) as any) as A;
 }
 
 /**
  * 使用 Layer 运行 Effect 并返回 Exit
  */
-export function runWithLayerExit<A, E>(
+export function runWithLayerExit<A, E, I, R>(
   effect: Effect.Effect<A, E>,
-  layer: Layer.Layer<any>,
+  layer: Layer.Layer<I, never, R>,
 ): Exit.Exit<A, E> {
-  return Effect.runSyncExit(effect.pipe(Effect.provide(layer)));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return Effect.runSyncExit(effect.pipe(Effect.provide(layer as any)) as any) as Exit.Exit<A, E>;
 }
 
 /**
@@ -131,32 +133,29 @@ export function runWithLayerExit<A, E>(
  *   }
  * );
  */
-export function makeMockLayer<T>(impl: T): Layer.Layer<any> {
-  // 使用 any 来简化类型
-  return Layer.succeed(
-    Context.GenericTag<any>("mock"),
-    impl,
-  ) as unknown as Layer.Layer<any>;
+export function makeMockLayer<I, R>(
+  tag: Context.Tag<I, R>,
+  impl: R,
+): Layer.Layer<I, never, R> {
+  return Layer.succeed(tag, impl);
 }
 
 /**
  * 创建 Effect Mock Layer（用于异步或需要 Effect 的场景）
  */
-export function makeEffectMockLayer(
-  impl: Effect.Effect<any>,
-): Layer.Layer<any> {
-  return Layer.effect(
-    Context.GenericTag<any>("mock"),
-    impl,
-  ) as unknown as Layer.Layer<any>;
+export function makeEffectMockLayer<I, R, E>(
+  tag: Context.Tag<I, R>,
+  impl: Effect.Effect<R, E>,
+): Layer.Layer<I, E, R> {
+  return Layer.effect(tag, impl);
 }
 
 /**
  * 组合多个 Mock Layer
  */
-export function mergeLayers(
-  layer1: Layer.Layer<any>,
-  layer2: Layer.Layer<any>,
-): Layer.Layer<any> {
+export function mergeLayers<I1, E1, R1, I2, E2, R2>(
+  layer1: Layer.Layer<I1, E1, R1>,
+  layer2: Layer.Layer<I2, E2, R2>,
+): Layer.Layer<I1 | I2, E1 | E2, R1 | R2> {
   return Layer.mergeAll(layer1, layer2);
 }
