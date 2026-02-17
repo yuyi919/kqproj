@@ -4,10 +4,16 @@
  * 游戏配置类型定义
  */
 
+import type { LogLevel } from "../effect/context/logger";
+
 /**
  * 游戏配置
  */
 export interface GameConfig {
+  /** 调试模式 */
+  debugMode?: boolean;
+  /** 日志级别 */
+  logLevel?: LogLevel;
   /** 最大玩家数量 */
   maxPlayers: number;
   /** 最大游戏回合数 */
@@ -36,6 +42,7 @@ export interface GameConfig {
 
 // 七人局配置
 export const SEVEN_PLAYER_CONFIG: GameConfig = {
+  debugMode: false,
   maxPlayers: 7,
   maxRounds: 7,
   dayDuration: 300,
@@ -55,6 +62,7 @@ export const SEVEN_PLAYER_CONFIG: GameConfig = {
 
 // 八人局配置
 export const EIGHT_PLAYER_CONFIG: GameConfig = {
+  debugMode: false,
   maxPlayers: 8,
   maxRounds: 7,
   dayDuration: 300,
@@ -74,6 +82,7 @@ export const EIGHT_PLAYER_CONFIG: GameConfig = {
 
 // 九人局配置
 export const NINE_PLAYER_CONFIG: GameConfig = {
+  debugMode: false,
   maxPlayers: 9,
   maxRounds: 7,
   dayDuration: 300,
