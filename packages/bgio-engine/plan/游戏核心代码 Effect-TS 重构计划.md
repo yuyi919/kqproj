@@ -1511,3 +1511,317 @@ pnpm --filter @whole-ends-kneel/bgio-engine test
 ---
 
 *最后更新: 2026-02-15*
+
+---
+
+## 2026-02-14: P1 错误模型收敛与结果类型回归
+
+### 本轮完成内容（具体）
+
+1. `src/effect/errors.ts`
+- 新增 `TargetWitchKillerFailedError`，并纳入 `AttackError` 联合类型。
+
+2. `src/effect/services/attackResolutionService.ts`
+- 将攻击规则失败统一为 Effect typed error：
+  - `ActorDeadError`
+  - `TargetWitchKillerFailedError`
+  - `QuotaExceededError`
+  - `TargetAlreadyDeadError`
+  - `BarrierProtectedError`
+- 使用 `Effect.catchTags({...})` 收敛规则失败分支，保持内部与外部都使用 `AttackError`（`TaggedError`）。
+- 对外返回保持 `{ actionId, reason }` 结构，但 `reason` 类型为 `AttackError`（不再降级为字符串）。
+
+3. `src/effect/services/attackResolutionService.test.ts`
+- 新增测试：`keeps internal rule errors as tagged failed reason`，验证失败原因以 `_tag` 形式保留。
+
+4. 文档同步
+- `AGENTS.md` 更新为最新状态：P1 错误建模完成，并记录“服务内 typed error、返回层原始 reason”策略。
+
+### 验证记录
+
+```bash
+pnpm build
+bun test src/effect/services/attackResolutionService.test.ts src/effect/services/playerStateService.test.ts src/effect/services/messageService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts
+bun test src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts
+```
+
+### 验证结果
+
+- `pnpm build` 通过
+- Effect 服务/Context/Layer 测试：11/11 通过
+- 关键结算回归测试：35/35 通过
+
+---
+
+## 2026-02-14: P1 结构收敛（按评审建议）
+
+### 本轮改动（针对三点建议）
+
+1. 去除冗长的 `catchTag` 链
+- 文件：`src/effect/services/attackResolutionService.ts`
+- 改动：连续 `Effect.catchTag(...)` 改为单次 `Effect.catchTags({...})`，保持内部/输出均为 `TaggedError`（`AttackError`）。
+
+2. 下沉失败消息分发逻辑
+- 文件：`src/effect/services/messageService.ts`
+- 改动：新增 `handleAttackFailureByReason(...)`，统一接收
+  - `actionId`
+  - `actorId`
+  - `targetId`
+  - `cardType`
+  - `reason`
+  并在服务内部完成失败消息分发。
+
+3. 精简 `AttackResolutionService` 分支职责
+- 文件：`src/effect/services/attackResolutionService.ts`
+- 改动：移除外层失败消息 `switch`，调用 `messageService.handleAttackFailureByReason(...)`；外层仅保留必要状态分支处理：
+  - `ActorDeadError` -> 维护 `deadPlayersInPhase`
+  - `BarrierProtectedError` -> 维护 `consumedBarriers`
+
+### 验证
+
+```bash
+pnpm build
+bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts
+bun test src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts
+```
+
+### 验证结果
+
+- `pnpm build` 通过
+- Effect 层测试：11/11 通过
+- 关键结算回归：35/35 通过
+
+## 2026-02-14: failedReason 全链路 TaggedError 收敛（补充）
+
+### 本次完成
+
+- [x] `NightAction.failedReason` 保持 `AttackError`（`Data.TaggedError` 联合），不再转换为字符串 reason。
+- [x] `AttackResolutionResult.failedActions.reason` 保持 `AttackError`。
+- [x] `AttackResolutionService` 内部失败映射由多段 `catchTag` 收敛为单次 `Effect.catchTags({...})`。
+- [x] `MessageService.handleAttackFailureByReason` 接收 `AttackError`，并按 `reason._tag` 分发到内部失败处理方法。
+- [x] 失败卡牌消耗判定统一按 `_tag`：`phase5-consume.ts`。
+
+### 本次代码调整
+
+- [x] `src/effect/services/attackResolutionService.ts`
+- [x] `src/effect/services/messageService.ts`
+- [x] `src/types/state.ts`
+- [x] `src/types/index.ts`
+- [x] `src/types.ts`
+- [x] `src/game/resolution/types.ts`
+- [x] `src/game/resolution/phase5-consume.ts`
+- [x] `src/effect/services/attackResolutionService.test.ts`
+- [x] `src/game/resolution/phase2-attack.test.ts`
+- [x] `src/__tests__/attack.test.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts`
+- [x] `bun test src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts`
+- [x] `bun test src/__tests__/attack.test.ts`
+
+## 2026-02-14: phase2 全流程下沉到 Effect
+
+### 本次完成
+
+- [x] `AttackResolutionService` 新增 `resolvePhase2(previousResult)`：
+  - 在 Effect 内执行攻击流程（复用 `processAttackActionsEffect`）
+  - 在 Effect 内组装 `PhaseResult`
+  - 在 Effect 内处理 `consumedBarriers` -> `barrierPlayers` 消耗
+  - 在 Effect 内处理成功动作后续：`cardSelection`、`pendingDistributions`
+  - 在 Effect 内发送选牌私信（`MessageService.handlePrivateMessage`）
+- [x] `src/game/resolution/phase2-attack.ts` 简化为纯 Effect 入口：
+  - 仅负责 Layer 注入、运行、错误边界
+  - 移除外层 imperative 的结果拼装与后处理逻辑
+
+### 影响文件
+
+- [x] `src/effect/services/attackResolutionService.ts`
+- [x] `src/game/resolution/phase2-attack.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts`
+
+## 2026-02-14: attackResolutionService 结构优化（去重/去转换）
+
+### 本次完成
+
+- [x] `executedActionInfos` 由 `Map<string, ExecutedActionInfo>` 收敛为 `ReadonlyArray<ExecutedActionInfo>`，减少不必要 key->value 结构。
+- [x] 删除未使用字段 `transferredWitchKiller` 及相关赋值。
+- [x] 删除不必要的 `Refinements` 转换与 `as never`：按 `CardType` 直接判定 `"kill" | "witch_killer"`。
+- [x] 抽出重复逻辑辅助函数：
+  - `createConsumedBarrierSnapshot`（barrier 消耗差集）
+  - `appendPendingDistribution`（pending 分配统一追加）
+- [x] 规则失败映射去重：`catchTags` handler 统一复用 `asRuleFailure`。
+- [x] 成功路径重复写入去重：`deadPlayers.add(targetId)` 提升到分支前。
+
+### 影响文件
+
+- [x] `src/effect/services/attackResolutionService.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts src/__tests__/attack.test.ts`
+
+## 2026-02-14: phase2 消息清单回归补充
+
+### 本次完成
+
+- [x] 在 `src/effect/services/attackResolutionService.test.ts` 新增表驱动测试：
+      `AttackResolutionService > phase2 message checklist (table-driven)`。
+- [x] 覆盖 5 类高风险链路场景：
+      `kill success`、`barrier protected`、`quota exceeded`、`witch_killer holder protection`、`actor dead`。
+- [x] 对消息链路做正反断言，确保关键消息不会遗漏或误发：
+      `attack_result`、`dead_response`、`transform_witch`、`private_message`、`barrier_applied`、`attack_excess`。
+- [x] 断言实现从 `any` 收敛为 `TMessage` 判别联合，避免类型检查弱化。
+
+### 影响文件
+
+- [x] `src/effect/services/attackResolutionService.test.ts`
+
+### 验证
+
+- [x] `bun test src/effect/services/attackResolutionService.test.ts`
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts src/__tests__/attack.test.ts`
+
+## 2026-02-14: Refinements 判别收敛（按评审建议）
+
+### 本次完成
+
+- [x] `AttackResolutionService` 中与攻击卡类型相关的分支全部改为 `Refinements` 判别，移除散落的字面量比较：
+      `Refinements.isKillMagicCard`、`Refinements.isWitchKillerCard`。
+- [x] `resolvePhase2` 中 `executedActionInfos` 的后处理分支收敛到 `Refinements` 判别。
+- [x] `processAttackActions` 中 kill 配额计数、死亡原因映射、witch_killer 成功分支改为 `Refinements` 判别。
+- [x] `priority.ts` 中 `isWitchKillerUsed` 改为复用 `Refinements.isWitchKillerCard`，避免重复字面量判断。
+
+### 影响文件
+
+- [x] `src/effect/services/attackResolutionService.ts`
+- [x] `src/game/resolution/services/priority.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/game/resolution/services/priority.test.ts src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/__tests__/attack.test.ts`
+
+## 2026-02-14: WitchKillerObtainedNotification 结构化与可观测性补强
+
+### 本次完成
+
+- [x] 新增结构化私密响应消息类型：
+      `WitchKillerObtainedNotification`（`private_response`），字段包含：
+      `actorId`、`fromPlayerId`、`mode("active" | "passive")`。
+- [x] `TMessageBuilder` 新增：
+      `createWitchKillerObtainedNotification(...)`。
+- [x] `MessageService.handleWitchKillerObtained` 改为发结构化消息，移除写死文案字符串。
+- [x] 残骸化强制转移补提醒：
+      `Mutations.killPlayer` 在 `wreck` 转移后发 `witch_killer_obtained(mode=passive)`，
+      并写入 `revealedInfo` 追踪来源（`fromPlayerId`）与原因（`forced_wreck_transfer`）。
+- [x] 前端展示解耦：
+      `MessageItem` 新增 `witch_killer_obtained` 分支，根据 `mode` 渲染主动/被动文案。
+- [x] 归属链路可观测性补充（Effect）：
+      在 `AttackResolutionService`、`PlayerStateService`、`MessageService`
+      加入 `Effect.logInfo + Effect.annotateLogs`，统一输出 from/to/reason/source。
+- [x] 去重归属转移路径：
+      移除 `PlayerStateService.killPlayer` 的 `kill_magic` 重复转移逻辑，
+      保留 `AttackResolutionService -> transferWitchKiller` 单一路径，避免双写。
+- [x] 按聚合设计继续收敛：
+      将 `kill_magic/wreck(killer)` 下的归属转移 + 结构化通知回收到
+      `PlayerStateService.killPlayer`，并删除 `AttackResolutionService` 的手动转移分支，
+      使 `killPlayer` 成为 Effect 路径下的唯一转移入口。
+- [x] 纠偏对齐 `Mutations.killPlayer`：
+      `wreck` 且无 `killerId` 时走随机存活玩家转移（自然死亡场景），
+      不依赖攻击 `targetId`，并发送 `mode=passive` 的结构化获得通知。
+- [x] 服务依赖调整：
+      `PlayerStateService` 增加对 `MessageService` 的依赖，
+      在 `killPlayer` 内发送 `witch_killer_obtained(mode=active|passive)`。
+
+### 影响文件
+
+- [x] `src/types/message.ts`
+- [x] `src/domain/services/messageBuilder.ts`
+- [x] `src/effect/services/messageService.ts`
+- [x] `src/effect/services/playerStateService.ts`
+- [x] `src/effect/services/attackResolutionService.ts`
+- [x] `src/domain/commands/index.ts`
+- [x] `src/components/ChatBox/MessageItem.tsx`
+- [x] `src/effect/services/messageService.test.ts`
+- [x] `src/__tests__/utils.test.ts`
+- [x] `src/__tests__/resolution.test.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/playerStateService.test.ts src/effect/services/messageService.test.ts src/effect/services/attackResolutionService.test.ts src/__tests__/resolution.test.ts src/__tests__/utils.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase2-attack.test.ts`
+
+## 2026-02-14: 消息链路复核修正（attackResolutionService）
+
+### 复核结论
+
+- [x] `handleTargetDead` 与 `handleTransformWitch` 在攻击成功链路中存在遗漏调用风险。
+- [x] 已在 `processAttackActionsEffect` 成功路径恢复这两类消息发送。
+
+### 本次修正
+
+- [x] 成功攻击后追加：`messageService.handleTargetDead(targetId, action.playerId)`。
+- [x] `kill_magic` 成功后，在首次魔女化场景发送：
+      `messageService.handleTransformWitch(action.playerId)`。
+- [x] 增加守护测试：
+      `AttackResolutionService > emits dead response and transform message for successful kill_magic`。
+
+### 影响文件
+
+- [x] `src/effect/services/attackResolutionService.ts`
+- [x] `src/effect/services/attackResolutionService.test.ts`
+
+### 验证
+
+- [x] `pnpm build`
+- [x] `bun test src/effect/services/attackResolutionService.test.ts src/effect/services/messageService.test.ts src/effect/services/playerStateService.test.ts src/effect/context/gameStateRef.test.ts src/effect/layers/gameLayers.test.ts src/game/resolution/phase2-attack.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase1-detect-barrier.test.ts src/game/resolution/phase3-check.test.ts src/game/resolution/applyPhaseResult.test.ts src/__tests__/attack.test.ts`
+
+## 2026-02-14 增量记录（RandomAPI Context 直连与 killPlayer 分支收敛）
+
+- [x] `GameRandom` 从 `Effect.Service` 改为 `Context.GenericTag<RandomAPI>`，并提供 `makeGameRandomLayer(random)` 与 `GameRandomDefault`。
+- [x] `PlayerStateService.killPlayer` 引入 `WitchKillerTransferDecision` + `decideWitchKillerTransfer(...)`，去除嵌套 `Effect.gen` 导致的类型坍塌与 `{}` 推断。
+- [x] 随机转移路径统一使用 `gameRandom.Die(...)`，移除服务内 `Math.random()`。
+- [x] 移除 `PlayerStateService` 对 `GameRandomDefault` 的硬依赖，改为由外层显式注入随机层，避免默认层吞掉测试注入。
+- [x] 注入点同步更新：
+      `src/game/resolution/phase2-attack.ts` 使用 `makeGameRandomLayer(random)`
+      `src/effect/services/playerStateService.test.ts` 显式提供 `makeGameRandomLayer(createMockRandom())`
+      `src/effect/services/attackResolutionService.test.ts` 显式提供随机层
+      `src/effect/layers/gameLayers.test.ts` 显式提供随机层
+- [x] 验证通过：
+      `pnpm build`
+      `bun test src/effect/services/playerStateService.test.ts src/effect/services/messageService.test.ts src/effect/services/attackResolutionService.test.ts src/__tests__/resolution.test.ts src/game/resolution/integration.test.ts src/game/resolution/phase2-attack.test.ts`
+      `bun test src/effect/layers/gameLayers.test.ts`
+
+## 2026-02-14 增量记录（killPlayer 联合类型收敛 + 注释修复）
+
+- [x] `IPlayerStateService.killPlayer` 改为联合类型入参 `KillPlayerInput`：
+      `kill_magic/witch_killer` 分支要求 `killerId`；
+      `wreck` 分支允许无 `killerId`。
+- [x] 删除 `WitchKillerTransferDecision` 与额外决策转换函数，`killPlayer` 内直接按 `input.cause` 分支，降低复杂度。
+- [x] `wreck` 且无击杀者时，随机接收者仍由 `RandomAPI` Context (`gameRandom.Die`) 提供，不使用 `Math.random()`。
+- [x] 同步服务与测试：
+      `AttackResolutionService.executeKill` 接口改为接收 `KillPlayerInput`；
+      `attackResolutionService.ts`、`playerStateService.test.ts`、`gameLayers.test.ts` 已完成迁移。
+- [x] 修复注释乱码并补充关键中文注释：
+      `src/effect/services/playerStateService.ts`
+      `src/effect/services/messageService.ts`
+      `src/effect/context/gameStateRef.ts`
+      `src/effect/layers/gameLayers.ts`
+- [x] 验证通过：
+      `pnpm build`
+      `bun test src/effect/services/playerStateService.test.ts src/effect/services/attackResolutionService.test.ts src/effect/layers/gameLayers.test.ts src/game/resolution/phase2-attack.test.ts`
+
+## 2026-02-14 增量记录（Selectors 去重收敛）
+- [x] `PlayerStateService` 查询侧收敛为复用 `Selectors`，去掉重复状态计算。
+- [x] 覆盖 `isAlive/isImprisoned/getAlivePlayers/isWitchKillerHolder/getHandCount/hasBarrier`。
+- [x] `killPlayer` 的 wreck 无击杀者分支改为复用 `Selectors.getAlivePlayers`。
+- [x] `Selectors.isPlayerAlive` 按现有设计保持 `state.players` 语义。
+- [x] 验证通过：`pnpm build`，以及 effect + phase2 相关回归测试。

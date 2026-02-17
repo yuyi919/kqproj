@@ -16,6 +16,7 @@ import type {
   TMessage,
 } from "../../types";
 import { Selectors } from "../queries";
+import { TMessageBuilder } from "../services/messageBuilder";
 
 /**
  * 状态修改 - 用于移动函数中的状态更新
@@ -113,10 +114,12 @@ export const Mutations = {
         // 残骸化：魔女杀手永不被遗弃
         // 优先转移给击杀者，如果没有击杀者则随机选择存活玩家
         let receiverId: string | null = null;
+        let transferMode: "wreck_killer" | "wreck_random" | null = null;
 
         if (killerId) {
           // 有击杀者，转移给击杀者
           receiverId = killerId;
+          transferMode = "wreck_killer";
         } else {
           // 无击杀者（连续两夜未击杀导致的残骸化），随机选择
           const alivePlayers = Selectors.getAlivePlayers(state);
@@ -125,16 +128,55 @@ export const Mutations = {
               ? random.Die(alivePlayers.length) - 1
               : Math.floor(Math.random() * alivePlayers.length);
             receiverId = alivePlayers[randomIndex].id;
+            transferMode = "wreck_random";
           }
         }
 
         if (receiverId) {
           this.transferWitchKiller(state, receiverId, droppedCards);
           state.secrets[receiverId].isWitch = true;
+
+          const receivedWitchKiller = state.secrets[receiverId].hand.find(
+            (card) => card.type === "witch_killer",
+          );
+          if (receivedWitchKiller) {
+            record.cardReceivers[receiverId] =
+              record.cardReceivers[receiverId] ?? [];
+            if (
+              !record.cardReceivers[receiverId].includes(receivedWitchKiller.id)
+            ) {
+              record.cardReceivers[receiverId].push(receivedWitchKiller.id);
+            }
+          }
+
+          this.msg(
+            state,
+            TMessageBuilder.createWitchKillerObtainedNotification(
+              receiverId,
+              playerId,
+              "passive",
+            ),
+          );
+          this.addRevealedInfo(state, receiverId, "witch_killer_obtained", {
+            fromPlayerId: playerId,
+            reason: "forced_wreck_transfer",
+            transferMode,
+          });
         }
       } else if (cause === "kill_magic" && killerId) {
         // 击杀者获得 witch_killer
         this.transferWitchKiller(state, killerId, droppedCards);
+        const receivedWitchKiller = state.secrets[killerId].hand.find(
+          (card) => card.type === "witch_killer",
+        );
+        if (receivedWitchKiller) {
+          record.cardReceivers[killerId] = record.cardReceivers[killerId] ?? [];
+          if (
+            !record.cardReceivers[killerId].includes(receivedWitchKiller.id)
+          ) {
+            record.cardReceivers[killerId].push(receivedWitchKiller.id);
+          }
+        }
       }
     }
 

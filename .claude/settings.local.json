@@ -37,7 +37,10 @@
       "Skill(clone-repo)",
       "mcp__serena__list_dir",
       "Bash(pnpm --filter @whole-ends-kneel/bgio-engine build:*)",
-      "Skill(effect-ts)"
+      "Skill(effect-ts)",
+      "mcp__serena__read_file",
+      "Bash(pnpm --filter @whole-ends-kneel/bgio-engine test:*)",
+      "mcp__serena__find_symbol"
     ]
   },
   "enableAllProjectMcpServers": true,
