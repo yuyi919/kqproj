@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 3 of 4 (技术债务)
-Plan: 01 of 04 (03-tech-debt-01)
+Plan: 04 of 04 (03-tech-debt-04)
 Status: Plan complete
-Last activity: 2026-02-17 — Plan 03-tech-debt-01 completed (Logger service infrastructure)
+Last activity: 2026-02-17 — Plan 03-tech-debt-04 completed (Unified error handling)
 
-Progress: [▓▓░░░░░░░░] 10%
+Progress: [▓▓▓▓▓▓▓▓▓▓] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: ~1.8 min
-- Total execution time: 0.08 hours
+- Total plans completed: 6
+- Average duration: ~1.5 min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
@@ -46,6 +46,7 @@ Progress: [▓▓░░░░░░░░] 10%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- **TECH-04:** Unified error handling - GameLogicError and Effect-TS TaggedError coexist with conversion via taggedErrorToGameLogicError at service boundaries
 - **TECH-01:** Created Logger Context with LoggerInterface, methods return Effect.Effect<void>
 - **TYPE-07:** Used generic type parameters (I, E, R) for Layer types instead of any in test-helpers.ts
 - **EFFECT-05:** Legacy domain services (cardService, messageBuilder, queries) preserved as compatibility layer. Effect-TS services import from legacy domain to maintain backward compatibility.
@@ -67,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed plan 03-tech-debt-01 (Logger service infrastructure)
-Resume file: .planning/phases/03-tech-debt/03-01-SUMMARY.md
+Stopped at: Completed plan 03-tech-debt-04 (Unified error handling)
+Resume file: .planning/phases/03-tech-debt/03-04-SUMMARY.md
