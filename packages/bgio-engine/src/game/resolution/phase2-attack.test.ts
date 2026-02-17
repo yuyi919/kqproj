@@ -83,7 +83,7 @@ describe("Phase 2: Attack", () => {
       const quotaFail = newResult.attackResult?.failedActions.find(
         (f: any) => f.actionId === "na4",
       );
-      expect(quotaFail?.reason).toBe("quota_exceeded");
+      expect(quotaFail?.reason._tag).toBe("QuotaExceededError");
     });
 
     it("应该处理目标已死亡的情况", () => {
@@ -115,7 +115,7 @@ describe("Phase 2: Attack", () => {
       expect(deadPlayers.has("p3")).toBe(true);
       // p2 的攻击应该失败（目标已死亡）
       const failAction = newResult.attackResult?.failedActions.find(
-        (f: any) => f.reason === "target_already_dead",
+        (f: any) => f.reason?._tag === "TargetAlreadyDeadError",
       );
       expect(failAction).toBeDefined();
     });
@@ -159,12 +159,12 @@ describe("Phase 2: Attack", () => {
       const p2Failed = newResult.attackResult?.failedActions.find(
         (f: any) => f.actionId === "na2",
       );
-      expect(p2Failed?.reason).toBe("actor_dead");
+      expect(p2Failed?.reason._tag).toBe("ActorDeadError");
       // p3 的 kill 失败：持有者受保护（target_witch_killer_failed），消耗卡牌
       const p3Failed = newResult.attackResult?.failedActions.find(
         (f: any) => f.actionId === "na3",
       );
-      expect(p3Failed?.reason).toBe("target_witch_killer_failed");
+      expect(p3Failed?.reason._tag).toBe("TargetWitchKillerFailedError");
     });
 
     it("应该正确处理 witch_killer 优先级", () => {
@@ -263,8 +263,8 @@ describe("Phase 2: Attack", () => {
 
       const newResult = processAttackActions(G, mockRandom, result);
 
-      // barrierPlayers 应该被传递
-      expect(newResult.barrierPlayers?.has("p2")).toBe(true);
+      // barrier 应该被消耗（攻击被 barrier 阻挡）
+      expect(newResult.barrierPlayers?.has("p2")).toBe(false);
     });
 
     it("规则4.5：witch_killer攻击他人成功时，针对持有者的攻击落空且消耗卡牌", () => {
@@ -308,11 +308,11 @@ describe("Phase 2: Attack", () => {
       const p2Failed = newResult.attackResult?.failedActions.find(
         (f: any) => f.actionId === "na2",
       );
-      expect(p2Failed?.reason).toBe("target_witch_killer_failed");
+      expect(p2Failed?.reason._tag).toBe("TargetWitchKillerFailedError");
       const p3Failed = newResult.attackResult?.failedActions.find(
         (f: any) => f.actionId === "na3",
       );
-      expect(p3Failed?.reason).toBe("target_witch_killer_failed");
+      expect(p3Failed?.reason._tag).toBe("TargetWitchKillerFailedError");
     });
 
     it("规则4.5：witch_killer被防御时，攻击持有者的kill应成功且获得witch_killer", () => {

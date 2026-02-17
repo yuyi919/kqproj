@@ -8,7 +8,7 @@
  */
 
 import type {
-  ActionFailureReason,
+  ActionFailureError,
   BGGameState,
   CardRef,
   NightAction,
@@ -24,7 +24,7 @@ import type {
  */
 export interface PhaseResult {
   /** 普通状态更新（Partial<BGGameState>） */
-  stateUpdates: Partial<BGGameState>;
+  stateUpdates: Pick<Partial<BGGameState>, "cardSelection">;
 
   /** 死亡的玩家 ID 集合 */
   deadPlayers?: Set<string>;
@@ -56,7 +56,7 @@ export interface AttackResult {
   executedActions: Set<string>;
 
   /** 失败的行动列表 */
-  failedActions: Array<{ actionId: string; reason: ActionFailureReason }>;
+  failedActions: Array<{ actionId: string; reason: ActionFailureError }>;
 }
 
 /**

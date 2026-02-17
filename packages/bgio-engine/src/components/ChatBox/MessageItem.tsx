@@ -138,6 +138,11 @@ function getMessageText(
           return msg.attackerId
             ? `你被${getPlayerName(msg.attackerId, players)}杀死了`
             : `你被不知道什么人杀死了`;
+        case "witch_killer_obtained":
+          const fromName = getPlayerName(msg.fromPlayerId, players);
+          return msg.mode === "active"
+            ? `你击杀了${fromName}，取得了【魔女杀手】`
+            : `【魔女杀手】从${fromName}强制转移给了你`;
         case "check_result":
           const checkTargetName = getPlayerName(msg.targetId, players);
           const causeNames: Record<string, string> = {

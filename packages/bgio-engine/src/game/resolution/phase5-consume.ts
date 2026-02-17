@@ -14,7 +14,7 @@
  * - 其他失败行动（目标已死、结界等）：仍然消耗卡牌
  */
 
-import type { ActionFailureReason, BGGameState } from "../../types";
+import type { ActionFailureError, BGGameState } from "../../types";
 import { getCardDefinition, Mutations } from "../../utils";
 import type { CardConsumption, ConsumptionReason, PhaseResult } from "./types";
 
@@ -85,7 +85,7 @@ export function processCardConsumption(
  */
 function determineConsumptionReason(
   executed: boolean | undefined,
-  failedReason: ActionFailureReason | undefined,
+  failedReason: ActionFailureError | undefined,
   isConsumable: boolean,
 ): ConsumptionReason {
   // witch_killer（consumable=false）：无论成功与否都不消耗
@@ -93,17 +93,17 @@ function determineConsumptionReason(
     return "executed_non_consumable";
   }
 
-  if (!executed && failedReason === "actor_dead") {
+  if (!executed && failedReason?._tag === "ActorDeadError") {
     // 攻击者在结算前已死亡：卡牌不消耗，留在亡者手中
     return "failed_witch_killer_priority";
   }
 
-  if (!executed && failedReason === "target_witch_killer_failed") {
+  if (!executed && failedReason?._tag === "TargetWitchKillerFailedError") {
     // witch_killer 成功后，针对原持有者的攻击失败：消耗
     return "failed_target_dead";
   }
 
-  if (!executed && failedReason === "quota_exceeded") {
+  if (!executed && failedReason?._tag === "QuotaExceededError") {
     // 因攻击超额失败：卡牌不消耗，归还攻击者
     return "failed_quota_exceeded";
   }
@@ -113,12 +113,12 @@ function determineConsumptionReason(
     return "executed_consumable";
   }
 
-  if (!executed && failedReason === "barrier_protected") {
+  if (!executed && failedReason?._tag === "BarrierProtectedError") {
     // 被结界防御：消耗卡牌
     return "failed_barrier";
   }
 
-  if (!executed && failedReason === "target_already_dead") {
+  if (!executed && failedReason?._tag === "TargetAlreadyDeadError") {
     // 目标已死：消耗卡牌
     return "failed_target_dead";
   }

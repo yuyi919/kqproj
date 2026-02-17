@@ -49,6 +49,7 @@ export type {
 } from "./player";
 // 状态相关
 export type {
+  ActionFailureError,
   ActionFailureReason,
   NightAction,
   PlayerAction,
@@ -68,5 +69,11 @@ export type {
 
 // ==================== BGGameState (重新导出) ====================
 
+// Effect-TS Branded Types
+export type { CardId, PlayerId } from "./branded";
+export {
+  isCardId,
+  isPlayerId,
+} from "./branded";
 // 重新导出 BGGameState 和 MoveContext 以保持向后兼容
 export type { BGGameState, MoveContext, MoveResult } from "./state";

@@ -313,6 +313,25 @@ export const TMessageBuilder = {
   },
 
   /**
+   * 创建获得魔女杀手通知（仅接收者可见）
+   */
+  createWitchKillerObtainedNotification(
+    actorId: string,
+    fromPlayerId: string,
+    mode: "active" | "passive",
+  ): TMessage {
+    return {
+      id: nanoid(),
+      timestamp: Date.now(),
+      kind: "private_response",
+      type: "witch_killer_obtained",
+      actorId,
+      fromPlayerId,
+      mode,
+    };
+  },
+
+  /**
    * 创建检定结果（仅检定者可见）
    */
   createCheckResult(

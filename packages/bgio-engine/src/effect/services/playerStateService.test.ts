@@ -1,0 +1,70 @@
+import { describe, expect, it } from "bun:test";
+import { Effect, Layer } from "effect";
+import { createTestState, setupPlayers } from "../../__tests__/testUtils";
+import { GameStateRef } from "../context/gameStateRef";
+import { PlayerStateService } from "./playerStateService";
+
+function makeLayer(state: ReturnType<typeof createTestState>) {
+  return Layer.provideMerge(PlayerStateService.Default, GameStateRef.layer(state));
+}
+
+describe("PlayerStateService", () => {
+  it("supports catchTag for PlayerNotFoundError", () => {
+    const G = createTestState();
+    setupPlayers(G, ["p1"]);
+
+    const program = Effect.gen(function* () {
+      const service = yield* PlayerStateService;
+      return yield* service.isAlive("missing-player");
+    }).pipe(
+      Effect.map(() => "ok"),
+      Effect.catchTag("PlayerNotFoundError", (error) =>
+        Effect.succeed(`missing:${error.playerId}`),
+      ),
+      Effect.provide(makeLayer(G)),
+    );
+
+    const result = Effect.runSync(program);
+    expect(result).toBe("missing:missing-player");
+  });
+
+  it("supports catchTag for PlayerNotAliveError", () => {
+    const G = createTestState();
+    setupPlayers(G, [{ id: "p1", status: "dead" }, "p2"]);
+
+    const program = Effect.gen(function* () {
+      const service = yield* PlayerStateService;
+      return yield* service.killPlayer("p1", "kill_magic", "p2");
+    }).pipe(
+      Effect.map(() => "ok"),
+      Effect.catchTag("PlayerNotAliveError", (error) =>
+        Effect.succeed(`not-alive:${error.playerId}:${error.status}`),
+      ),
+      Effect.provide(makeLayer(G)),
+    );
+
+    const result = Effect.runSync(program);
+    expect(result).toBe("not-alive:p1:dead");
+  });
+
+  it("writes kill result back to GameStateRef", () => {
+    const G = createTestState();
+    setupPlayers(G, ["p1", "p2"]);
+
+    const program = Effect.gen(function* () {
+      const service = yield* PlayerStateService;
+      const stateRef = yield* GameStateRef;
+
+      yield* service.killPlayer("p2", "kill_magic", "p1");
+      const updated = yield* stateRef.get();
+      return updated;
+    }).pipe(Effect.provide(makeLayer(G)));
+
+    const updated = Effect.runSync(program);
+
+    expect(updated.players["p2"].status).toBe("dead");
+    expect(updated.secrets["p2"].status).toBe("dead");
+    expect(updated.deathLog).toHaveLength(1);
+    expect(updated.deathLog[0].playerId).toBe("p2");
+  });
+});

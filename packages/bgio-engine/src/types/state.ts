@@ -14,6 +14,7 @@
 
 import type { PlayerID } from "boardgame.io";
 import type { EventsAPI, GameCtx, RandomAPI } from "../game";
+import type { AttackError } from "../effect/errors";
 import type { CardPoolConfig, CardRef } from "./card";
 import type { GameConfig } from "./config";
 import type { ActionType, CardType, GamePhase } from "./core";
@@ -60,23 +61,14 @@ export interface Vote {
 }
 
 /**
- * 行动失败原因类型
- *
- * 规则 4.5：
- * - actor_dead: 攻击者在结算前已死亡
- * - quota_exceeded: 配额超额
- * - target_witch_killer_failed: 目标是魔女杀手持有者但攻击失败
- * - barrier_protected: 被结界保护
- * - target_already_dead: 目标已死亡
- * - execution_failed: 执行失败
+ * 行动失败错误（TaggedError）
  */
-export type ActionFailureReason =
-  | "actor_dead" // 攻击者在结算前已死亡
-  | "quota_exceeded" // 配额超额
-  | "target_witch_killer_failed" // 目标是魔女杀手持有者但攻击失败
-  | "barrier_protected" // 被结界保护
-  | "target_already_dead" // 目标已死亡
-  | "execution_failed"; // 执行失败
+export type ActionFailureError = AttackError;
+
+/**
+ * @deprecated 保留兼容命名，语义已迁移为 TaggedError
+ */
+export type ActionFailureReason = ActionFailureError;
 
 /**
  * 夜间行动记录
@@ -95,8 +87,8 @@ export interface NightAction {
   executed?: boolean;
   /** 行动是否已处理（用于配额计算） */
   processed?: boolean;
-  /** 行动失败原因（可选） */
-  failedReason?: ActionFailureReason;
+  /** 行动失败原因（TaggedError，可选） */
+  failedReason?: ActionFailureError;
 }
 
 /**

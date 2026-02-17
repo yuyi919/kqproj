@@ -21,15 +21,18 @@ describe("Apply PhaseResult", () => {
   });
 
   it("应该应用状态更新", () => {
+    const cardSelection = {
+      
+    }
     const result: PhaseResult = {
-      stateUpdates: { round: 5 },
+      stateUpdates: { cardSelection: cardSelection },
       deadPlayers: new Set(),
       barrierPlayers: new Set(),
     };
 
     applyPhaseResult(G, mockRandom, result);
 
-    expect(G.round).toBe(5);
+    expect(G.cardSelection).toBe(cardSelection);
   });
 
   it("应该更新 deadPlayers 的状态", () => {

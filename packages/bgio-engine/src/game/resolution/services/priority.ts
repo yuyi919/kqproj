@@ -60,5 +60,7 @@ export function sortAttackActions(actions: NightAction[]): NightAction[] {
  * 判断 witch_killer 是否已使用
  */
 export function isWitchKillerUsed(actions: NightAction[]): boolean {
-  return actions.some((a) => a.card?.type === "witch_killer");
+  return actions.some(
+    (action) => !!action.card && Refinements.isWitchKillerCard(action.card),
+  );
 }

@@ -200,6 +200,7 @@ export type PrivateResponseMessage =
   | PrivateMessageResponse
   | BarrierResponse
   | DeadResponse
+  | WitchKillerObtainedNotification
   | CheckResultAction
   | DetectResultAction;
 
@@ -222,6 +223,14 @@ export interface DeadResponse extends BaseMessage {
   type: "dead_response";
   actorId: string;
   attackerId?: string;
+}
+
+export interface WitchKillerObtainedNotification extends BaseMessage {
+  kind: "private_response";
+  type: "witch_killer_obtained";
+  actorId: string;
+  fromPlayerId: string;
+  mode: "active" | "passive";
 }
 
 export interface CheckResultAction extends BaseMessage {

@@ -47,6 +47,7 @@ export type {
 // ==================== 状态相关 ====================
 // ==================== BGGameState ====================
 export type {
+  ActionFailureError,
   ActionFailureReason,
   BGGameState,
   MoveContext,
