@@ -29,7 +29,11 @@
 4. 统一使用 Effect-TS Data.TaggedError 处理错误
 5. 保留遗留 domain 服务层代码作为兼容层（不删除）
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+- [ ] 01-effect-ts-01-PLAN.md — Add boundary error conversion (EFFECT-04)
+- [ ] 01-effect-ts-02-PLAN.md — Verify integration tests for Effect-TS services
+- [ ] 01-effect-ts-03-PLAN.md — Verify backward compatibility (EFFECT-05)
 
 ---
 
@@ -64,7 +68,7 @@
 1. src/game/moves.ts 使用标准日志框架替代 console.log
 2. src/game/phases.ts 使用标准日志框架替代 console.log
 3. 移除调试模式 Player ID "0" 硬编码（或使用环境变量控制）
-4. 统一 GameLogicError 和 Effect-TS Data.TaggedError 错误处理
+4. 统一 GameLogicError 和 Effect-TS 错误处理
 
 **Plans**: TBD
 
@@ -97,7 +101,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Effect-TS 迁移 | 0/5 | Not started | - |
+| 1. Effect-TS 迁移 | 0/3 | Not started | - |
 | 2. 类型安全 | 0/3 | Not started | - |
 | 3. 技术债务 | 0/4 | Not started | - |
 | 4. 测试覆盖 | 0/5 | Not started | - |
