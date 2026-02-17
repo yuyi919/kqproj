@@ -80,8 +80,8 @@ The `wrapMove` function in `src/game/wrapMove.ts` correctly:
 
 ### Verification
 
-- TypeScript typecheck: PASSED
-- All 229 tests: PASSED (0 failures)
+- TypeScript typecheck: PASSED (on committed code)
+- Tests on committed code: 229 pass, 0 fail
 
 ## Deviations from Plan
 
@@ -89,6 +89,24 @@ The `wrapMove` function in `src/game/wrapMove.ts` correctly:
 
 None - plan executed exactly as written.
 
+### Out of Scope Issues Discovered
+
+The following pre-existing issues were found during execution but are OUT OF SCOPE for this plan:
+
+1. **src/game/moves.ts** - Contains invalid `yield*` syntax in non-generator functions
+2. **src/game/phases.ts** - Contains invalid `yield*` syntax in non-generator functions
+
+These issues appear to be from a different plan/process and should be addressed separately.
+
 ## Auth Gates
 
 None encountered.
+
+## Self-Check
+
+- [x] src/effect/errors.ts modified - BaseError case added
+- [x] Commit c560730 exists - "fix(tech-debt-03-04): add BaseError to error conversion function"
+- [x] Commit 70abc63 exists - "docs(03-tech-debt-04): complete unified error handling plan"
+- [x] SUMMARY.md created in plan directory
+
+Result: PASSED
