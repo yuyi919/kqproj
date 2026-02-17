@@ -31,9 +31,9 @@
 
 **Plans**: 3 plans
 
-- [ ] 01-effect-ts-01-PLAN.md — Add boundary error conversion (EFFECT-04)
-- [ ] 01-effect-ts-02-PLAN.md — Verify integration tests for Effect-TS services
-- [ ] 01-effect-ts-03-PLAN.md — Verify backward compatibility (EFFECT-05)
+- [x] 01-effect-ts-01-PLAN.md — Add boundary error conversion (EFFECT-04)
+- [x] 01-effect-ts-02-PLAN.md — Verify integration tests for Effect-TS services
+- [x] 01-effect-ts-03-PLAN.md — Verify backward compatibility (EFFECT-05)
 
 ---
 
@@ -51,7 +51,11 @@
 2. src/game/index.ts 无类型强制转换 (type casting)
 3. 所有测试辅助函数有完整类型签名
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+- [ ] 02-type-safety-01-PLAN.md — Remove any types from test-helpers.ts (TYPE-02)
+- [ ] 02-type-safety-02-PLAN.md — Add complete type signatures to testUtils.ts (TYPE-04)
+- [ ] 02-type-safety-03-PLAN.md — Verify no type casting in game/index.ts (TYPE-03)
 
 ---
 
@@ -101,7 +105,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Effect-TS 迁移 | 0/3 | Complete    | 2026-02-17 |
+| 1. Effect-TS 迁移 | 3/3 | Complete    | 2026-02-17 |
 | 2. 类型安全 | 0/3 | Not started | - |
 | 3. 技术债务 | 0/4 | Not started | - |
 | 4. 测试覆盖 | 0/5 | Not started | - |
