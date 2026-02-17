@@ -16,6 +16,7 @@ import {
 import type { BGGameState } from "../types";
 import { GamePhase } from "../types";
 import {
+  assertAttackQuotaAvailable,
   assertCardInHand,
   assertNotEmpty,
   assertPhase,
@@ -367,6 +368,38 @@ describe("assertValidMessage", () => {
   it("should pass for messages exactly 500 chars", () => {
     const exactMessage = "a".repeat(500);
     expect(() => assertValidMessage(exactMessage)).not.toThrow();
+  });
+});
+
+describe("assertAttackQuotaAvailable", () => {
+  it("should pass for non-witch-killer cards regardless of quota", () => {
+    const G = createTestState();
+    G.attackQuota = { witchKillerUsed: true, killMagicUsed: 0 };
+
+    // kill, detect, barrier, check cards don't check quota
+    expect(() => assertAttackQuotaAvailable(G, "kill")).not.toThrow();
+    expect(() => assertAttackQuotaAvailable(G, "detect")).not.toThrow();
+    expect(() => assertAttackQuotaAvailable(G, "barrier")).not.toThrow();
+    expect(() => assertAttackQuotaAvailable(G, "check")).not.toThrow();
+  });
+
+  it("should pass when witch killer quota is available", () => {
+    const G = createTestState();
+    G.attackQuota = { witchKillerUsed: false, killMagicUsed: 0 };
+
+    expect(() => assertAttackQuotaAvailable(G, "witch_killer")).not.toThrow();
+  });
+
+  it("should throw GameLogicError when witch killer quota is used", () => {
+    const G = createTestState();
+    G.attackQuota = { witchKillerUsed: true, killMagicUsed: 0 };
+
+    expect(() => assertAttackQuotaAvailable(G, "witch_killer")).toThrow(
+      GameLogicError,
+    );
+    expect(() => assertAttackQuotaAvailable(G, "witch_killer")).toThrow(
+      "Witch killer quota already used",
+    );
   });
 });
 
