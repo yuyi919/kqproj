@@ -156,7 +156,7 @@ export const TypedWitchTrialGame = {
     };
 
     if (playerID) {
-      if (playerID === "0") {
+      if (G.config.debugMode) {
         // 调试模式：显示所有玩家的私有信息
         publicState.secrets = G.secrets;
       } else if (G.secrets[playerID]) {
