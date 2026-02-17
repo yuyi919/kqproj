@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 2 of 4 (类型安全)
-Plan: 03 of 04 (02-type-safety-03)
+Plan: 01 of 04 (02-type-safety-01)
 Status: Plan complete
-Last activity: 2026-02-17 — Plan 02-type-safety-03 completed (Type-safe game definition verified)
+Last activity: 2026-02-17 — Plan 02-type-safety-01 completed (Type-safe test helpers verified)
 
-Progress: [▓▓▓▓▓▓▓░░░] 75%
+Progress: [▓▓░░░░░░░░] 10%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [▓▓▓▓▓▓▓░░░] 75%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- **TYPE-07:** Used generic type parameters (I, E, R) for Layer types instead of any in test-helpers.ts
 - **EFFECT-05:** Legacy domain services (cardService, messageBuilder, queries) preserved as compatibility layer. Effect-TS services import from legacy domain to maintain backward compatibility.
 - **TYPE-06:** Used MoveFn<BGGameState> and EventsAPI from boardgame.io for type-safe test utilities
 - **TYPE-03:** Removed unnecessary type cast (`as any`) from game/index.ts deathLog in playerView
@@ -65,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed plan 02-type-safety-03 (Type-safe game definition verified)
-Resume file: .planning/phases/02-type-safety/02-type-safety-03-SUMMARY.md
+Stopped at: Completed plan 02-type-safety-01 (Type-safe test helpers verified)
+Resume file: .planning/phases/02-type-safety/02-type-safety-01-SUMMARY.md
