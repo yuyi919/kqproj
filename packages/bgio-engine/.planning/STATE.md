@@ -6,23 +6,23 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** 建立稳定、可维护、可测试的游戏引擎架构，为后续功能开发奠定坚实基础。
 
-**Current focus:** Phase 1 - Effect-TS 迁移
+**Current focus:** Phase 2 - 类型安全 (Type Safety)
 
 ## Current Position
 
-Phase: 1 of 4 (Effect-TS 迁移)
-Plan: 03 of 05 (01-effect-ts-03)
+Phase: 2 of 4 (类型安全)
+Plan: 02 of 04 (02-type-safety-02)
 Status: Plan complete
-Last activity: 2026-02-17 — Plan 03 completed (Backward compatibility verified)
+Last activity: 2026-02-17 — Plan 02-type-safety-02 completed (Type-safe test utilities)
 
-Progress: [▓▓▓▓▓▓░░░░░] 40%
+Progress: [▓▓▓▓▓░░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~1.5 min
-- Total execution time: 0.05 hours
+- Total plans completed: 3
+- Average duration: ~1.8 min
+- Total execution time: 0.06 hours
 
 **By Phase:**
 
@@ -47,6 +47,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - **EFFECT-05:** Legacy domain services (cardService, messageBuilder, queries) preserved as compatibility layer. Effect-TS services import from legacy domain to maintain backward compatibility.
+- **TYPE-06:** Used MoveFn<BGGameState> and EventsAPI from boardgame.io for type-safe test utilities
 
 ### Pending Todos
 
@@ -63,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed plan 01-effect-ts-03 (Backward compatibility verified)
-Resume file: .planning/phases/01-effect-ts/01-effect-ts-03-SUMMARY.md
+Stopped at: Completed plan 02-type-safety-02 (Type-safe test utilities)
+Resume file: .planning/phases/02-type-safety/02-type-safety-02-SUMMARY.md
