@@ -29,7 +29,8 @@
 - 创建游戏配置对象管理调试设置
 
 ### 错误处理
-- 统一使用 GameLogicError（由你决定）
+- 双轨并存：GameLogicError 和 Effect-TS TaggedError 共存
+- 视情况转换
 
 </decisions>
 
