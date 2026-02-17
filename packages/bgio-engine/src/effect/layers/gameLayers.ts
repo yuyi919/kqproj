@@ -14,16 +14,11 @@ import {
   PlayerStateService,
   PriorityServiceLayer,
 } from "../services";
-import { LoggerLayer } from "../context/logger";
 
 /**
  * 基础服务层组合（无状态依赖）
  */
-const BaseServices = Layer.mergeAll(
-  PriorityServiceLayer,
-  CardServiceLayer,
-  LoggerLayer,
-);
+const BaseServices = Layer.mergeAll(PriorityServiceLayer, CardServiceLayer);
 
 /**
  * 游戏完整服务层：

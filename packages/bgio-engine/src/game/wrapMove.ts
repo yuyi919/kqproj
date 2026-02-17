@@ -30,7 +30,11 @@ export function wrapMove<T extends unknown[]>(
   ) =>
     | void
     | BGGameState
-    | Effect.Effect<void | BGGameState, unknown, GameStateRef | GameRandom>,
+    | Effect.Effect<
+        void | BGGameState,
+        unknown,
+        GameStateRef | GameRandom | MessageService
+      >,
 ) {
   return ((
     ctx: MoveContext,

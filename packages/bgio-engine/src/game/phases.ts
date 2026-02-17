@@ -7,9 +7,9 @@
 import type { PhaseConfig } from "boardgame.io";
 import { ActivePlayers, TurnOrder } from "boardgame.io/core";
 import { Effect } from "effect";
-import { Logger } from "../effect/context/logger";
 import { isEmptyObject } from "es-toolkit";
 import { MessageService } from "../effect";
+import { LoggerService } from "../effect/context/logger";
 import type { BGGameState } from "../types";
 import { GamePhase } from "../types/core";
 import { Mutations, Selectors } from "../utils";
@@ -68,7 +68,10 @@ const phaseConfigs = {
                 (c) => !receivedCardIds.has(c.id),
               );
               if (unclaimed.length > 0) {
-                yield* MessageService.sendDeathRecord(death.playerId, unclaimed);
+                yield* MessageService.sendDeathRecord(
+                  death.playerId,
+                  unclaimed,
+                );
               }
             }
           }
@@ -76,7 +79,10 @@ const phaseConfigs = {
           G.status = GamePhase.MORNING;
         }
         // 添加早晨阶段消息
-        yield* MessageService.sendPhaseTransition(GamePhase.DAY, GamePhase.MORNING);
+        yield* MessageService.sendPhaseTransition(
+          GamePhase.DAY,
+          GamePhase.MORNING,
+        );
         Mutations.setPhaseTimer(G, 5); // 5 seconds duration
       }),
     ),
@@ -103,7 +109,10 @@ const phaseConfigs = {
         G.activeTrade = null;
 
         // 添加日间阶段消息
-        yield* MessageService.sendPhaseTransition(GamePhase.MORNING, GamePhase.DAY);
+        yield* MessageService.sendPhaseTransition(
+          GamePhase.MORNING,
+          GamePhase.DAY,
+        );
       }),
     ),
   } satisfies PhaseConfig<BGGameState>,
@@ -127,21 +136,24 @@ const phaseConfigs = {
     next: GamePhase.DEEP_NIGHT,
     onBegin: wrapHook(({ G }: PhaseHookContext) =>
       Effect.gen(function* () {
-        const logger = yield* (Logger);
         G.status = GamePhase.NIGHT;
         Mutations.setPhaseTimer(G, G.config.votingDuration);
-        yield* (logger.info(`phase: Voting phase started, round ${G.round}`));
+        yield* LoggerService.info(
+          `phase: Voting phase started, round ${G.round}`,
+        );
 
         // 添加夜间阶段消息
-        yield* MessageService.sendPhaseTransition(GamePhase.DAY, GamePhase.NIGHT);
+        yield* MessageService.sendPhaseTransition(
+          GamePhase.DAY,
+          GamePhase.NIGHT,
+        );
       }),
     ),
     onEnd: wrapHook(({ G }: PhaseHookContext) =>
       Effect.gen(function* () {
-        const logger = yield* (Logger);
-        yield* (logger.info(
+        yield* LoggerService.info(
           `phase: Voting phase ended, processing ${G.currentVotes.length} votes`,
-        ));
+        );
 
         // 使用 Selectors 计算投票结果
         const voteResult = Selectors.computeVoteResult(G);
@@ -151,27 +163,29 @@ const phaseConfigs = {
         const participationRate =
           totalAlive > 0 ? participationCount / totalAlive : 0;
 
-        yield* (logger.info(
+        yield* LoggerService.info(
           `voteResult: Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
-        ));
+        );
 
         // 投票参与率验证
         if (!isValid) {
-          yield* (logger.warn(
+          yield* LoggerService.warn(
             `voteResult: Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
-          ));
+          );
           yield* MessageService.sendSystem(
             `⚠️ 投票无效：参与率 ${participationCount}/${totalAlive}(${(
               participationRate * 100
             ).toFixed(1)}%) 未达到最低要求`,
           );
         } else if (isTie) {
-          yield* (logger.info(`voteResult: Tie! No one will be imprisoned`));
+          yield* LoggerService.info(
+            `voteResult: Tie! No one will be imprisoned`,
+          );
           yield* MessageService.sendSystem("⚠️ 投票平票，无人被监禁");
         } else if (imprisonedId) {
-          yield* (logger.info(
+          yield* LoggerService.info(
             `voteResult: ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
-          ));
+          );
           const imprisonedPlayer = G.players[imprisonedId];
           if (imprisonedPlayer) {
             yield* MessageService.sendSystem(
@@ -179,7 +193,9 @@ const phaseConfigs = {
             );
           }
         } else {
-          yield* (logger.info(`voteResult: No valid votes, no one imprisoned`));
+          yield* LoggerService.info(
+            `voteResult: No valid votes, no one imprisoned`,
+          );
           yield* MessageService.sendSystem("⚠️ 无有效投票，无人被监禁");
         }
 
@@ -188,9 +204,9 @@ const phaseConfigs = {
         // 记录到历史
         G.voteHistory.push(voteResult);
 
-        yield* (logger.info(
+        yield* LoggerService.info(
           `voteResult: Vote history updated, total records: ${G.voteHistory.length}`,
-        ));
+        );
 
         // 添加投票结果摘要
         const voteSummary = Object.entries(voteCounts)
@@ -314,7 +330,6 @@ const phaseConfigs = {
     ),
     onEnd: wrapHook(({ G, random }: PhaseHookContext) =>
       Effect.gen(function* () {
-        const logger = yield* (Logger);
         // 如果有卡牌选择但超时，随机分配
         for (const cardSelection of Object.values(G.cardSelection)) {
           if (cardSelection) {
@@ -327,16 +342,20 @@ const phaseConfigs = {
               const selectedCard = availableCards[randomIndex];
 
               // 完成卡牌选择过程（随机分配）
-              Mutations.completeCardSelection(G, selectingPlayerId, selectedCard);
+              Mutations.completeCardSelection(
+                G,
+                selectingPlayerId,
+                selectedCard,
+              );
 
               yield* MessageService.sendPrivateMessage(
                 selectingPlayerId,
                 `你超时未选择，随机获得了一张卡牌`,
               );
 
-              yield* (logger.info(
+              yield* LoggerService.info(
                 `cardSelection: ${selectingPlayerId} timed out, randomly assigned card ${selectedCard.type}`,
-              ));
+              );
             }
           }
         }

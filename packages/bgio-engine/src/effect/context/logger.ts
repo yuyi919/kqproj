@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Logger Context - Effect-TS 日志服务
+ * Logger Service - Effect-TS 日志服务
  *
- * 提供统一的日志接口，支持通过 Context 注入。
+ * 提供统一的日志接口，可直接调用方法。
  * Logger 方法返回 Effect.Effect<void>，由 wrapMove 自动执行。
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
 
 /**
  * 日志级别
@@ -15,93 +15,36 @@ import { Context, Effect, Layer } from "effect";
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
- * Logger 接口
- * 所有方法返回 Effect.Effect<void>，而非 void
+ * Logger Service - 直接调用的日志服务
  */
-export interface LoggerInterface {
-  debug(message: string, ...args: unknown[]): Effect.Effect<void>;
-  info(message: string, ...args: unknown[]): Effect.Effect<void>;
-  warn(message: string, ...args: unknown[]): Effect.Effect<void>;
-  error(message: string, ...args: unknown[]): Effect.Effect<void>;
-}
-
-/**
- * Logger Tag - 用于 Context 注入
- */
-export const Logger = Context.GenericTag<LoggerInterface>("Logger");
-
-/**
- * 控制台日志实现
- * 使用 Effect.log (3.19+ API) 代替 Effect.logInfo
- */
-class ConsoleLogger implements LoggerInterface {
-  private readonly minLevel: LogLevel;
-
-  private readonly levelPriority: Record<LogLevel, number> = {
-    debug: 0,
-    info: 1,
-    warn: 2,
-    error: 3,
-  };
-
-  constructor(minLevel: LogLevel = "info") {
-    this.minLevel = minLevel;
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    return this.levelPriority[level] >= this.levelPriority[this.minLevel];
-  }
-
-  private formatMessage(level: LogLevel, message: string, args: unknown[]): string {
-    const argsStr = args.length > 0 ? ` ${JSON.stringify(args)}` : "";
-    return `[${level.toUpperCase()}] ${message}${argsStr}`;
-  }
-
+export const LoggerService = {
   debug(message: string, ...args: unknown[]): Effect.Effect<void> {
-    if (!this.shouldLog("debug")) {
-      return Effect.void;
-    }
-    return Effect.log(this.formatMessage("debug", message, args)).pipe(
-      Effect.annotateLogs({ level: "debug" }),
+    return Effect.log(
+      `[DEBUG] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
-  }
+  },
 
   info(message: string, ...args: unknown[]): Effect.Effect<void> {
-    if (!this.shouldLog("info")) {
-      return Effect.void;
-    }
-    return Effect.log(this.formatMessage("info", message, args)).pipe(
-      Effect.annotateLogs({ level: "info" }),
+    return Effect.log(
+      `[INFO] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
-  }
+  },
 
   warn(message: string, ...args: unknown[]): Effect.Effect<void> {
-    if (!this.shouldLog("warn")) {
-      return Effect.void;
-    }
-    return Effect.log(this.formatMessage("warn", message, args)).pipe(
-      Effect.annotateLogs({ level: "warn" }),
+    return Effect.log(
+      `[WARN] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
-  }
+  },
 
   error(message: string, ...args: unknown[]): Effect.Effect<void> {
-    if (!this.shouldLog("error")) {
-      return Effect.void;
-    }
-    return Effect.log(this.formatMessage("error", message, args)).pipe(
-      Effect.annotateLogs({ level: "error" }),
+    return Effect.log(
+      `[ERROR] ${message} ${args.length > 0 ? JSON.stringify(args) : ""}`,
     );
-  }
-}
+  },
+};
 
 /**
- * 创建 Logger Layer
- * @param minLevel 最小日志级别，默认 "info"
+ * 兼容旧接口 - 导出 Logger 作为 Context 注入（保留以兼容现有代码）
+ * @deprecated 建议直接使用 LoggerService
  */
-export const makeLoggerLayer = (minLevel: LogLevel = "info") =>
-  Layer.succeed(Logger, Logger.of(new ConsoleLogger(minLevel)));
-
-/**
- * 默认 Logger Layer (info 级别)
- */
-export const LoggerLayer = makeLoggerLayer("info");
+export { LoggerService as Logger };

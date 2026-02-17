@@ -4,7 +4,9 @@
  * Move 函数定义
  */
 
+import { Effect } from "effect";
 import { nanoid } from "nanoid";
+import { LoggerService } from "../effect/context/logger";
 import type { MoveContext, PublicPlayerInfo } from "../types";
 import { GamePhase } from "../types/core";
 import {
@@ -25,8 +27,6 @@ import {
   assertWitchKillerCardAllowed,
 } from "./assertions";
 import { GameLogicError } from "./errors";
-import { Effect } from "effect";
-import { Logger } from "../effect/context/logger";
 import { wrapMove } from "./wrapMove";
 
 const moveFunctions = {
@@ -64,8 +64,7 @@ const moveFunctions = {
         throw new GameLogicError("Cannot vote for yourself");
       }
 
-      const logger = yield* (Logger);
-      yield* (logger.info(`vote: ${playerID} votes for ${targetId}`));
+      yield* LoggerService.info(`vote: ${playerID} votes for ${targetId}`);
 
       // 查找是否已有投票（支持改票）
       const existingVote = Selectors.findExistingVote(G, playerID);
@@ -78,9 +77,9 @@ const moveFunctions = {
         }
         existingVote.targetId = targetId;
         existingVote.timestamp = Date.now();
-        yield* (logger.info(
+        yield* LoggerService.info(
           `vote: ${playerID} changed vote from ${oldTarget} to ${targetId}`,
-        ));
+        );
 
         Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
       } else {
@@ -92,9 +91,9 @@ const moveFunctions = {
         };
         // 新增投票
         G.currentVotes.push(vote);
-        yield* (logger.info(
+        yield* LoggerService.info(
           `vote: ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
-        ));
+        );
 
         Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
       }
@@ -118,8 +117,7 @@ const moveFunctions = {
       assertPhase(G, GamePhase.NIGHT);
       const player = assertPlayerAlive(G, playerID);
 
-      const logger = yield* (Logger);
-      yield* (logger.info(`vote: ${playerID} passes (votes for self)`));
+      yield* LoggerService.info(`vote: ${playerID} passes (votes for self)`);
 
       // 查找是否已有投票
       const existingIndex = Selectors.findExistingVoteIndex(G, playerID);
@@ -136,16 +134,16 @@ const moveFunctions = {
         // 更新为弃权
         const oldTarget = G.currentVotes[existingIndex].targetId;
         G.currentVotes[existingIndex] = vote;
-        yield* (logger.info(
+        yield* LoggerService.info(
           `vote: ${playerID} changed vote to pass (from ${oldTarget})`,
-        ));
+        );
         Mutations.msg(G, TMessageBuilder.createPass(playerID));
       } else {
         // 新增弃权票
         G.currentVotes.push(vote);
-        yield* (logger.info(
+        yield* LoggerService.info(
           `vote: ${playerID} passed, total votes: ${G.currentVotes.length}`,
-        ));
+        );
         Mutations.msg(G, TMessageBuilder.createPass(playerID));
       }
     });
@@ -343,10 +341,9 @@ const moveFunctions = {
           TMessageBuilder.createTradeOffer(playerID, targetId, offeredCardId),
         );
 
-        const logger = yield* (Logger);
-        yield* (logger.info(
+        yield* LoggerService.info(
           `trade: ${playerID} initiated trade with ${targetId}, offering ${offeredCardId}`,
-        ));
+        );
       });
     },
   ),
@@ -390,8 +387,6 @@ const moveFunctions = {
         if (!initiator || !responder) {
           throw new GameLogicError("Player not found");
         }
-
-        const logger = yield* (Logger);
 
         // 查找发起者提供的卡牌
         const offeredIndex = initiator.hand.findIndex(
@@ -439,12 +434,14 @@ const moveFunctions = {
           initiator.hand[offeredIndex] = responseCard;
           responder.hand[responseIndex] = offeredCard;
 
-          yield* (logger.info(
+          yield* LoggerService.info(
             `trade: Trade between ${initiatorId} and ${playerID} completed`,
-          ));
+          );
         } else {
           // 拒绝交易，卡牌归发起者
-          yield* (logger.info(`trade: ${playerID} rejected trade from ${initiatorId}`));
+          yield* LoggerService.info(
+            `trade: ${playerID} rejected trade from ${initiatorId}`,
+          );
 
           // 拒绝后发起方仍视为已参与当日交易（规则 5.2）
           Mutations.updateTradeTracker(G, initiatorId, {
@@ -483,8 +480,7 @@ const moveFunctions = {
         throw new GameLogicError("Only the initiator can cancel the trade");
       }
 
-      const logger = yield* (Logger);
-      yield* (logger.info(`trade: ${playerID} cancelled trade`));
+      yield* LoggerService.info(`trade: ${playerID} cancelled trade`);
 
       // 清除活跃交易
       G.activeTrade = null;
@@ -533,8 +529,7 @@ const moveFunctions = {
         // 完成卡牌选择过程
         Mutations.completeCardSelection(G, playerID, selectedCard);
 
-        const logger = yield* (Logger);
-        yield* (logger.info(`card: ${playerID} selected card ${cardId}`));
+        yield* LoggerService.info(`card: ${playerID} selected card ${cardId}`);
       });
     },
   ),
@@ -567,8 +562,7 @@ const moveFunctions = {
       // 完成卡牌选择过程（无选卡）
       Mutations.completeCardSelection(G, playerID, null);
 
-      const logger = yield* (Logger);
-      yield* (logger.info(`card: ${playerID} skipped card selection`));
+      yield* LoggerService.info(`card: ${playerID} skipped card selection`);
     });
   }),
 };

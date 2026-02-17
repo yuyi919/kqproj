@@ -124,7 +124,6 @@ export function taggedErrorToGameLogicError(error: unknown): GameLogicError {
   }
 
   // Default case - include original error message
-  const message =
-    error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
   return new GameLogicError(`Unknown error: ${message}`);
 }
