@@ -8,7 +8,7 @@
 
 - [x] **Phase 1: Effect-TS 迁移** - 完成服务层迁移，统一错误处理 (completed 2026-02-17)
 - [x] **Phase 2: 类型安全** - 移除 any 类型，提升类型安全 (completed 2026-02-17)
-- [ ] **Phase 3: 技术债务** - 标准化日志记录，统一错误处理
+- [x] **Phase 3: 技术债务** - 标准化日志记录，统一错误处理 (completed 2026-02-17)
 - [ ] **Phase 4: 测试覆盖** - 提升测试覆盖率至 80%+
 
 ## Phase Details
@@ -74,7 +74,12 @@
 3. 移除调试模式 Player ID "0" 硬编码（或使用环境变量控制）
 4. 统一 GameLogicError 和 Effect-TS 错误处理
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+- [ ] 03-01-PLAN.md — 创建 Effect-TS 日志服务 (DEBT-01 前置)
+- [ ] 03-02-PLAN.md — 替换 moves.ts 中的 console.log (DEBT-01)
+- [ ] 03-03-PLAN.md — 替换 phases.ts 中的 console.log + 移除调试 ID 硬编码 (DEBT-02 + DEBT-03)
+- [ ] 03-04-PLAN.md — 统一错误处理 (DEBT-04)
 
 ---
 
@@ -106,6 +111,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Effect-TS 迁移 | 3/3 | Complete    | 2026-02-17 |
-| 2. 类型安全 | 0/3 | Complete    | 2026-02-17 |
-| 3. 技术债务 | 0/4 | Not started | - |
+| 2. 类型安全 | 3/3 | Complete    | 2026-02-17 |
+| 3. 技术债务 | 4/4 | Complete    | 2026-02-17 |
 | 4. 测试覆盖 | 0/5 | Not started | - |

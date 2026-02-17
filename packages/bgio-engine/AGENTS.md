@@ -48,6 +48,58 @@
 - [x] `PlayerNotFound`、`QuotaExceeded`、`BarrierProtected` 等错误统一为 `Data.TaggedError`。
 - [ ] `PlayerId/CardId` 在服务边界参数类型中启用（逐步替换裸 `string`）。
 
+---
+
+## Phase 3: 技术债务 - 经验总结
+
+### 背景
+
+Phase 3 目标是标准化日志记录（替换 console.log）和统一错误处理。执行过程中发现原有计划存在设计问题，需要修正。
+
+### 问题发现
+
+**原计划设计 (错误):**
+```typescript
+// 使用 Context 注入
+const logger = yield* Logger;  // 错误！
+yield* logger.info("message");
+```
+
+- 使用 `yield* Logger` 在非生成器函数中
+- 尝试将 Logger 作为 Effect-TS Context 注入
+- 使用了不存在的 `_` 导入
+
+### 修正后的设计 (正确):
+
+```typescript
+// 直接调用模式
+import { LoggerService } from "../effect/context/logger";
+
+yield* LoggerService.info("message");
+```
+
+- LoggerService 直接导出，无需 Context 注入
+- 方法返回 `Effect.Effect<void>`，由 wrapMove 自动执行
+- 使用 `Effect.log` (3.19+ API)
+
+### 学到的教训
+
+1. **不要假设 Effect-TS 模式** - 不是所有服务都需要 Context 注入。简单的工具服务可以直接导出函数/对象。
+
+2. **验证导入来源** - `_` 不是从 "effect" 导出的，需要直接使用 `yield*`
+
+3. **Effect.gen 内直接调用** - `yield* LoggerService.info()` 在 `Effect.gen(function*() {})` 内直接调用
+
+4. **测试驱动的修正** - typecheck 和测试帮助快速发现问题
+
+5. **计划需要与实现对齐** - 计划文档应反映实际可行的实现方式
+
+### 相关提交
+
+- `6990e7d` - refactor(phase-3): correct LoggerService implementation
+- `4a509d6` - docs(phase-3): update UAT report with LoggerService pattern
+- `b96a1fe` - docs(phase-3): add SUMMARY files for all plans
+
 ## 测试场景（最小闭环）
 
 - [x] `phase2` 执行失败时：不会静默返回“空成功结果”。
