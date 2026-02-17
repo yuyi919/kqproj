@@ -7,6 +7,7 @@
 import type { PhaseConfig } from "boardgame.io";
 import { ActivePlayers, TurnOrder } from "boardgame.io/core";
 import { Effect } from "effect";
+import { Logger } from "../effect/context/logger";
 import { isEmptyObject } from "es-toolkit";
 import { MessageService } from "../effect";
 import type { BGGameState } from "../types";
@@ -126,9 +127,10 @@ const phaseConfigs = {
     next: GamePhase.DEEP_NIGHT,
     onBegin: wrapHook(({ G }: PhaseHookContext) =>
       Effect.gen(function* () {
+        const logger = yield* (Logger);
         G.status = GamePhase.NIGHT;
         Mutations.setPhaseTimer(G, G.config.votingDuration);
-        console.log(`[Phase] Voting phase started, round ${G.round}`);
+        yield* (logger.info(`phase: Voting phase started, round ${G.round}`));
 
         // 添加夜间阶段消息
         yield* MessageService.sendPhaseTransition(GamePhase.DAY, GamePhase.NIGHT);
@@ -136,9 +138,10 @@ const phaseConfigs = {
     ),
     onEnd: wrapHook(({ G }: PhaseHookContext) =>
       Effect.gen(function* () {
-        console.log(
-          `[Phase] Voting phase ended, processing ${G.currentVotes.length} votes`,
-        );
+        const logger = yield* (Logger);
+        yield* (logger.info(
+          `phase: Voting phase ended, processing ${G.currentVotes.length} votes`,
+        ));
 
         // 使用 Selectors 计算投票结果
         const voteResult = Selectors.computeVoteResult(G);
@@ -148,27 +151,27 @@ const phaseConfigs = {
         const participationRate =
           totalAlive > 0 ? participationCount / totalAlive : 0;
 
-        console.log(
-          `[VoteResult] Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
-        );
+        yield* (logger.info(
+          `voteResult: Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
+        ));
 
         // 投票参与率验证
         if (!isValid) {
-          console.log(
-            `[VoteResult] Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
-          );
+          yield* (logger.warn(
+            `voteResult: Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
+          ));
           yield* MessageService.sendSystem(
             `⚠️ 投票无效：参与率 ${participationCount}/${totalAlive}(${(
               participationRate * 100
             ).toFixed(1)}%) 未达到最低要求`,
           );
         } else if (isTie) {
-          console.log(`[VoteResult] Tie! No one will be imprisoned`);
+          yield* (logger.info(`voteResult: Tie! No one will be imprisoned`));
           yield* MessageService.sendSystem("⚠️ 投票平票，无人被监禁");
         } else if (imprisonedId) {
-          console.log(
-            `[VoteResult] ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
-          );
+          yield* (logger.info(
+            `voteResult: ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
+          ));
           const imprisonedPlayer = G.players[imprisonedId];
           if (imprisonedPlayer) {
             yield* MessageService.sendSystem(
@@ -176,7 +179,7 @@ const phaseConfigs = {
             );
           }
         } else {
-          console.log(`[VoteResult] No valid votes, no one imprisoned`);
+          yield* (logger.info(`voteResult: No valid votes, no one imprisoned`));
           yield* MessageService.sendSystem("⚠️ 无有效投票，无人被监禁");
         }
 
@@ -185,9 +188,9 @@ const phaseConfigs = {
         // 记录到历史
         G.voteHistory.push(voteResult);
 
-        console.log(
-          `[VoteResult] Vote history updated, total records: ${G.voteHistory.length}`,
-        );
+        yield* (logger.info(
+          `voteResult: Vote history updated, total records: ${G.voteHistory.length}`,
+        ));
 
         // 添加投票结果摘要
         const voteSummary = Object.entries(voteCounts)
@@ -311,6 +314,7 @@ const phaseConfigs = {
     ),
     onEnd: wrapHook(({ G, random }: PhaseHookContext) =>
       Effect.gen(function* () {
+        const logger = yield* (Logger);
         // 如果有卡牌选择但超时，随机分配
         for (const cardSelection of Object.values(G.cardSelection)) {
           if (cardSelection) {
@@ -330,9 +334,9 @@ const phaseConfigs = {
                 `你超时未选择，随机获得了一张卡牌`,
               );
 
-              console.log(
-                `[CardSelection] ${selectingPlayerId} timed out, randomly assigned card ${selectedCard.type}`,
-              );
+              yield* (logger.info(
+                `cardSelection: ${selectingPlayerId} timed out, randomly assigned card ${selectedCard.type}`,
+              ));
             }
           }
         }

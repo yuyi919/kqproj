@@ -25,6 +25,8 @@ import {
   assertWitchKillerCardAllowed,
 } from "./assertions";
 import { GameLogicError } from "./errors";
+import { Effect } from "effect";
+import { Logger } from "../effect/context/logger";
 import { wrapMove } from "./wrapMove";
 
 const moveFunctions = {
@@ -42,58 +44,61 @@ const moveFunctions = {
    * @param targetId - 目标玩家ID
    */
   vote: wrapMove(({ G, playerID }: MoveContext, targetId: string) => {
-    // 验证阶段和基本参数
-    assertPhase(G, GamePhase.NIGHT);
-    assertNotEmpty(targetId, "targetId");
+    return Effect.gen(function* () {
+      // 验证阶段和基本参数
+      assertPhase(G, GamePhase.NIGHT);
+      assertNotEmpty(targetId, "targetId");
 
-    // 验证投票者存活
-    const player = assertPlayerAlive(G, playerID);
+      // 验证投票者存活
+      const player = assertPlayerAlive(G, playerID);
 
-    // 验证被监禁玩家无法投票
-    if (Selectors.isPlayerImprisoned(G, playerID)) {
-      throw new GameLogicError("被监禁的玩家无法投票");
-    }
-
-    // 验证目标玩家存活且不是自投
-    const target = assertPlayerPublicAlive(G, targetId);
-
-    if (playerID === targetId) {
-      throw new GameLogicError("Cannot vote for yourself");
-    }
-
-    console.log(`[Vote] ${playerID} votes for ${targetId}`);
-
-    // 查找是否已有投票（支持改票）
-    const existingVote = Selectors.findExistingVote(G, playerID);
-
-    if (existingVote) {
-      // 更新已有投票
-      const oldTarget = existingVote.targetId;
-      if (existingVote.targetId === targetId) {
-        return;
+      // 验证被监禁玩家无法投票
+      if (Selectors.isPlayerImprisoned(G, playerID)) {
+        throw new GameLogicError("被监禁的玩家无法投票");
       }
-      existingVote.targetId = targetId;
-      existingVote.timestamp = Date.now();
-      console.log(
-        `[Vote] ${playerID} changed vote from ${oldTarget} to ${targetId}`,
-      );
 
-      Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
-    } else {
-      const vote = {
-        voterId: playerID,
-        targetId,
-        round: G.round,
-        timestamp: Date.now(),
-      };
-      // 新增投票
-      G.currentVotes.push(vote);
-      console.log(
-        `[Vote] ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
-      );
+      // 验证目标玩家存活且不是自投
+      const target = assertPlayerPublicAlive(G, targetId);
 
-      Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
-    }
+      if (playerID === targetId) {
+        throw new GameLogicError("Cannot vote for yourself");
+      }
+
+      const logger = yield* (Logger);
+      yield* (logger.info(`vote: ${playerID} votes for ${targetId}`));
+
+      // 查找是否已有投票（支持改票）
+      const existingVote = Selectors.findExistingVote(G, playerID);
+
+      if (existingVote) {
+        // 更新已有投票
+        const oldTarget = existingVote.targetId;
+        if (existingVote.targetId === targetId) {
+          return;
+        }
+        existingVote.targetId = targetId;
+        existingVote.timestamp = Date.now();
+        yield* (logger.info(
+          `vote: ${playerID} changed vote from ${oldTarget} to ${targetId}`,
+        ));
+
+        Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
+      } else {
+        const vote = {
+          voterId: playerID,
+          targetId,
+          round: G.round,
+          timestamp: Date.now(),
+        };
+        // 新增投票
+        G.currentVotes.push(vote);
+        yield* (logger.info(
+          `vote: ${playerID} voted for ${targetId}, total votes: ${G.currentVotes.length}`,
+        ));
+
+        Mutations.msg(G, TMessageBuilder.createVote(playerID, targetId));
+      }
+    });
   }),
 
   /**
@@ -109,38 +114,41 @@ const moveFunctions = {
    * @param playerID - 弃权者ID
    */
   pass: wrapMove(({ G, playerID }: MoveContext) => {
-    assertPhase(G, GamePhase.NIGHT);
-    const player = assertPlayerAlive(G, playerID);
+    return Effect.gen(function* () {
+      assertPhase(G, GamePhase.NIGHT);
+      const player = assertPlayerAlive(G, playerID);
 
-    console.log(`[Vote] ${playerID} passes (votes for self)`);
+      const logger = yield* (Logger);
+      yield* (logger.info(`vote: ${playerID} passes (votes for self)`));
 
-    // 查找是否已有投票
-    const existingIndex = Selectors.findExistingVoteIndex(G, playerID);
+      // 查找是否已有投票
+      const existingIndex = Selectors.findExistingVoteIndex(G, playerID);
 
-    // 弃权相当于投给自己
-    const vote = {
-      voterId: playerID,
-      targetId: playerID, // 投给自己表示弃权
-      round: G.round,
-      timestamp: Date.now(),
-    };
+      // 弃权相当于投给自己
+      const vote = {
+        voterId: playerID,
+        targetId: playerID, // 投给自己表示弃权
+        round: G.round,
+        timestamp: Date.now(),
+      };
 
-    if (existingIndex !== -1) {
-      // 更新为弃权
-      const oldTarget = G.currentVotes[existingIndex].targetId;
-      G.currentVotes[existingIndex] = vote;
-      console.log(
-        `[Vote] ${playerID} changed vote to pass (from ${oldTarget})`,
-      );
-      Mutations.msg(G, TMessageBuilder.createPass(playerID));
-    } else {
-      // 新增弃权票
-      G.currentVotes.push(vote);
-      console.log(
-        `[Vote] ${playerID} passed, total votes: ${G.currentVotes.length}`,
-      );
-      Mutations.msg(G, TMessageBuilder.createPass(playerID));
-    }
+      if (existingIndex !== -1) {
+        // 更新为弃权
+        const oldTarget = G.currentVotes[existingIndex].targetId;
+        G.currentVotes[existingIndex] = vote;
+        yield* (logger.info(
+          `vote: ${playerID} changed vote to pass (from ${oldTarget})`,
+        ));
+        Mutations.msg(G, TMessageBuilder.createPass(playerID));
+      } else {
+        // 新增弃权票
+        G.currentVotes.push(vote);
+        yield* (logger.info(
+          `vote: ${playerID} passed, total votes: ${G.currentVotes.length}`,
+        ));
+        Mutations.msg(G, TMessageBuilder.createPass(playerID));
+      }
+    });
   }),
 
   /** 使用卡牌 move */
@@ -260,83 +268,86 @@ const moveFunctions = {
    */
   initiateTrade: wrapMove(
     ({ G, playerID }: MoveContext, targetId: string, offeredCardId: string) => {
-      assertPhase(G, GamePhase.DAY);
-      assertNotEmpty(targetId, "targetId");
-      assertNotEmpty(offeredCardId, "offeredCardId");
+      return Effect.gen(function* () {
+        assertPhase(G, GamePhase.DAY);
+        assertNotEmpty(targetId, "targetId");
+        assertNotEmpty(offeredCardId, "offeredCardId");
 
-      // 验证发起者存活
-      const player = assertPlayerAlive(G, playerID);
+        // 验证发起者存活
+        const player = assertPlayerAlive(G, playerID);
 
-      // 验证目标玩家存活
-      const target = assertPlayerPublicAlive(G, targetId);
+        // 验证目标玩家存活
+        const target = assertPlayerPublicAlive(G, targetId);
 
-      // 不能与自己交易
-      if (playerID === targetId) {
-        throw new GameLogicError("Cannot trade with yourself");
-      }
+        // 不能与自己交易
+        if (playerID === targetId) {
+          throw new GameLogicError("Cannot trade with yourself");
+        }
 
-      // 检查是否已有活跃交易
-      if (G.activeTrade) {
-        throw new GameLogicError("There is already an active trade");
-      }
+        // 检查是否已有活跃交易
+        if (G.activeTrade) {
+          throw new GameLogicError("There is already an active trade");
+        }
 
-      // 检查今日是否已参与过任何交易（规则 5.2）
-      if (Selectors.hasTradedToday(G, playerID)) {
-        throw new GameLogicError(
-          "You have already participated in a trade today",
+        // 检查今日是否已参与过任何交易（规则 5.2）
+        if (Selectors.hasTradedToday(G, playerID)) {
+          throw new GameLogicError(
+            "You have already participated in a trade today",
+          );
+        }
+
+        // 检查目标今日是否已参与过任何交易
+        if (Selectors.hasTradedToday(G, targetId)) {
+          throw new GameLogicError(
+            "This player has already participated in a trade today",
+          );
+        }
+
+        // 验证卡牌在发起者手牌中
+        const cardIndex = player.secret.hand.findIndex(
+          (c) => c.id === offeredCardId,
         );
-      }
+        if (cardIndex === -1) {
+          throw new GameLogicError("Card not found in hand");
+        }
 
-      // 检查目标今日是否已参与过任何交易
-      if (Selectors.hasTradedToday(G, targetId)) {
-        throw new GameLogicError(
-          "This player has already participated in a trade today",
+        const offeredCard = player.secret.hand[cardIndex];
+
+        // 不能交易 witch_killer
+        if (Refinements.isWitchKillerCard(offeredCard)) {
+          throw new GameLogicError("Cannot trade witch_killer card");
+        }
+
+        // 设置活跃交易
+        G.activeTrade = {
+          tradeId: nanoid(),
+          initiatorId: playerID,
+          targetId,
+          offeredCardId,
+          expiresAt: Date.now() + G.config.dayDuration * 1000,
+        };
+
+        // 更新交易状态（设置 hasTradedToday 表示已参与交易）
+        Mutations.updateTradeTracker(G, playerID, {
+          hasInitiatedToday: true,
+          hasTradedToday: true,
+        });
+        Mutations.updateTradeTracker(G, targetId, {
+          hasReceivedOfferToday: true,
+          hasTradedToday: true,
+        });
+
+        // 发送交易提议消息（私密）
+        Mutations.msg(
+          G,
+          TMessageBuilder.createTradeOffer(playerID, targetId, offeredCardId),
         );
-      }
 
-      // 验证卡牌在发起者手牌中
-      const cardIndex = player.secret.hand.findIndex(
-        (c) => c.id === offeredCardId,
-      );
-      if (cardIndex === -1) {
-        throw new GameLogicError("Card not found in hand");
-      }
-
-      const offeredCard = player.secret.hand[cardIndex];
-
-      // 不能交易 witch_killer
-      if (Refinements.isWitchKillerCard(offeredCard)) {
-        throw new GameLogicError("Cannot trade witch_killer card");
-      }
-
-      // 设置活跃交易
-      G.activeTrade = {
-        tradeId: nanoid(),
-        initiatorId: playerID,
-        targetId,
-        offeredCardId,
-        expiresAt: Date.now() + G.config.dayDuration * 1000,
-      };
-
-      // 更新交易状态（设置 hasTradedToday 表示已参与交易）
-      Mutations.updateTradeTracker(G, playerID, {
-        hasInitiatedToday: true,
-        hasTradedToday: true,
+        const logger = yield* (Logger);
+        yield* (logger.info(
+          `trade: ${playerID} initiated trade with ${targetId}, offering ${offeredCardId}`,
+        ));
       });
-      Mutations.updateTradeTracker(G, targetId, {
-        hasReceivedOfferToday: true,
-        hasTradedToday: true,
-      });
-
-      // 发送交易提议消息（私密）
-      Mutations.msg(
-        G,
-        TMessageBuilder.createTradeOffer(playerID, targetId, offeredCardId),
-      );
-
-      console.log(
-        `[Trade] ${playerID} initiated trade with ${targetId}, offering ${offeredCardId}`,
-      );
     },
   ),
 
@@ -359,92 +370,96 @@ const moveFunctions = {
       accepted: boolean,
       responseCardId?: string,
     ) => {
-      assertPhase(G, GamePhase.DAY);
+      return Effect.gen(function* () {
+        assertPhase(G, GamePhase.DAY);
 
-      // 验证有活跃交易
-      if (!G.activeTrade) {
-        throw new GameLogicError("No active trade to respond to");
-      }
+        // 验证有活跃交易
+        if (!G.activeTrade) {
+          throw new GameLogicError("No active trade to respond to");
+        }
 
-      // 验证响应者是交易目标
-      if (G.activeTrade.targetId !== playerID) {
-        throw new GameLogicError("You are not the target of this trade");
-      }
+        // 验证响应者是交易目标
+        if (G.activeTrade.targetId !== playerID) {
+          throw new GameLogicError("You are not the target of this trade");
+        }
 
-      const initiatorId = G.activeTrade.initiatorId;
-      const initiator = G.secrets[initiatorId];
-      const responder = G.secrets[playerID];
+        const initiatorId = G.activeTrade.initiatorId;
+        const initiator = G.secrets[initiatorId];
+        const responder = G.secrets[playerID];
 
-      if (!initiator || !responder) {
-        throw new GameLogicError("Player not found");
-      }
+        if (!initiator || !responder) {
+          throw new GameLogicError("Player not found");
+        }
 
-      // 查找发起者提供的卡牌
-      const offeredIndex = initiator.hand.findIndex(
-        (c) => c.id === G.activeTrade!.offeredCardId,
-      );
-      if (offeredIndex === -1) {
-        // 提供的卡牌已不在发起者手中，交易取消
+        const logger = yield* (Logger);
+
+        // 查找发起者提供的卡牌
+        const offeredIndex = initiator.hand.findIndex(
+          (c) => c.id === G.activeTrade!.offeredCardId,
+        );
+        if (offeredIndex === -1) {
+          // 提供的卡牌已不在发起者手中，交易取消
+          G.activeTrade = null;
+          throw new GameLogicError("Offered card no longer available");
+        }
+        const offeredCard = initiator.hand[offeredIndex];
+
+        // 发送响应消息
+        Mutations.msg(
+          G,
+          TMessageBuilder.createTradeResponse(
+            playerID,
+            initiatorId,
+            accepted,
+            responseCardId,
+          ),
+        );
+
+        if (accepted) {
+          // 接受交易
+          // 规则：被发起方必须指定一张手牌交付给发起方
+          if (!responseCardId) {
+            throw new GameLogicError("必须指定要交付的卡牌");
+          }
+
+          const responseIndex = responder.hand.findIndex(
+            (c) => c.id === responseCardId,
+          );
+          if (responseIndex === -1) {
+            throw new GameLogicError("指定的卡牌不在手牌中");
+          }
+          const responseCard = responder.hand[responseIndex];
+
+          // 不能交易 witch_killer
+          if (Refinements.isWitchKillerCard(responseCard)) {
+            throw new GameLogicError("Cannot trade witch_killer card");
+          }
+
+          // 交换卡牌
+          initiator.hand[offeredIndex] = responseCard;
+          responder.hand[responseIndex] = offeredCard;
+
+          yield* (logger.info(
+            `trade: Trade between ${initiatorId} and ${playerID} completed`,
+          ));
+        } else {
+          // 拒绝交易，卡牌归发起者
+          yield* (logger.info(`trade: ${playerID} rejected trade from ${initiatorId}`));
+
+          // 拒绝后发起方仍视为已参与当日交易（规则 5.2）
+          Mutations.updateTradeTracker(G, initiatorId, {
+            hasInitiatedToday: true,
+            hasTradedToday: true,
+          });
+          // 接收方也视为已参与当日交易
+          Mutations.updateTradeTracker(G, playerID, {
+            hasTradedToday: true,
+          });
+        }
+
+        // 清除活跃交易
         G.activeTrade = null;
-        throw new GameLogicError("Offered card no longer available");
-      }
-      const offeredCard = initiator.hand[offeredIndex];
-
-      // 发送响应消息
-      Mutations.msg(
-        G,
-        TMessageBuilder.createTradeResponse(
-          playerID,
-          initiatorId,
-          accepted,
-          responseCardId,
-        ),
-      );
-
-      if (accepted) {
-        // 接受交易
-        // 规则：被发起方必须指定一张手牌交付给发起方
-        if (!responseCardId) {
-          throw new GameLogicError("必须指定要交付的卡牌");
-        }
-
-        const responseIndex = responder.hand.findIndex(
-          (c) => c.id === responseCardId,
-        );
-        if (responseIndex === -1) {
-          throw new GameLogicError("指定的卡牌不在手牌中");
-        }
-        const responseCard = responder.hand[responseIndex];
-
-        // 不能交易 witch_killer
-        if (Refinements.isWitchKillerCard(responseCard)) {
-          throw new GameLogicError("Cannot trade witch_killer card");
-        }
-
-        // 交换卡牌
-        initiator.hand[offeredIndex] = responseCard;
-        responder.hand[responseIndex] = offeredCard;
-
-        console.log(
-          `[Trade] Trade between ${initiatorId} and ${playerID} completed`,
-        );
-      } else {
-        // 拒绝交易，卡牌归发起者
-        console.log(`[Trade] ${playerID} rejected trade from ${initiatorId}`);
-
-        // 拒绝后发起方仍视为已参与当日交易（规则 5.2）
-        Mutations.updateTradeTracker(G, initiatorId, {
-          hasInitiatedToday: true,
-          hasTradedToday: true,
-        });
-        // 接收方也视为已参与当日交易
-        Mutations.updateTradeTracker(G, playerID, {
-          hasTradedToday: true,
-        });
-      }
-
-      // 清除活跃交易
-      G.activeTrade = null;
+      });
     },
   ),
 
@@ -455,22 +470,25 @@ const moveFunctions = {
    * @param playerID - 请求取消者ID
    */
   cancelTrade: wrapMove(({ G, playerID }: MoveContext) => {
-    assertPhase(G, GamePhase.DAY);
+    return Effect.gen(function* () {
+      assertPhase(G, GamePhase.DAY);
 
-    // 验证有活跃交易
-    if (!G.activeTrade) {
-      throw new GameLogicError("No active trade to cancel");
-    }
+      // 验证有活跃交易
+      if (!G.activeTrade) {
+        throw new GameLogicError("No active trade to cancel");
+      }
 
-    // 只有交易发起者可以取消
-    if (G.activeTrade.initiatorId !== playerID) {
-      throw new GameLogicError("Only the initiator can cancel the trade");
-    }
+      // 只有交易发起者可以取消
+      if (G.activeTrade.initiatorId !== playerID) {
+        throw new GameLogicError("Only the initiator can cancel the trade");
+      }
 
-    console.log(`[Trade] ${playerID} cancelled trade`);
+      const logger = yield* (Logger);
+      yield* (logger.info(`trade: ${playerID} cancelled trade`));
 
-    // 清除活跃交易
-    G.activeTrade = null;
+      // 清除活跃交易
+      G.activeTrade = null;
+    });
   }),
 
   // ==================== 卡牌选择阶段（新增）====================
@@ -489,32 +507,35 @@ const moveFunctions = {
    */
   selectDroppedCard: wrapMove(
     ({ G, playerID }: MoveContext, cardId: string) => {
-      assertNotEmpty(cardId, "cardId");
-      const cardSelection = G.cardSelection[playerID];
-      // 验证卡牌选择状态
-      if (!cardSelection) {
-        throw new GameLogicError("No card selection in progress");
-      }
+      return Effect.gen(function* () {
+        assertNotEmpty(cardId, "cardId");
+        const cardSelection = G.cardSelection[playerID];
+        // 验证卡牌选择状态
+        if (!cardSelection) {
+          throw new GameLogicError("No card selection in progress");
+        }
 
-      // 验证选择者
-      if (cardSelection.selectingPlayerId !== playerID) {
-        throw new GameLogicError("You are not the current selector");
-      }
+        // 验证选择者
+        if (cardSelection.selectingPlayerId !== playerID) {
+          throw new GameLogicError("You are not the current selector");
+        }
 
-      // 验证卡牌在可用列表中
-      const cardIndex = cardSelection.availableCards.findIndex(
-        (c) => c.id === cardId,
-      );
-      if (cardIndex === -1) {
-        throw new GameLogicError("Card not available for selection");
-      }
+        // 验证卡牌在可用列表中
+        const cardIndex = cardSelection.availableCards.findIndex(
+          (c) => c.id === cardId,
+        );
+        if (cardIndex === -1) {
+          throw new GameLogicError("Card not available for selection");
+        }
 
-      const selectedCard = cardSelection.availableCards[cardIndex];
+        const selectedCard = cardSelection.availableCards[cardIndex];
 
-      // 完成卡牌选择过程
-      Mutations.completeCardSelection(G, playerID, selectedCard);
+        // 完成卡牌选择过程
+        Mutations.completeCardSelection(G, playerID, selectedCard);
 
-      console.log(`[CardSelection] ${playerID} selected card ${cardId}`);
+        const logger = yield* (Logger);
+        yield* (logger.info(`card: ${playerID} selected card ${cardId}`));
+      });
     },
   ),
 
@@ -525,27 +546,30 @@ const moveFunctions = {
    * @param playerID - 选择者ID
    */
   skipCardSelection: wrapMove(({ G, playerID }: MoveContext) => {
-    // 验证卡牌选择状态
-    if (!G.cardSelection[playerID]) {
-      throw new GameLogicError("No card selection in progress");
-    }
+    return Effect.gen(function* () {
+      // 验证卡牌选择状态
+      if (!G.cardSelection[playerID]) {
+        throw new GameLogicError("No card selection in progress");
+      }
 
-    // 验证选择者
-    if (G.cardSelection[playerID].selectingPlayerId !== playerID) {
-      // 添加消息说明放弃选择
-      throw new GameLogicError("You are not the current selector");
-    }
-    Mutations.msg(
-      G,
-      TMessageBuilder.createHiddenSystem(
-        `玩家${G.players[playerID]?.seatNumber ?? playerID}放弃了卡牌选择`,
-      ),
-    );
+      // 验证选择者
+      if (G.cardSelection[playerID].selectingPlayerId !== playerID) {
+        // 添加消息说明放弃选择
+        throw new GameLogicError("You are not the current selector");
+      }
+      Mutations.msg(
+        G,
+        TMessageBuilder.createHiddenSystem(
+          `玩家${G.players[playerID]?.seatNumber ?? playerID}放弃了卡牌选择`,
+        ),
+      );
 
-    // 完成卡牌选择过程（无选卡）
-    Mutations.completeCardSelection(G, playerID, null);
+      // 完成卡牌选择过程（无选卡）
+      Mutations.completeCardSelection(G, playerID, null);
 
-    console.log(`[CardSelection] ${playerID} skipped card selection`);
+      const logger = yield* (Logger);
+      yield* (logger.info(`card: ${playerID} skipped card selection`));
+    });
   }),
 };
 
