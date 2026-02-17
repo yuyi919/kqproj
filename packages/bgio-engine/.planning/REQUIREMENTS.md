@@ -11,20 +11,20 @@
 - [ ] **EFFECT-02**: 完成 MessageService 从旧服务层到 Effect-TS 的迁移
 - [ ] **EFFECT-03**: 完成 PlayerStateService 从旧服务层到 Effect-TS 的迁移
 - [ ] **EFFECT-04**: 统一错误处理模式，使用 Effect-TS Data.TaggedError
-- [ ] **EFFECT-05**: 移除遗留的 domain 服务层代码
+- [ ] **EFFECT-05**: 保留遗留的 domain 服务层代码作为兼容层（不删除）
 
 ### 类型安全
 
-- [ ] **TYPE-01**: 移除 src/ai/index.ts 中的 any 类型
+- [x] ~~**TYPE-01**: 移除 src/ai/index.ts 中的 any 类型~~ （暂不处理，未开发内容）
 - [ ] **TYPE-02**: 移除 src/effect/test-helpers.ts 中的 any 类型
 - [ ] **TYPE-03**: 移除 src/game/index.ts 中的类型强制转换
 - [ ] **TYPE-04**: 为所有测试辅助函数添加完整类型签名
 
 ### 技术债务
 
-- [ ] **DEBT-01**: 移除 src/game/moves.ts 中的 console.log 语句
-- [ ] **DEBT-02**: 移除 src/game/phases.ts 中的 console.log 语句
-- [ ] **DEBT-03**: 移除调试模式下的 Player ID "0" 硬编码
+- [ ] **DEBT-01**: 使用标准日志框架替代 src/game/moves.ts 中的 console.log
+- [ ] **DEBT-02**: 使用标准日志框架替代 src/game/phases.ts 中的 console.log
+- [ ] **DEBT-03**: 移除调试模式下的 Player ID "0" 硬编码（或使用环境变量控制）
 - [ ] **DEBT-04**: 统一 GameLogicError 和 Effect-TS 错误处理
 
 ### 测试覆盖
@@ -41,6 +41,7 @@
 |---------|--------|
 | 新游戏功能开发 | 聚焦代码质量改进 |
 | AI 对手实现 | 超出当前范围 |
+| src/ai 代码改进 | 未开发内容，暂不处理 |
 | 性能优化 | 质量改进完成后处理 |
 | 架构重构 | 保持现有架构稳定 |
 
@@ -53,7 +54,6 @@
 | EFFECT-03 | Phase 1 | Pending |
 | EFFECT-04 | Phase 1 | Pending |
 | EFFECT-05 | Phase 1 | Pending |
-| TYPE-01 | Phase 2 | Pending |
 | TYPE-02 | Phase 2 | Pending |
 | TYPE-03 | Phase 2 | Pending |
 | TYPE-04 | Phase 2 | Pending |
@@ -68,10 +68,10 @@
 | TEST-05 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 18
+- v1 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after initial definition*
+*Last updated: 2026-02-17 after roadmap creation*
