@@ -99,7 +99,13 @@
 4. src/utils.ts Selectors 选择器测试完成
 5. 整体测试覆盖率达到 80%+
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+- [ ] 04-01-PLAN.md — Effect-TS 服务层测试 (CardService, PriorityService)
+- [ ] 04-02-PLAN.md — 消息类型和 Selectors 测试
+- [ ] 04-03-PLAN.md — 相位钩子和断言函数测试
+- [ ] 04-04-PLAN.md — Effect Context 和测试辅助函数测试
+- [ ] 04-05-PLAN.md — 覆盖率补充和最终验证
 
 ---
 
