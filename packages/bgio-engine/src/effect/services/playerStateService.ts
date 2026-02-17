@@ -3,11 +3,14 @@
 /**
  * PlayerStateService - 玩家状态服务
  *
- * 职责：读取/修改游戏状态中的玩家信息
- * 执行层：访问和修改 BGGameState
+ * 职责：
+ * 1. 提供玩家状态查询（公开信息 / 私密信息）
+ * 2. 处理玩家死亡与魔女杀手归属转移
+ * 3. 通过 GameStateRef 在 Effect 体系内安全读写状态
  */
 
 import { Effect } from "effect";
+import { Selectors } from "../../domain/queries";
 import type {
   BGGameState,
   CardRef,
@@ -16,8 +19,26 @@ import type {
   PrivatePlayerInfo,
   PublicPlayerInfo,
 } from "../../types";
+import { GameRandom } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { PlayerNotAliveError, PlayerNotFoundError } from "../errors";
+import { MessageService } from "./messageService";
+
+/**
+ * killPlayer 入参。
+ * 使用联合类型明确不同死因需要的字段，避免外部先传分散参数再做内部转换。
+ */
+export type KillPlayerInput =
+  | {
+      readonly playerId: string;
+      readonly cause: "kill_magic" | "witch_killer";
+      readonly killerId: string;
+    }
+  | {
+      readonly playerId: string;
+      readonly cause: "wreck";
+      readonly killerId?: string;
+    };
 
 /**
  * 玩家状态服务接口
@@ -28,7 +49,7 @@ export interface IPlayerStateService {
     playerId: string,
   ) => Effect.Effect<PublicPlayerInfo, PlayerNotFoundError>;
 
-  /** 获取玩家私有信息 */
+  /** 获取玩家私密信息 */
   readonly getPlayerSecrets: (
     playerId: string,
   ) => Effect.Effect<PrivatePlayerInfo, PlayerNotFoundError>;
@@ -71,24 +92,20 @@ export interface IPlayerStateService {
     playerId: string,
   ) => Effect.Effect<number, PlayerNotFoundError>;
 
-  /** 击杀玩家 - 返回死亡记录和遗落的手牌 */
-  readonly killPlayer: (
-    playerId: string,
-    cause: DeathCause,
-    killerId?: string,
-  ) => Effect.Effect<
-    { record: DeathRecord; droppedCards: CardRef[] },
+  /** 击杀玩家，返回死亡记录与遗落手牌 */
+  readonly killPlayer: (input: KillPlayerInput) => Effect.Effect<
+    {
+      /** 死亡记录 */
+      record: DeathRecord;
+      /** 遗落手牌 */
+      droppedCards: CardRef[];
+      /** 是否持有魔女杀手 */
+      hadWitchKiller: boolean;
+    },
     PlayerNotFoundError | PlayerNotAliveError
   >;
 
-  /** 转移魔女杀手 */
-  readonly transferWitchKiller: (
-    receiverId: string,
-    droppedCards: CardRef[],
-    fromPlayerId?: string,
-  ) => Effect.Effect<boolean, PlayerNotFoundError>;
-
-  /** 更新玩家连续未击杀回合数 */
+  /** 递增玩家连续未击杀回合数 */
   readonly incrementConsecutiveNoKillRounds: (
     playerId: string,
   ) => Effect.Effect<void, PlayerNotFoundError>;
@@ -98,21 +115,10 @@ export interface IPlayerStateService {
     playerId: string,
   ) => Effect.Effect<void, PlayerNotFoundError>;
 
-  /** 清除玩家的 barrier */
+  /** 清除玩家 barrier */
   readonly clearBarrier: (
     playerId: string,
   ) => Effect.Effect<void, PlayerNotFoundError>;
-}
-
-function isPlayerAliveStatus(secret: PrivatePlayerInfo): boolean {
-  return secret.status === "alive" || secret.status === "witch";
-}
-
-function getAlivePlayersFromState(state: BGGameState): PublicPlayerInfo[] {
-  return Object.values(state.players).filter((player) => {
-    const secret = state.secrets[player.id];
-    return secret && isPlayerAliveStatus(secret);
-  });
 }
 
 function requirePlayer(
@@ -161,31 +167,39 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
     accessors: true,
     effect: Effect.gen(function* () {
       const gameStateRef = yield* GameStateRef;
-      const withState = <A, E>(
-        f: (state: BGGameState) => Effect.Effect<A, E>,
-      ): Effect.Effect<A, E> => Effect.flatMap(gameStateRef.get(), f);
+      const messageService = yield* MessageService;
+      const gameRandom = yield* GameRandom;
+      const withState = <A, E, R>(
+        f: (state: BGGameState) => Effect.Effect<A, E, R>,
+      ): Effect.Effect<A, E, R> => Effect.flatMap(gameStateRef.get(), f);
 
       return {
-        getPlayer: (playerId) => withState((state) => requirePlayer(state, playerId)),
+        getPlayer: (playerId) =>
+          withState((state) => requirePlayer(state, playerId)),
 
         getPlayerSecrets: (playerId) =>
           withState((state) => requireSecret(state, playerId)),
 
         isAlive: (playerId) =>
           withState((state) =>
-            Effect.map(requireSecret(state, playerId), isPlayerAliveStatus),
+            Effect.gen(function* () {
+              yield* requireSecret(state, playerId);
+              return Selectors.isPlayerAlive(state, playerId);
+            }),
           ),
 
         isImprisoned: (playerId) =>
           withState((state) =>
             Effect.gen(function* () {
               yield* requirePlayer(state, playerId);
-              return !!state.imprisonedId && state.imprisonedId === playerId;
+              return Selectors.isPlayerImprisoned(state, playerId);
             }),
           ),
 
         getAlivePlayers: () =>
-          withState((state) => Effect.succeed(getAlivePlayersFromState(state))),
+          withState((state) =>
+            Effect.succeed(Selectors.getAlivePlayers(state)),
+          ),
 
         getHand: (playerId) =>
           withState((state) =>
@@ -194,23 +208,26 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
 
         isWitchKillerHolder: (playerId) =>
           withState((state) =>
-            Effect.map(
-              requireSecret(state, playerId),
-              (secret) => secret.witchKillerHolder,
-            ),
+            Effect.gen(function* () {
+              yield* requireSecret(state, playerId);
+              return Selectors.isWitchKillerHolder(state, playerId);
+            }),
           ),
 
         getHandCount: (playerId) =>
           withState((state) =>
-            Effect.map(
-              requireSecret(state, playerId),
-              (secret) => secret.hand.length,
-            ),
+            Effect.gen(function* () {
+              yield* requireSecret(state, playerId);
+              return Selectors.getPlayerHandCount(state, playerId);
+            }),
           ),
 
         hasBarrier: (playerId) =>
           withState((state) =>
-            Effect.map(requireSecret(state, playerId), (secret) => secret.hasBarrier),
+            Effect.gen(function* () {
+              yield* requireSecret(state, playerId);
+              return Selectors.hasPlayerBarrier(state, playerId);
+            }),
           ),
 
         getConsecutiveNoKillRounds: (playerId) =>
@@ -221,15 +238,18 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
             ),
           ),
 
-        killPlayer: (playerId, cause, killerId) =>
+        killPlayer: (input) =>
           withState((state) =>
             Effect.gen(function* () {
+              const playerId = input.playerId;
+              const cause: DeathCause = input.cause;
+              const killerId = input.killerId;
               const { player, secret } = yield* requirePlayerAndSecret(
                 state,
                 playerId,
               );
 
-              if (!isPlayerAliveStatus(secret)) {
+              if (!Selectors.isPlayerAlive(state, playerId)) {
                 return yield* new PlayerNotAliveError({
                   playerId,
                   status: secret.status,
@@ -261,62 +281,86 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
               state.deathLog.push(record);
 
               if (hadWitchKiller) {
-                if (cause === "wreck" && killerId) {
-                  const killerSecret = yield* requireSecret(state, killerId);
-                  killerSecret.witchKillerHolder = true;
-                  killerSecret.isWitch = true;
+                // 规则：持有者死亡时，魔女杀手不能遗失，必须按规则转移
+                let receiverId: string | null = null;
+                let transferMode: "active" | "passive" | null = null;
+                let transferReason:
+                  | "kill_magic"
+                  | "wreck_killer"
+                  | "wreck_random"
+                  | null = null;
+
+                if (input.cause === "kill_magic") {
+                  receiverId = input.killerId;
+                  transferMode = "active";
+                  transferReason = "kill_magic";
+                } else if (input.cause === "wreck") {
+                  // wreck 场景：优先转移给击杀者；无击杀者时在存活玩家中随机分配
+                  if (input.killerId) {
+                    receiverId = input.killerId;
+                    transferMode = "passive";
+                    transferReason = "wreck_killer";
+                  } else {
+                    const alivePlayers = Selectors.getAlivePlayers(state);
+                    if (alivePlayers.length > 0) {
+                      const randomIndex =
+                        gameRandom.Die(alivePlayers.length) - 1;
+                      receiverId = alivePlayers[randomIndex]?.id ?? null;
+                      if (receiverId) {
+                        transferMode = "passive";
+                        transferReason = "wreck_random";
+                      }
+                    }
+                  }
+                }
+
+                if (receiverId && transferMode && transferReason) {
+                  const receiverSecret = yield* requireSecret(
+                    state,
+                    receiverId,
+                  );
+                  receiverSecret.witchKillerHolder = true;
+                  if (transferMode === "passive") {
+                    receiverSecret.isWitch = true;
+                  }
+
+                  // 把遗落中的魔女杀手实体卡移入接收者手牌，并记入 deathLog.cardReceivers
                   const wkCard = droppedCards.find(
                     (card) => card.type === "witch_killer",
                   );
                   if (wkCard) {
-                    killerSecret.hand.push(wkCard);
-                    record.cardReceivers[killerId] ??= [];
-                    record.cardReceivers[killerId].push(wkCard.id);
+                    receiverSecret.hand.push(wkCard);
+                    const witchKillerCardIndex = droppedCards.findIndex(
+                      (card) => card.id === wkCard.id,
+                    );
+                    if (witchKillerCardIndex > -1) {
+                      droppedCards.splice(witchKillerCardIndex, 1);
+                    }
+                    record.cardReceivers[receiverId] ??= [];
+                    record.cardReceivers[receiverId].push(wkCard.id);
+                  }
+                  if (transferMode === "passive") {
+                    yield* messageService.handleWitchKillerObtained(
+                      receiverId,
+                      playerId,
+                      transferMode,
+                    );
                   }
                   yield* Effect.logInfo(
                     "witch_killer ownership transfer applied",
                   ).pipe(
                     Effect.annotateLogs({
                       source: "player_state_service.kill_player",
-                      reason: "wreck_killer",
+                      reason: transferReason,
                       fromPlayerId: playerId,
-                      toPlayerId: killerId,
+                      toPlayerId: receiverId,
+                      mode: transferMode,
                     }),
                   );
                 }
               }
 
-              return { record, droppedCards };
-            }),
-          ),
-
-        transferWitchKiller: (receiverId, droppedCards, fromPlayerId) =>
-          withState((state) =>
-            Effect.gen(function* () {
-              const receiverSecret = yield* requireSecret(state, receiverId);
-
-              receiverSecret.witchKillerHolder = true;
-
-              const witchKillerCardIndex = droppedCards.findIndex(
-                (card) => card.type === "witch_killer",
-              );
-              if (witchKillerCardIndex > -1) {
-                const card = droppedCards[witchKillerCardIndex];
-                receiverSecret.hand.push(card);
-                droppedCards.splice(witchKillerCardIndex, 1);
-              }
-
-              yield* Effect.logInfo(
-                "witch_killer ownership transfer applied",
-              ).pipe(
-                Effect.annotateLogs({
-                  source: "player_state_service.transfer_witch_killer",
-                  reason: "manual_transfer",
-                  fromPlayerId: fromPlayerId ?? "unknown",
-                  toPlayerId: receiverId,
-                }),
-              );
-              return true;
+              return { record, droppedCards, hadWitchKiller };
             }),
           ),
 
@@ -345,6 +389,6 @@ export class PlayerStateService extends Effect.Service<PlayerStateService>()(
           ),
       } satisfies IPlayerStateService;
     }),
-    dependencies: [],
+    dependencies: [MessageService.Default],
   },
 ) {}

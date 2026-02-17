@@ -1,11 +1,19 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
-import { createTestState, setupPlayers } from "../../__tests__/testUtils";
+import {
+  createMockRandom,
+  createTestState,
+  setupPlayers,
+} from "../../__tests__/testUtils";
+import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { PlayerStateService } from "./playerStateService";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return Layer.provideMerge(PlayerStateService.Default, GameStateRef.layer(state));
+  return Layer.provideMerge(
+    Layer.provideMerge(PlayerStateService.Default, GameStateRef.layer(state)),
+    makeGameRandomLayer(createMockRandom()),
+  );
 }
 
 describe("PlayerStateService", () => {
@@ -34,7 +42,11 @@ describe("PlayerStateService", () => {
 
     const program = Effect.gen(function* () {
       const service = yield* PlayerStateService;
-      return yield* service.killPlayer("p1", "kill_magic", "p2");
+      return yield* service.killPlayer({
+        playerId: "p1",
+        cause: "kill_magic",
+        killerId: "p2",
+      });
     }).pipe(
       Effect.map(() => "ok"),
       Effect.catchTag("PlayerNotAliveError", (error) =>
@@ -55,7 +67,11 @@ describe("PlayerStateService", () => {
       const service = yield* PlayerStateService;
       const stateRef = yield* GameStateRef;
 
-      yield* service.killPlayer("p2", "kill_magic", "p1");
+      yield* service.killPlayer({
+        playerId: "p2",
+        cause: "kill_magic",
+        killerId: "p1",
+      });
       const updated = yield* stateRef.get();
       return updated;
     }).pipe(Effect.provide(makeLayer(G)));
@@ -67,4 +83,45 @@ describe("PlayerStateService", () => {
     expect(updated.deathLog).toHaveLength(1);
     expect(updated.deathLog[0].playerId).toBe("p2");
   });
+
+  it("handles wreck with no killer by random transfer and passive notification", () => {
+    const G = createTestState();
+    setupPlayers(G, ["p1", "p2", "p3"]);
+    G.secrets["p1"].witchKillerHolder = true;
+    G.secrets["p1"].isWitch = true;
+    G.secrets["p1"].hand = [{ id: "wk1", type: "witch_killer" }];
+
+    const program = Effect.gen(function* () {
+      const service = yield* PlayerStateService;
+      const stateRef = yield* GameStateRef;
+
+      yield* service.killPlayer({
+        playerId: "p1",
+        cause: "wreck",
+      });
+      return yield* stateRef.get();
+    }).pipe(Effect.provide(makeLayer(G)));
+
+    const updated = Effect.runSync(program);
+    const receiverId = (["p2", "p3"] as const).find(
+      (id) => updated.secrets[id].witchKillerHolder,
+    );
+
+    expect(receiverId).toBeDefined();
+    if (!receiverId) {
+      throw new Error("receiverId should be defined");
+    }
+    expect(updated.secrets[receiverId].isWitch).toBe(true);
+    expect(
+      updated.chatMessages.some(
+        (message) =>
+          message.kind === "private_response" &&
+          message.type === "witch_killer_obtained" &&
+          message.actorId === receiverId &&
+          message.fromPlayerId === "p1" &&
+          message.mode === "passive",
+      ),
+    ).toBe(true);
+  });
 });
+

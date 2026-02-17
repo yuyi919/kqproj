@@ -12,10 +12,10 @@
  * - MoveContext: 移动函数上下文
  */
 
-import type { PlayerID } from "boardgame.io";
-import type { EventsAPI, GameCtx, RandomAPI } from "../game";
+import type { FnContext, PlayerID } from "boardgame.io";
 import type { AttackError } from "../effect/errors";
-import type { CardPoolConfig, CardRef } from "./card";
+import type { GameCtx } from "../game";
+import type { CardRef } from "./card";
 import type { GameConfig } from "./config";
 import type { ActionType, CardType, GamePhase } from "./core";
 import type { DeathRecord } from "./death";
@@ -209,12 +209,9 @@ export interface BGGameState {
 /**
  * boardgame.io 移动函数上下文
  */
-export interface MoveContext {
-  G: BGGameState;
+export interface MoveContext extends FnContext<BGGameState> {
   ctx: GameCtx;
   playerID: string;
-  events: EventsAPI;
-  random: RandomAPI;
 }
 
 export type MoveResult = BGGameState | void | "INVALID_MOVE";

@@ -2,12 +2,13 @@
 
 import { Effect } from "effect";
 import { Refinements } from "../../domain/refinements";
-import { KILL_QUOTA } from "../../game/resolution/types";
 import type {
   PendingDistribution,
   PhaseResult,
 } from "../../game/resolution/types";
+import { KILL_QUOTA } from "../../game/resolution/types";
 import type { CardRef, CardType, DeathCause } from "../../types";
+import { Selectors } from "../../utils";
 import { GameStateRef, type IGameStateRef } from "../context/gameStateRef";
 import {
   ActorDeadError,
@@ -19,8 +20,12 @@ import {
   TargetAlreadyDeadError,
   TargetWitchKillerFailedError,
 } from "../errors";
-import { type IMessageService, MessageService } from "./messageService";
-import { type IPlayerStateService, PlayerStateService } from "./playerStateService";
+import { MessageService, type MessageServiceImpl } from "./messageService";
+import {
+  type IPlayerStateService,
+  type KillPlayerInput,
+  PlayerStateService,
+} from "./playerStateService";
 import {
   type IPriorityService,
   PriorityService,
@@ -44,6 +49,7 @@ export interface ExecutedActionInfo {
   readonly targetId: string;
   readonly cardType: CardType;
   readonly droppedCards: CardRef[];
+  readonly targetHadWitchKiller: boolean;
 }
 
 export interface AttackResolutionResult {
@@ -113,9 +119,7 @@ export interface IAttackResolutionService {
   ) => Effect.Effect<AttackResolutionResult, AttackResolutionServiceError>;
 
   readonly executeKill: (
-    targetId: string,
-    cause: DeathCause,
-    killerId: string,
+    input: KillPlayerInput,
   ) => Effect.Effect<KillResult, AttackResolutionServiceError>;
 }
 
@@ -148,22 +152,18 @@ export class AttackResolutionService extends Effect.Service<AttackResolutionServ
             barrierPlayers,
           ),
 
-        executeKill: (targetId: string, cause: DeathCause, killerId: string) =>
-          playerStateService.killPlayer(targetId, cause, killerId),
+        executeKill: (input: KillPlayerInput) =>
+          playerStateService.killPlayer(input),
       } satisfies IAttackResolutionService;
     }),
-    dependencies: [
-      PriorityServiceLayer,
-      PlayerStateService.Default,
-      MessageService.Default,
-    ],
+    dependencies: [],
   },
 ) {}
 
 function resolvePhase2Effect(
   priorityService: IPriorityService,
   playerStateService: IPlayerStateService,
-  messageService: IMessageService,
+  messageService: MessageServiceImpl,
   gameStateRef: IGameStateRef,
   previousResult: Readonly<PhaseResult>,
 ): Effect.Effect<PhaseResult, AttackResolutionServiceError> {
@@ -197,24 +197,30 @@ function resolvePhase2Effect(
 
     for (const actionInfo of resolutionResult.executedActionInfos) {
       if (Refinements.isKillMagicCard(actionInfo.cardType)) {
-        (result.stateUpdates.cardSelection ||= {})[actionInfo.playerId] = {
-          selectingPlayerId: actionInfo.playerId,
-          availableCards: actionInfo.droppedCards,
-          victimId: actionInfo.targetId,
-          deadline: selectionDeadline,
-        };
+        // 击杀【魔女杀手】时应跳过 cardSelection 阶段，因为会直接强制取得魔女杀手
+        if (!actionInfo.targetHadWitchKiller) {
+          // kill 击杀：杀手有 cardSelection 阶段
+          // 设置 cardSelection 状态，触发 cardSelection phase
+          (result.stateUpdates.cardSelection ||= {})[actionInfo.playerId] = {
+            selectingPlayerId: actionInfo.playerId,
+            availableCards: actionInfo.droppedCards,
+            victimId: actionInfo.targetId,
+            deadline: selectionDeadline,
+          };
 
-        appendPendingDistribution(result, {
-          type: "killerSelect",
-          victimId: actionInfo.targetId,
-          cards: actionInfo.droppedCards,
-          killerId: actionInfo.playerId,
-        });
+          // 同时设置延迟分配（cardSelection 完成后执行）
+          appendPendingDistribution(result, {
+            type: "killerSelect",
+            victimId: actionInfo.targetId,
+            cards: actionInfo.droppedCards,
+            killerId: actionInfo.playerId,
+          });
 
-        yield* messageService.handlePrivateMessage(
-          actionInfo.playerId,
-          `请选择一张卡牌（${actionInfo.droppedCards.length}张可选）`,
-        );
+          yield* messageService.sendPrivateMessage(
+            actionInfo.playerId,
+            `请选择一张卡牌（${actionInfo.droppedCards.length}张可选）`,
+          );
+        }
       } else if (Refinements.isWitchKillerCard(actionInfo.cardType)) {
         appendPendingDistribution(result, {
           type: "skipKiller",
@@ -232,7 +238,7 @@ function resolvePhase2Effect(
 function processAttackActionsEffect(
   priorityService: IPriorityService,
   playerStateService: IPlayerStateService,
-  messageService: IMessageService,
+  messageService: MessageServiceImpl,
   gameStateRef: IGameStateRef,
   barrierPlayers: Set<string>,
 ): Effect.Effect<AttackResolutionResult, AttackResolutionServiceError> {
@@ -332,7 +338,7 @@ function processAttackActionsEffect(
           consumedBarriers.add(targetId);
         }
 
-        yield* messageService.handleAttackFailureByReason(
+        yield* messageService.sendAttackFailureByReason(
           action.id,
           action.playerId,
           targetId,
@@ -347,28 +353,37 @@ function processAttackActionsEffect(
       deadPlayersInPhase.add(action.playerId);
       killedTargetsInPhase.add(targetId);
 
-      const targetSecret = yield* playerStateService.getPlayerSecrets(
-        targetId,
-      );
-      const targetHadWitchKiller = targetSecret.witchKillerHolder;
-      const droppedCards = [...targetSecret.hand];
+      const cause: DeathCause = Refinements.isWitchKillerCard(cardType)
+        ? "witch_killer"
+        : "kill_magic";
 
-      const cause: DeathCause =
-        Refinements.isWitchKillerCard(cardType) ? "witch_killer" : "kill_magic";
-
-      yield* playerStateService.killPlayer(targetId, cause, action.playerId);
+      const { record: killResult, hadWitchKiller } =
+        yield* playerStateService.killPlayer({
+          playerId: targetId,
+          cause,
+          killerId: action.playerId,
+        });
+      const droppedCards = killResult.droppedCards;
       yield* messageService.handleAttackSuccess(
         action.playerId,
         targetId,
         cardType,
       );
       yield* messageService.handleTargetDead(targetId, action.playerId);
+      if (hadWitchKiller) {
+        yield* messageService.handleWitchKillerObtained(
+          action.playerId,
+          targetId,
+          "active",
+        );
+      }
 
       executedActionInfos.push({
         playerId: action.playerId,
         targetId,
         cardType,
         droppedCards,
+        targetHadWitchKiller: hadWitchKiller,
       });
 
       deadPlayers.add(targetId);
@@ -376,9 +391,8 @@ function processAttackActionsEffect(
         killedByWitchKiller.add(targetId);
         protectedWitchKillerHolderId = action.playerId;
       } else {
-        const actorSecretBeforeTransform = yield* playerStateService.getPlayerSecrets(
-          action.playerId,
-        );
+        const actorSecretBeforeTransform =
+          yield* playerStateService.getPlayerSecrets(action.playerId);
         const shouldNotifyTransform = !actorSecretBeforeTransform.isWitch;
 
         yield* gameStateRef.update((state) => {
@@ -392,26 +406,6 @@ function processAttackActionsEffect(
         if (shouldNotifyTransform) {
           yield* messageService.handleTransformWitch(action.playerId);
         }
-
-        if (targetHadWitchKiller) {
-          yield* Effect.logInfo("witch_killer ownership transfer planned").pipe(
-            Effect.annotateLogs({
-              source: "attack_resolution_service.phase2",
-              reason: "kill_holder",
-              fromPlayerId: targetId,
-              toPlayerId: action.playerId,
-            }),
-          );
-          yield* messageService.handleWitchKillerObtained(
-            action.playerId,
-            targetId,
-          );
-          yield* playerStateService.transferWitchKiller(
-            action.playerId,
-            droppedCards,
-            targetId,
-          );
-        }
       }
     }
 
@@ -422,6 +416,6 @@ function processAttackActionsEffect(
       killedByWitchKiller,
       deadPlayers,
       consumedBarriers,
-    };
+    } satisfies AttackResolutionResult;
   });
 }

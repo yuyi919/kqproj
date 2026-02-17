@@ -7,16 +7,16 @@
  * 评估层：纯函数，可独立测试
  */
 
-import { Effect, Layer, Context } from "effect";
-import type { CardRef, NightAction } from "../../types";
+import { Context, Effect, Layer } from "effect";
 import type { AttackType } from "../../game/resolution/services/priority";
 import {
   getAttackType as importedGetAttackType,
   isAttackAction as importedIsAttackAction,
+  isWitchKillerUsed as importedIsWitchKillerUsed,
   sortActionsByPriority as importedSortActionsByPriority,
   sortAttackActions as importedSortAttackActions,
-  isWitchKillerUsed as importedIsWitchKillerUsed,
 } from "../../game/resolution/services/priority";
+import type { CardRef, NightAction } from "../../types";
 
 /**
  * 优先级服务接口

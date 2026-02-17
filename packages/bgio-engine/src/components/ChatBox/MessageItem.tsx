@@ -120,7 +120,7 @@ function getMessageText(
             return `【${attackCardName}】的攻击失败了${reason ? `：${reason}` : ""}`;
           }
         case "transform_witch":
-          return "魔女化：使用杀人魔法成功";
+          return "你变成魔女了";
         case "wreck":
           return "残骸化：连续两回合未击杀，已转化为残骸";
         case "attack_excess":
@@ -205,9 +205,8 @@ function isOwnMessage(msg: TMessage, currentPlayerId: string | null): boolean {
     case "announcement":
       return false; // 公告都是系统消息
     case "public_action":
-      return msg.actorId === currentPlayerId;
     case "private_action":
-      return msg.actorId === currentPlayerId;
+    case "private_response":
     case "witnessed_action":
       return msg.actorId === currentPlayerId;
     default:

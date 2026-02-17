@@ -376,7 +376,7 @@ export const Selectors = {
   filterDeathLogForPlayer(
     log: DeathRecord[],
     playerId: PlayerID,
-  ): Partial<DeathRecord>[] {
+  ): DeathRecord[] {
     if (playerId === "0") return log; // 调试模式显示完整信息
     return log.map((record) => ({
       ...record,

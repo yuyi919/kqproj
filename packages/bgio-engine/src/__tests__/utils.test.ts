@@ -248,6 +248,37 @@ describe("Mutations", () => {
       expect(holders).toHaveLength(1);
       expect(holders[0]).not.toBe("p2");
     });
+
+    it("魔女杀手强制转移时接收者应收到提醒并可追踪来源", () => {
+      const state = createMockGameState();
+      const mockRandom = createMockRandom();
+
+      Mutations.killPlayer(state, "p2", "wreck", undefined, mockRandom);
+
+      const receiverId = Object.entries(state.secrets).find(
+        ([id, secret]) => id !== "p2" && secret.witchKillerHolder,
+      )?.[0];
+
+      expect(receiverId).toBeDefined();
+
+      const privateNotice = state.chatMessages.some(
+        (message) =>
+          message.kind === "private_response" &&
+          message.type === "witch_killer_obtained" &&
+          message.actorId === receiverId &&
+          message.fromPlayerId === "p2" &&
+          message.mode === "passive",
+      );
+      expect(privateNotice).toBe(true);
+
+      const obtainedInfo = state.secrets[receiverId!].revealedInfo.findLast(
+        (item) => item.type === "witch_killer_obtained",
+      );
+      expect(obtainedInfo?.content).toMatchObject({
+        fromPlayerId: "p2",
+        reason: "forced_wreck_transfer",
+      });
+    });
   });
 });
 

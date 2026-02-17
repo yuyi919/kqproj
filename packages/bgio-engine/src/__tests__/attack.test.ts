@@ -3,6 +3,7 @@ import { INVALID_MOVE } from "boardgame.io/core";
 import type { RandomAPI } from "../game";
 import { moveFunctions } from "../game/moves";
 import { resolveNightActions } from "../game/resolution";
+import { QuotaExceededError } from "../effect/errors";
 import type { BGGameState } from "../types";
 import { Selectors } from "../utils";
 import {
@@ -297,15 +298,15 @@ describe("Witch Killer Priority Rules", () => {
     it("所有失败原因类型定义正确", () => {
       // 验证 ActionFailureReason 类型包含所有预期的值
       const reasons: Array<
-        | "quota_exceeded"
-        | "target_witch_killer_failed"
-        | "barrier_protected"
-        | "target_already_dead"
+        | "QuotaExceededError"
+        | "TargetWitchKillerFailedError"
+        | "BarrierProtectedError"
+        | "TargetAlreadyDeadError"
       > = [
-        "quota_exceeded",
-        "target_witch_killer_failed",
-        "barrier_protected",
-        "target_already_dead",
+        "QuotaExceededError",
+        "TargetWitchKillerFailedError",
+        "BarrierProtectedError",
+        "TargetAlreadyDeadError",
       ];
 
       expect(reasons).toHaveLength(4);
@@ -319,11 +320,11 @@ describe("Witch Killer Priority Rules", () => {
         targetId: "p2",
         timestamp: 1000,
         executed: false,
-        failedReason: "quota_exceeded" as const,
+        failedReason: new QuotaExceededError({ current: 4, max: 3 }),
       };
 
       expect(action.executed).toBe(false);
-      expect(action.failedReason).toBe("quota_exceeded");
+      expect(action.failedReason._tag).toBe("QuotaExceededError");
     });
   });
 });
@@ -370,7 +371,7 @@ describe("Witch Killer Priority Resolution (Integration)", () => {
       // p2 的行动应该失败（因为 p2 已被 witch_killer 杀死，攻击者已死亡）
       const p2Action = nightActionsCopy.find((a) => a.playerId === "p2");
       expect(p2Action?.executed).toBe(false);
-      expect(p2Action?.failedReason).toBe("actor_dead");
+      expect(p2Action?.failedReason?._tag).toBe("ActorDeadError");
     });
 
     it("场景2：witch_killer持有者未被攻击 - 所有kill按顺序执行", () => {

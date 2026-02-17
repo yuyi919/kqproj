@@ -6,13 +6,16 @@
 
 import type { PhaseConfig } from "boardgame.io";
 import { ActivePlayers, TurnOrder } from "boardgame.io/core";
+import { Effect } from "effect";
 import { isEmptyObject } from "es-toolkit";
+import { MessageService } from "../effect";
 import type { BGGameState } from "../types";
 import { GamePhase } from "../types/core";
-import { Mutations, Selectors, TMessageBuilder as TB } from "../utils";
+import { Mutations, Selectors } from "../utils";
 import { moveFunctions } from "./moves";
 import { resolveNightActions } from "./resolution";
 import type { PhaseHookContext } from "./types";
+import { wrapHook } from "./wrapMove";
 
 const phaseConfigs = {
   [GamePhase.LOBBY]: {
@@ -42,41 +45,40 @@ const phaseConfigs = {
       // 防止刚进入就超时
       return G.status === GamePhase.MORNING && G.phaseEndTime <= Date.now();
     },
-    onBegin: ({ G, events }: PhaseHookContext) => {
-      if (G.status !== GamePhase.SETUP) {
-        G.status = GamePhase.MORNING;
-        const prevRound = G.round++;
-        Mutations.msg(G, TB.createSystem(`📜 第 ${prevRound} 天过去了`));
-        // 显示死亡日志
-        const lastRoundDeaths = G.deathLog.filter(
-          (record) => record.round === prevRound,
-        );
-        if (lastRoundDeaths.length > 0) {
-          const deathIds = lastRoundDeaths.map((d) => d.playerId);
-          Mutations.msg(G, TB.createDeathList(deathIds));
+    onBegin: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        if (G.status !== GamePhase.SETUP) {
+          G.status = GamePhase.MORNING;
+          const prevRound = G.round++;
+          yield* MessageService.sendSystem(`📜 第 ${prevRound} 天过去了`);
+          // 显示死亡日志
+          const lastRoundDeaths = G.deathLog.filter(
+            (record) => record.round === prevRound,
+          );
+          if (lastRoundDeaths.length > 0) {
+            const deathIds = lastRoundDeaths.map((d) => d.playerId);
+            yield* MessageService.sendDeathList(deathIds);
 
-          for (const death of lastRoundDeaths) {
-            const receivedCardIds = new Set(
-              Object.values(death.cardReceivers).flat(),
-            );
-            const unclaimed = death.droppedCards.filter(
-              (c) => !receivedCardIds.has(c.id),
-            );
-            if (unclaimed.length > 0) {
-              Mutations.msg(G, TB.createDeathRecord(death.playerId, unclaimed));
+            for (const death of lastRoundDeaths) {
+              const receivedCardIds = new Set(
+                Object.values(death.cardReceivers).flat(),
+              );
+              const unclaimed = death.droppedCards.filter(
+                (c) => !receivedCardIds.has(c.id),
+              );
+              if (unclaimed.length > 0) {
+                yield* MessageService.sendDeathRecord(death.playerId, unclaimed);
+              }
             }
           }
+        } else {
+          G.status = GamePhase.MORNING;
         }
-      } else {
-        G.status = GamePhase.MORNING;
-      }
-      // 添加早晨阶段消息
-      Mutations.msg(
-        G,
-        TB.createPhaseTransition(GamePhase.DAY, GamePhase.MORNING),
-      );
-      Mutations.setPhaseTimer(G, 5); // 5 seconds duration
-    },
+        // 添加早晨阶段消息
+        yield* MessageService.sendPhaseTransition(GamePhase.DAY, GamePhase.MORNING);
+        Mutations.setPhaseTimer(G, 5); // 5 seconds duration
+      }),
+    ),
   } satisfies PhaseConfig<BGGameState>,
 
   [GamePhase.DAY]: {
@@ -88,22 +90,21 @@ const phaseConfigs = {
     },
     turn: { order: TurnOrder.RESET, activePlayers: ActivePlayers.ALL },
     next: GamePhase.NIGHT,
-    onBegin: ({ G }: PhaseHookContext) => {
-      G.status = GamePhase.DAY;
-      Mutations.setPhaseTimer(G, G.config.dayDuration);
+    onBegin: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        G.status = GamePhase.DAY;
+        Mutations.setPhaseTimer(G, G.config.dayDuration);
 
-      // 重置每日交易状态
-      Mutations.resetDailyTradeStatus(G);
+        // 重置每日交易状态
+        Mutations.resetDailyTradeStatus(G);
 
-      // 清除未完成的交易
-      G.activeTrade = null;
+        // 清除未完成的交易
+        G.activeTrade = null;
 
-      // 添加日间阶段消息
-      Mutations.msg(
-        G,
-        TB.createPhaseTransition(GamePhase.MORNING, GamePhase.DAY),
-      );
-    },
+        // 添加日间阶段消息
+        yield* MessageService.sendPhaseTransition(GamePhase.MORNING, GamePhase.DAY);
+      }),
+    ),
   } satisfies PhaseConfig<BGGameState>,
 
   /**
@@ -123,90 +124,85 @@ const phaseConfigs = {
       pass: moveFunctions.pass,
     },
     next: GamePhase.DEEP_NIGHT,
-    onBegin: ({ G }: PhaseHookContext) => {
-      G.status = GamePhase.NIGHT;
-      Mutations.setPhaseTimer(G, G.config.votingDuration);
-      console.log(`[Phase] Voting phase started, round ${G.round}`);
+    onBegin: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        G.status = GamePhase.NIGHT;
+        Mutations.setPhaseTimer(G, G.config.votingDuration);
+        console.log(`[Phase] Voting phase started, round ${G.round}`);
 
-      // 添加夜间阶段消息
-      Mutations.msg(
-        G,
-        TB.createPhaseTransition(GamePhase.DAY, GamePhase.NIGHT),
-      );
-    },
-    onEnd: ({ G }: PhaseHookContext) => {
-      console.log(
-        `[Phase] Voting phase ended, processing ${G.currentVotes.length} votes`,
-      );
-
-      // 使用 Selectors 计算投票结果
-      const voteResult = Selectors.computeVoteResult(G);
-      const { imprisonedId, isTie, voteCounts, stats } = voteResult;
-      const { totalAlive, participationCount, isValid, maxVotes } = stats;
-
-      const participationRate =
-        totalAlive > 0 ? participationCount / totalAlive : 0;
-
-      console.log(
-        `[VoteResult] Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
-      );
-
-      // 投票参与率验证
-      if (!isValid) {
+        // 添加夜间阶段消息
+        yield* MessageService.sendPhaseTransition(GamePhase.DAY, GamePhase.NIGHT);
+      }),
+    ),
+    onEnd: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
         console.log(
-          `[VoteResult] Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
+          `[Phase] Voting phase ended, processing ${G.currentVotes.length} votes`,
         );
-        Mutations.msg(
-          G,
-          TB.createSystem(
+
+        // 使用 Selectors 计算投票结果
+        const voteResult = Selectors.computeVoteResult(G);
+        const { imprisonedId, isTie, voteCounts, stats } = voteResult;
+        const { totalAlive, participationCount, isValid, maxVotes } = stats;
+
+        const participationRate =
+          totalAlive > 0 ? participationCount / totalAlive : 0;
+
+        console.log(
+          `[VoteResult] Participation: ${(participationRate * 100).toFixed(1)}%, valid: ${isValid}`,
+        );
+
+        // 投票参与率验证
+        if (!isValid) {
+          console.log(
+            `[VoteResult] Vote invalid: participation rate ${(participationRate * 100).toFixed(1)}% below minimum`,
+          );
+          yield* MessageService.sendSystem(
             `⚠️ 投票无效：参与率 ${participationCount}/${totalAlive}(${(
               participationRate * 100
             ).toFixed(1)}%) 未达到最低要求`,
-          ),
-        );
-      } else if (isTie) {
-        console.log(`[VoteResult] Tie! No one will be imprisoned`);
-        Mutations.msg(G, TB.createSystem("⚠️ 投票平票，无人被监禁"));
-      } else if (imprisonedId) {
-        console.log(
-          `[VoteResult] ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
-        );
-        const imprisonedPlayer = G.players[imprisonedId];
-        if (imprisonedPlayer) {
-          Mutations.msg(
-            G,
-            TB.createSystem(
-              `🔒 玩家${imprisonedPlayer.seatNumber} 以 ${maxVotes} 票被监禁`,
-            ),
           );
+        } else if (isTie) {
+          console.log(`[VoteResult] Tie! No one will be imprisoned`);
+          yield* MessageService.sendSystem("⚠️ 投票平票，无人被监禁");
+        } else if (imprisonedId) {
+          console.log(
+            `[VoteResult] ${imprisonedId} will be imprisoned with ${maxVotes} votes`,
+          );
+          const imprisonedPlayer = G.players[imprisonedId];
+          if (imprisonedPlayer) {
+            yield* MessageService.sendSystem(
+              `🔒 玩家${imprisonedPlayer.seatNumber} 以 ${maxVotes} 票被监禁`,
+            );
+          }
+        } else {
+          console.log(`[VoteResult] No valid votes, no one imprisoned`);
+          yield* MessageService.sendSystem("⚠️ 无有效投票，无人被监禁");
         }
-      } else {
-        console.log(`[VoteResult] No valid votes, no one imprisoned`);
-        Mutations.msg(G, TB.createSystem("⚠️ 无有效投票，无人被监禁"));
-      }
 
-      G.imprisonedId = imprisonedId;
+        G.imprisonedId = imprisonedId;
 
-      // 记录到历史
-      G.voteHistory.push(voteResult);
+        // 记录到历史
+        G.voteHistory.push(voteResult);
 
-      console.log(
-        `[VoteResult] Vote history updated, total records: ${G.voteHistory.length}`,
-      );
+        console.log(
+          `[VoteResult] Vote history updated, total records: ${G.voteHistory.length}`,
+        );
 
-      // 添加投票结果摘要
-      const voteSummary = Object.entries(voteCounts)
-        .map(([targetId, count]) => {
-          const player = G.players[targetId];
-          return player
-            ? `玩家${player.seatNumber}: ${count}票`
-            : `${targetId}: ${count}票`;
-        })
-        .join(" | ");
-      if (voteSummary) {
-        Mutations.msg(G, TB.createSystem(`投票结果：${voteSummary}`));
-      }
-    },
+        // 添加投票结果摘要
+        const voteSummary = Object.entries(voteCounts)
+          .map(([targetId, count]) => {
+            const player = G.players[targetId];
+            return player
+              ? `玩家${player.seatNumber}: ${count}票`
+              : `${targetId}: ${count}票`;
+          })
+          .join(" | ");
+        if (voteSummary) {
+          yield* MessageService.sendSystem(`投票结果：${voteSummary}`);
+        }
+      }),
+    ),
   } satisfies PhaseConfig<BGGameState>,
 
   /**
@@ -223,47 +219,50 @@ const phaseConfigs = {
       pass: moveFunctions.passNight,
     },
     next: GamePhase.RESOLUTION,
-    onBegin: ({ G }: PhaseHookContext) => {
-      G.status = GamePhase.DEEP_NIGHT;
-      G.attackQuota = {
-        witchKillerUsed: false,
-        killMagicUsed: 0,
-      };
-      Mutations.setPhaseTimer(G, G.config.nightDuration);
+    onBegin: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        G.status = GamePhase.DEEP_NIGHT;
+        G.attackQuota = {
+          witchKillerUsed: false,
+          killMagicUsed: 0,
+        };
+        Mutations.setPhaseTimer(G, G.config.nightDuration);
 
-      // 添加夜间阶段消息
-      Mutations.msg(
-        G,
-        TB.createPhaseTransition(GamePhase.NIGHT, GamePhase.DEEP_NIGHT),
-      );
-    },
+        // 添加夜间阶段消息
+        yield* MessageService.sendPhaseTransition(
+          GamePhase.NIGHT,
+          GamePhase.DEEP_NIGHT,
+        );
+      }),
+    ),
   } satisfies PhaseConfig<BGGameState>,
 
   resolution: {
     moves: {},
     turn: { order: TurnOrder.RESET, activePlayers: ActivePlayers.ALL },
-    onBegin: ({ G, random, events }: PhaseHookContext) => {
-      G.status = GamePhase.RESOLUTION;
+    onBegin: wrapHook(({ G, random, events }) => {
+      return Effect.gen(function* () {
+        G.status = GamePhase.RESOLUTION;
+        // 添加结算阶段开始消息
+        yield* MessageService.sendSystem("⚖️ 正在结算……");
 
-      // 添加结算阶段开始消息
-      Mutations.msg(G, TB.createSystem("⚖️ 正在结算……"));
+        resolveNightActions(G, random);
 
-      resolveNightActions(G, random);
+        // 添加结算完成消息
+        yield* MessageService.sendSystem("✅ 夜间行动结算完成");
 
-      // 添加结算完成消息
-      Mutations.msg(G, TB.createSystem("✅ 夜间行动结算完成"));
+        // 显示本轮死亡汇总
+        const currentRoundDeaths = G.deathLog.filter(
+          (record) => record.round === G.round,
+        );
+        if (currentRoundDeaths.length > 0) {
+          const deathCount = currentRoundDeaths.length;
+          yield* MessageService.sendSystem(`☠️ 本轮共有 ${deathCount} 人死亡`);
+        }
 
-      // 显示本轮死亡汇总
-      const currentRoundDeaths = G.deathLog.filter(
-        (record) => record.round === G.round,
-      );
-      if (currentRoundDeaths.length > 0) {
-        const deathCount = currentRoundDeaths.length;
-        Mutations.msg(G, TB.createSystem(`☠️ 本轮共有 ${deathCount} 人死亡`));
-      }
-
-      events.endPhase?.();
-    },
+        events.endPhase?.();
+      });
+    }),
     // 如果存在卡牌选择，进入 cardSelection 阶段，否则进入 morning
     next: ({ G }: PhaseHookContext) => {
       return !isEmptyObject(G.cardSelection)
@@ -297,50 +296,48 @@ const phaseConfigs = {
         },
       },
     },
-    onBegin: ({ G }: PhaseHookContext) => {
-      G.status = GamePhase.CARD_SELECTION;
-      Mutations.setPhaseTimer(G, G.config.cardSelectionDuration);
+    onBegin: wrapHook(({ G }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        G.status = GamePhase.CARD_SELECTION;
+        Mutations.setPhaseTimer(G, G.config.cardSelectionDuration);
 
-      Object.values(G.cardSelection).forEach((cardSelection) => {
-        Mutations.msg(
-          G,
-          TB.createPrivateMessageResponse(
+        for (const cardSelection of Object.values(G.cardSelection)) {
+          yield* MessageService.sendPrivateMessage(
             cardSelection.selectingPlayerId,
             `请选择一张卡牌`,
-          ),
-        );
-      });
-    },
-    onEnd: ({ G, random }: PhaseHookContext) => {
-      // 如果有卡牌选择但超时，随机分配
-      Object.values(G.cardSelection).forEach((cardSelection) => {
-        if (cardSelection) {
-          const selectingPlayerId = cardSelection.selectingPlayerId;
-          const availableCards = cardSelection.availableCards;
+          );
+        }
+      }),
+    ),
+    onEnd: wrapHook(({ G, random }: PhaseHookContext) =>
+      Effect.gen(function* () {
+        // 如果有卡牌选择但超时，随机分配
+        for (const cardSelection of Object.values(G.cardSelection)) {
+          if (cardSelection) {
+            const selectingPlayerId = cardSelection.selectingPlayerId;
+            const availableCards = cardSelection.availableCards;
 
-          if (availableCards.length > 0) {
-            // 随机选择一张卡牌
-            const randomIndex = random.Die(availableCards.length) - 1;
-            const selectedCard = availableCards[randomIndex];
+            if (availableCards.length > 0) {
+              // 随机选择一张卡牌
+              const randomIndex = random.Die(availableCards.length) - 1;
+              const selectedCard = availableCards[randomIndex];
 
-            // 完成卡牌选择过程（随机分配）
-            Mutations.completeCardSelection(G, selectingPlayerId, selectedCard);
+              // 完成卡牌选择过程（随机分配）
+              Mutations.completeCardSelection(G, selectingPlayerId, selectedCard);
 
-            Mutations.msg(
-              G,
-              TB.createPrivateMessageResponse(
+              yield* MessageService.sendPrivateMessage(
                 selectingPlayerId,
                 `你超时未选择，随机获得了一张卡牌`,
-              ),
-            );
+              );
 
-            console.log(
-              `[CardSelection] ${selectingPlayerId} timed out, randomly assigned card ${selectedCard.type}`,
-            );
+              console.log(
+                `[CardSelection] ${selectingPlayerId} timed out, randomly assigned card ${selectedCard.type}`,
+              );
+            }
           }
         }
-      });
-    },
+      }),
+    ),
   } satisfies PhaseConfig<BGGameState>,
   [GamePhase.ENDED]: {},
 } satisfies Record<GamePhase, PhaseConfig<BGGameState>>;

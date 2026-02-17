@@ -19,9 +19,8 @@ export {
 } from "./cardService";
 // Message Service
 export {
-  createMessageService,
-  type IMessageService,
   MessageService,
+  MessageServiceImpl,
 } from "./messageService";
 // Player State Service
 export {

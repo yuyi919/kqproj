@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
-import { createTestState, setupPlayers } from "../../__tests__/testUtils";
+import { createMockRandom, createTestState, setupPlayers } from "../../__tests__/testUtils";
+import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { AttackResolutionService, CardService, PriorityService } from "../services";
 import { BaseGameLayers, GameLayers } from "./gameLayers";
@@ -43,12 +44,19 @@ describe("GameLayers", () => {
     const G = createTestState();
     setupPlayers(G, ["p1", "p2"]);
 
-    const layer = Layer.provideMerge(GameLayers, GameStateRef.layer(G));
+    const layer = Layer.provideMerge(
+      Layer.provideMerge(GameLayers, GameStateRef.layer(G)),
+      makeGameRandomLayer(createMockRandom()),
+    );
     const program = Effect.gen(function* () {
       const service = yield* AttackResolutionService;
       const stateRef = yield* GameStateRef;
 
-      yield* service.executeKill("p2", "kill_magic", "p1");
+      yield* service.executeKill({
+        playerId: "p2",
+        cause: "kill_magic",
+        killerId: "p1",
+      });
       const updated = yield* stateRef.get();
       return updated.secrets["p2"].status;
     }).pipe(Effect.provide(layer));
@@ -57,3 +65,4 @@ describe("GameLayers", () => {
     expect(status).toBe("dead");
   });
 });
+

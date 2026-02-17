@@ -651,6 +651,26 @@ describe("resolution", () => {
     if (p3HasWK) {
       expect(G.secrets["p3"].isWitch).toBe(true);
     }
+
+    const receiverId = p2HasWK ? "p2" : "p3";
+    const forcedTransferNotice = G.chatMessages.some(
+      (message) =>
+        message.kind === "private_response" &&
+        message.type === "witch_killer_obtained" &&
+        message.actorId === receiverId &&
+        message.fromPlayerId === "p1" &&
+        message.mode === "passive",
+    );
+    expect(forcedTransferNotice).toBe(true);
+
+    const obtainedInfo = G.secrets[receiverId].revealedInfo.findLast(
+      (item) => item.type === "witch_killer_obtained",
+    );
+    expect(obtainedInfo).toBeDefined();
+    expect(obtainedInfo?.content).toMatchObject({
+      fromPlayerId: "p1",
+      reason: "forced_wreck_transfer",
+    });
   });
 
   it("wreck: witch_killer should NOT check hand space (can exceed 4 cards)", () => {

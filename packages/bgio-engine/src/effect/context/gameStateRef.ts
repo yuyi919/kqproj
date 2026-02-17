@@ -3,8 +3,10 @@
 /**
  * GameStateRef - 游戏状态可变引用
  *
- * 职责：提供对 BGGameState 的可变引用访问
- * 使用 Effect-TS 的 Ref 实现线程安全的状态管理
+ * 职责：
+ * 1. 用 Effect.Ref 托管 BGGameState
+ * 2. 提供 get / set / update 三个统一入口
+ * 3. 避免服务层直接依赖裸对象副作用
  */
 
 import { Effect, Layer, Ref } from "effect";
@@ -19,8 +21,7 @@ export interface IGameStateRef {
 }
 
 /**
- * 创建 GameStateRef 的便捷 Layer
- * 接受初始状态
+ * 创建 GameStateRef 的便捷 Layer，注入初始状态
  */
 export const makeGameStateRefLayer = (initialState: BGGameState) =>
   Layer.effect(

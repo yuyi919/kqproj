@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
-import { createTestState, setupPlayers } from "../../__tests__/testUtils";
+import { createMockRandom, createTestState, setupPlayers } from "../../__tests__/testUtils";
+import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { GameLayers } from "../layers/gameLayers";
 import { AttackResolutionService } from "./attackResolutionService";
@@ -8,7 +9,10 @@ import type { PhaseResult } from "../../game/resolution/types";
 import type { BGGameState, TMessage } from "../../types";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return Layer.provideMerge(GameLayers, GameStateRef.layer(state));
+  return Layer.provideMerge(
+    Layer.provideMerge(GameLayers, GameStateRef.layer(state)),
+    makeGameRandomLayer(createMockRandom()),
+  );
 }
 
 function runPhase2AndGetState(
@@ -363,3 +367,4 @@ describe("AttackResolutionService", () => {
     }
   });
 });
+

@@ -24,7 +24,10 @@ import type {
  */
 export interface PhaseResult {
   /** 普通状态更新（Partial<BGGameState>） */
-  stateUpdates: Pick<Partial<BGGameState>, "cardSelection">;
+  stateUpdates: {
+    /** 卡牌选择 */
+    cardSelection?: BGGameState["cardSelection"];
+  };
 
   /** 死亡的玩家 ID 集合 */
   deadPlayers?: Set<string>;
