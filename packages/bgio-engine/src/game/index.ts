@@ -152,7 +152,7 @@ export const TypedWitchTrialGame = {
       deck: [],
       actionHistory: [],
       chatMessages: Selectors.filterMessagesForPlayer(G.chatMessages, pid),
-      deathLog: Selectors.filterDeathLogForPlayer(G.deathLog, pid) as any,
+      deathLog: Selectors.filterDeathLogForPlayer(G.deathLog, pid),
     };
 
     if (playerID) {
