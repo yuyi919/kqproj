@@ -9,7 +9,7 @@
 - [x] **Phase 1: Effect-TS 迁移** - 完成服务层迁移，统一错误处理 (completed 2026-02-17)
 - [x] **Phase 2: 类型安全** - 移除 any 类型，提升类型安全 (completed 2026-02-17)
 - [x] **Phase 3: 技术债务** - 标准化日志记录，统一错误处理 (completed 2026-02-17)
-- [ ] **Phase 4: 测试覆盖** - 提升测试覆盖率至 80%+
+- [x] **Phase 4: 测试覆盖** - 提升测试覆盖率至 80%+ (completed 2026-02-17)
 
 ## Phase Details
 
@@ -102,10 +102,10 @@
 **Plans**: 5 plans
 
 - [ ] 04-01-PLAN.md — Effect-TS 服务层测试 (CardService, PriorityService)
-- [ ] 04-02-PLAN.md — 消息类型和 Selectors 测试
-- [ ] 04-03-PLAN.md — 相位钩子和断言函数测试
-- [ ] 04-04-PLAN.md — Effect Context 和测试辅助函数测试
-- [ ] 04-05-PLAN.md — 覆盖率补充和最终验证
+- [x] 04-02-PLAN.md — 消息类型和 Selectors 测试
+- [x] 04-03-PLAN.md — 相位钩子和断言函数测试
+- [x] 04-04-PLAN.md — Effect Context 和测试辅助函数测试
+- [x] 04-05-PLAN.md — 覆盖率补充和最终验证
 
 ---
 
@@ -119,4 +119,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Effect-TS 迁移 | 3/3 | Complete    | 2026-02-17 |
 | 2. 类型安全 | 3/3 | Complete    | 2026-02-17 |
 | 3. 技术债务 | 4/4 | Complete    | 2026-02-17 |
-| 4. 测试覆盖 | 0/5 | Not started | - |
+| 4. 测试覆盖 | 5/5 | Complete    | 2026-02-17 |
