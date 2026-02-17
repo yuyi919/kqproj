@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 1 of 4 (Effect-TS 迁移)
-Plan: Not started
-Status: Context gathered
-Last activity: 2026-02-17 — Context gathered
+Plan: 03 of 05 (01-effect-ts-03)
+Status: Plan complete
+Last activity: 2026-02-17 — Plan 03 completed (Backward compatibility verified)
 
-Progress: [░░░░░░░░░░░] 0%
+Progress: [▓▓▓▓▓▓░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: N/A
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: ~1.5 min
+- Total execution time: 0.05 hours
 
 **By Phase:**
 
@@ -46,7 +46,7 @@ Progress: [░░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- None yet.
+- **EFFECT-05:** Legacy domain services (cardService, messageBuilder, queries) preserved as compatibility layer. Effect-TS services import from legacy domain to maintain backward compatibility.
 
 ### Pending Todos
 
@@ -63,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Roadmap creation completed
-Resume file: None
+Stopped at: Completed plan 01-effect-ts-03 (Backward compatibility verified)
+Resume file: .planning/phases/01-effect-ts/01-effect-ts-03-SUMMARY.md
