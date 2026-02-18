@@ -9,14 +9,7 @@
  */
 
 import { describe, expect, it } from "bun:test";
-import {
-  makePlayerId,
-  makeCardId,
-  isPlayerId,
-  isCardId,
-  PlayerId,
-  CardId,
-} from "./branded";
+import { isCardId, isPlayerId, makeCardId, makePlayerId } from "./branded";
 
 // ==================== PlayerId 测试 ====================
 
@@ -24,14 +17,14 @@ describe("PlayerId", () => {
   describe("makePlayerId", () => {
     it("应创建有效的 PlayerId", () => {
       const playerId = makePlayerId("p1");
-      expect(playerId).toBe("p1");
+      expect(playerId).toBe(makePlayerId("p1"));
       expect(typeof playerId).toBe("string");
     });
 
     it("应接受任意字符串作为 ID", () => {
-      expect(makePlayerId("player1")).toBe("player1");
-      expect(makePlayerId("")).toBe("");
-      expect(makePlayerId("123")).toBe("123");
+      expect(makePlayerId("player1")).toBe(makePlayerId("player1"));
+      expect(makePlayerId("")).toBe(makePlayerId(""));
+      expect(makePlayerId("123")).toBe(makePlayerId("123"));
     });
   });
 
@@ -63,14 +56,14 @@ describe("CardId", () => {
   describe("makeCardId", () => {
     it("应创建有效的 CardId", () => {
       const cardId = makeCardId("c1");
-      expect(cardId).toBe("c1");
+      expect(cardId).toBe(makeCardId("c1"));
       expect(typeof cardId).toBe("string");
     });
 
     it("应接受任意字符串作为 ID", () => {
-      expect(makeCardId("card-001")).toBe("card-001");
-      expect(makeCardId("")).toBe("");
-      expect(makeCardId("abc123")).toBe("abc123");
+      expect(makeCardId("card-001")).toBe(makeCardId("card-001"));
+      expect(makeCardId("")).toBe(makeCardId(""));
+      expect(makeCardId("abc123")).toBe(makeCardId("abc123"));
     });
   });
 
@@ -130,13 +123,13 @@ describe("类型行为", () => {
 describe("边界情况", () => {
   it("空字符串应该是有效的 ID", () => {
     const playerId = makePlayerId("");
-    expect(playerId).toBe("");
+    expect(playerId).toBe(makePlayerId(""));
     expect(isPlayerId(playerId)).toBe(true);
   });
 
   it("特殊字符应该是有效的 ID", () => {
     const playerId = makePlayerId("player_1-2");
-    expect(playerId).toBe("player_1-2");
+    expect(playerId).toBe(makePlayerId("player_1-2"));
   });
 
   it("应该可以用于对象键", () => {

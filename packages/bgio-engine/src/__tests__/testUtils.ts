@@ -603,7 +603,9 @@ export function createPhaseContext(G: BGGameState, phase?: GamePhase) {
       activePlayers: null,
     },
     random: createMockRandom(),
-    events: {} as EventsAPI,
+    events: {
+      endPhase: () => {},
+    } as EventsAPI,
     log: {},
   } as PhaseHookContext;
 }

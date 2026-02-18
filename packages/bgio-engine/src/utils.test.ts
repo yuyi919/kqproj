@@ -1,5 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
+  createTestState,
+  setupPlayer,
+  setupPlayers,
+} from "./__tests__/testUtils";
+import type { BGGameState, CardRef, GameConfig } from "./types";
+import { GamePhase } from "./types";
+import {
   createCard,
   createDeck,
   getCardDefinition,
@@ -10,9 +17,6 @@ import {
   Selectors,
   TMessageBuilder,
 } from "./utils";
-import { createTestState, setupPlayers, setupPlayer } from "./__tests__/testUtils";
-import type { BGGameState, CardRef, GameConfig } from "./types";
-import { GamePhase } from "./types";
 
 // ==================== 测试数据工厂 ====================
 
@@ -404,7 +408,14 @@ describe("Selectors", () => {
     it("应返回公开的死亡信息", () => {
       const state = createMockGameState();
       state.deathLog = [
-        { round: 1, playerId: "p5", deathCause: "kill_magic", killerId: "p1" },
+        {
+          round: 1,
+          playerId: "p5",
+          cause: "kill_magic",
+          killerId: "p1",
+          cardReceivers: {},
+          droppedCards: [],
+        },
       ];
       const info = Selectors.getPublicDeathInfo(state);
       expect(info).toHaveLength(1);
@@ -416,7 +427,14 @@ describe("Selectors", () => {
     it("应隐藏杀手信息", () => {
       const state = createMockGameState();
       state.deathLog = [
-        { round: 1, playerId: "p5", deathCause: "kill_magic", killerId: "p1" },
+        {
+          round: 1,
+          playerId: "p5",
+          cause: "kill_magic" as const,
+          killerId: "p1",
+          droppedCards: [],
+          cardReceivers: {},
+        },
       ];
       const info = Selectors.getPublicDeathInfo(state);
       expect((info[0] as any).killerId).toBeUndefined();
@@ -483,7 +501,12 @@ describe("Selectors", () => {
     it("应正确判断已行动的玩家", () => {
       const state = createMockGameState();
       state.nightActions = [
-        { id: "na1", playerId: "p1", card: { id: "c1", type: "detect" }, timestamp: Date.now() },
+        {
+          id: "na1",
+          playerId: "p1",
+          card: { id: "c1", type: "detect" },
+          timestamp: Date.now(),
+        },
       ];
       expect(Selectors.hasPlayerActed(state, "p1")).toBe(true);
       expect(Selectors.hasPlayerActed(state, "p2")).toBe(false);
@@ -506,7 +529,14 @@ describe("Selectors", () => {
       const state = createMockGameState();
       // Need to set executed: true for the action to be considered a successful kill
       state.nightActions = [
-        { id: "na1", playerId: "p1", card: { id: "c1", type: "kill" }, targetId: "p2", timestamp: Date.now(), executed: true },
+        {
+          id: "na1",
+          playerId: "p1",
+          card: { id: "c1", type: "kill" },
+          targetId: "p2",
+          timestamp: Date.now(),
+          executed: true,
+        },
       ];
       expect(Selectors.hasKilledThisRound(state, "p1")).toBe(true);
       expect(Selectors.hasKilledThisRound(state, "p2")).toBe(false);
@@ -517,7 +547,12 @@ describe("Selectors", () => {
     it("应正确判断本夜已使用卡牌的玩家", () => {
       const state = createMockGameState();
       state.nightActions = [
-        { id: "na1", playerId: "p1", card: { id: "c1", type: "detect" }, timestamp: Date.now() },
+        {
+          id: "na1",
+          playerId: "p1",
+          card: { id: "c1", type: "detect" },
+          timestamp: Date.now(),
+        },
       ];
       expect(Selectors.hasPlayerUsedCardThisNight(state, "p1")).toBe(true);
       expect(Selectors.hasPlayerUsedCardThisNight(state, "p2")).toBe(false);
@@ -591,7 +626,14 @@ describe("Selectors", () => {
   describe("filterDeathLogForPlayer", () => {
     it("应隐藏杀手信息", () => {
       const log = [
-        { round: 1, playerId: "p5", deathCause: "kill_magic" as const, killerId: "p1" },
+        {
+          round: 1,
+          playerId: "p5",
+          cause: "kill_magic" as const,
+          killerId: "p1",
+          droppedCards: [],
+          cardReceivers: {},
+        },
       ];
       const filtered = Selectors.filterDeathLogForPlayer(log, "p2");
       expect(filtered[0].killerId).toBeUndefined();
@@ -599,7 +641,14 @@ describe("Selectors", () => {
 
     it("调试模式应显示完整信息", () => {
       const log = [
-        { round: 1, playerId: "p5", deathCause: "kill_magic" as const, killerId: "p1" },
+        {
+          round: 1,
+          playerId: "p5",
+          cause: "kill_magic" as const,
+          killerId: "p1",
+          droppedCards: [],
+          cardReceivers: {},
+        },
       ];
       const filtered = Selectors.filterDeathLogForPlayer(log, "0");
       expect(filtered[0].killerId).toBe("p1");
@@ -619,7 +668,11 @@ describe("Selectors", () => {
     describe("hasInitiatedTradeToday", () => {
       it("应正确判断今日已发起交易的玩家", () => {
         const state = createMockGameState();
-        state.dailyTradeTracker.p1 = { hasInitiatedToday: true, hasReceivedOfferToday: false, hasTradedToday: true };
+        state.dailyTradeTracker.p1 = {
+          hasInitiatedToday: true,
+          hasReceivedOfferToday: false,
+          hasTradedToday: true,
+        };
         expect(Selectors.hasInitiatedTradeToday(state, "p1")).toBe(true);
         expect(Selectors.hasInitiatedTradeToday(state, "p2")).toBe(false);
       });
@@ -628,7 +681,11 @@ describe("Selectors", () => {
     describe("hasReceivedTradeOfferToday", () => {
       it("应正确判断今日已收到交易提议的玩家", () => {
         const state = createMockGameState();
-        state.dailyTradeTracker.p1 = { hasInitiatedToday: false, hasReceivedOfferToday: true, hasTradedToday: true };
+        state.dailyTradeTracker.p1 = {
+          hasInitiatedToday: false,
+          hasReceivedOfferToday: true,
+          hasTradedToday: true,
+        };
         expect(Selectors.hasReceivedTradeOfferToday(state, "p1")).toBe(true);
         expect(Selectors.hasReceivedTradeOfferToday(state, "p2")).toBe(false);
       });
@@ -637,7 +694,11 @@ describe("Selectors", () => {
     describe("hasTradedToday", () => {
       it("应正确判断今日已参与交易的玩家", () => {
         const state = createMockGameState();
-        state.dailyTradeTracker.p1 = { hasInitiatedToday: false, hasReceivedOfferToday: false, hasTradedToday: true };
+        state.dailyTradeTracker.p1 = {
+          hasInitiatedToday: false,
+          hasReceivedOfferToday: false,
+          hasTradedToday: true,
+        };
         expect(Selectors.hasTradedToday(state, "p1")).toBe(true);
         expect(Selectors.hasTradedToday(state, "p2")).toBe(false);
       });

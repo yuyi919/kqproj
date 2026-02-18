@@ -10,6 +10,9 @@
  */
 
 import { Layer } from "effect";
+import { makeGameRandomLayer } from "../effect/context/gameRandom";
+import { GameStateRef } from "../effect/context/gameStateRef";
+import { BaseGameLayers } from "../effect/layers/gameLayers";
 import type { RandomAPI } from "../game";
 import type {
   BGGameState,
@@ -21,9 +24,6 @@ import type {
   PublicPlayerInfo,
 } from "../types";
 import { GamePhase } from "../types";
-import { makeGameRandomLayer } from "../effect/context/gameRandom";
-import { GameStateRef } from "../effect/context/gameStateRef";
-import { BaseGameLayers } from "../effect/layers/gameLayers";
 
 // ==================== 标准配置 ====================
 
@@ -56,7 +56,9 @@ export const SEVEN_PLAYER_CONFIG: GameConfig = {
  *
  * 这个 mock 实现同时支持两种调用方式
  */
-export function createMockRandom(overrides: Partial<RandomAPI> = {}): RandomAPI {
+export function createMockRandom(
+  overrides: Partial<RandomAPI> = {},
+): RandomAPI {
   // 创建支持重载的骰子函数
   const makeDice = (value: number) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,7 +117,10 @@ export function makeGameState(options: MakeGameStateOptions = {}): BGGameState {
     round: overrides.round ?? 1,
     status: overrides.status ?? GamePhase.DEEP_NIGHT,
     imprisonedId: overrides.imprisonedId ?? null,
-    attackQuota: overrides.attackQuota ?? { witchKillerUsed: false, killMagicUsed: 0 },
+    attackQuota: overrides.attackQuota ?? {
+      witchKillerUsed: false,
+      killMagicUsed: 0,
+    },
     dailyTradeTracker: overrides.dailyTradeTracker ?? {},
     activeTrade: overrides.activeTrade ?? null,
     cardSelection: overrides.cardSelection ?? {},
@@ -151,11 +156,7 @@ export function makePlayer(
 
   // 计算公开状态（witch 显示为 alive，wreck 显示为 dead）
   const publicStatus: "alive" | "dead" =
-    status === "witch"
-      ? "alive"
-      : status === "wreck"
-        ? "dead"
-        : status;
+    status === "witch" ? "alive" : status === "wreck" ? "dead" : status;
 
   const publicInfo: PublicPlayerInfo = {
     id,
@@ -272,7 +273,9 @@ export interface MakeTestScenarioOptions {
  * @param options - 场景配置选项
  * @returns 配置好的游戏状态
  */
-export function makeTestScenario(options: MakeTestScenarioOptions = {}): BGGameState {
+export function makeTestScenario(
+  options: MakeTestScenarioOptions = {},
+): BGGameState {
   const playerCount = options.playerCount ?? 7;
   const withWitchKiller = options.withWitchKiller ?? false;
   const withDeadPlayers = options.withDeadPlayers ?? [];
@@ -309,7 +312,10 @@ export function makeTestScenario(options: MakeTestScenarioOptions = {}): BGGameS
  * @returns 可直接用于 Effect.provide 的 Layer
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function makeLayerWithState(state: BGGameState, random?: RandomAPI): Layer.Layer<any, never, never> {
+export function makeLayerWithState(
+  state: BGGameState,
+  random?: RandomAPI,
+): Layer.Layer<any, never, never> {
   const mockRandom = random ?? createMockRandom();
 
   return Layer.provideMerge(

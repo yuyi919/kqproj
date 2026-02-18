@@ -57,7 +57,8 @@ describe("phaseConfigs - MORNING", () => {
     G.status = GamePhase.MORNING;
     G.phaseEndTime = Date.now() - 1000; // Past time
 
-    const shouldEnd = config.endIf?.({ G } as ReturnType<typeof createPhaseContext>);
+    const ctx = createPhaseContext(G, GamePhase.MORNING);
+    const shouldEnd = config.endIf?.(ctx);
     expect(shouldEnd).toBe(true);
   });
 
@@ -68,7 +69,8 @@ describe("phaseConfigs - MORNING", () => {
     G.status = GamePhase.MORNING;
     G.phaseEndTime = Date.now() + 10000; // Future time
 
-    const shouldEnd = config.endIf?.({ G } as ReturnType<typeof createPhaseContext>);
+    const ctx = createPhaseContext(G, GamePhase.MORNING);
+    const shouldEnd = config.endIf?.(ctx);
     expect(shouldEnd).toBe(false);
   });
 
@@ -79,7 +81,8 @@ describe("phaseConfigs - MORNING", () => {
     G.status = GamePhase.DAY;
     G.phaseEndTime = Date.now() - 1000;
 
-    const shouldEnd = config.endIf?.({ G } as ReturnType<typeof createPhaseContext>);
+    const ctx = createPhaseContext(G, GamePhase.MORNING);
+    const shouldEnd = config.endIf?.(ctx);
     expect(shouldEnd).toBe(false);
   });
 
@@ -95,7 +98,7 @@ describe("phaseConfigs - MORNING", () => {
 
     // onBegin should not throw
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.MORNING);
+    expect(G.status as GamePhase).toBe(GamePhase.MORNING);
   });
 
   it("should announce deaths from previous round in onBegin", () => {
@@ -154,7 +157,7 @@ describe("phaseConfigs - DAY", () => {
     const ctx = createPhaseContext(G, GamePhase.DAY);
 
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.DAY);
+    expect(G.status as GamePhase).toBe(GamePhase.DAY);
     expect(G.activeTrade).toBeNull();
   });
 
@@ -165,7 +168,11 @@ describe("phaseConfigs - DAY", () => {
     setupPlayers(G, ["p1", "p2"]);
     G.status = GamePhase.MORNING;
     G.dailyTradeTracker = {
-      p1: { hasInitiatedToday: true, hasReceivedOfferToday: true, hasTradedToday: true },
+      p1: {
+        hasInitiatedToday: true,
+        hasReceivedOfferToday: true,
+        hasTradedToday: true,
+      },
     };
 
     const ctx = createPhaseContext(G, GamePhase.DAY);
@@ -206,7 +213,7 @@ describe("phaseConfigs - NIGHT", () => {
     const ctx = createPhaseContext(G, GamePhase.NIGHT);
 
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.NIGHT);
+    expect(G.status as GamePhase).toBe(GamePhase.NIGHT);
   });
 
   it("should execute onEnd hook and process votes", () => {
@@ -293,7 +300,7 @@ describe("phaseConfigs - DEEP_NIGHT", () => {
     const ctx = createPhaseContext(G, GamePhase.DEEP_NIGHT);
 
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.DEEP_NIGHT);
+    expect(G.status as GamePhase).toBe(GamePhase.DEEP_NIGHT);
     expect(G.attackQuota.witchKillerUsed).toBe(false);
     expect(G.attackQuota.killMagicUsed).toBe(0);
   });
@@ -314,13 +321,10 @@ describe("phaseConfigs - RESOLUTION", () => {
     setupPlayers(G, ["p1", "p2", "p3"]);
     G.status = GamePhase.DEEP_NIGHT;
 
-    const ctx = {
-      ...createPhaseContext(G, GamePhase.RESOLUTION),
-      events: { endPhase: () => {} },
-    };
+    const ctx = createPhaseContext(G, GamePhase.RESOLUTION);
 
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.RESOLUTION);
+    expect(G.status as GamePhase).toBe(GamePhase.RESOLUTION);
   });
 
   it("should transition to CARD_SELECTION when card selections exist", () => {
@@ -332,11 +336,12 @@ describe("phaseConfigs - RESOLUTION", () => {
         selectingPlayerId: "p1",
         victimId: "p2",
         availableCards: [{ id: "card1", type: "kill" as const }],
+        deadline: 0,
       },
     };
 
     const ctx = createPhaseContext(G, GamePhase.RESOLUTION);
-    const nextPhase = config.next?.({ G: ctx.G } as ReturnType<typeof createPhaseContext>);
+    const nextPhase = config.next?.(ctx);
 
     expect(nextPhase).toBe(GamePhase.CARD_SELECTION);
   });
@@ -346,9 +351,8 @@ describe("phaseConfigs - RESOLUTION", () => {
     const G = createTestState();
 
     G.cardSelection = {};
-
     const ctx = createPhaseContext(G, GamePhase.RESOLUTION);
-    const nextPhase = config.next?.({ G: ctx.G } as ReturnType<typeof createPhaseContext>);
+    const nextPhase = config.next?.(ctx);
 
     expect(nextPhase).toBe(GamePhase.MORNING);
   });
@@ -388,13 +392,14 @@ describe("phaseConfigs - CARD_SELECTION", () => {
         selectingPlayerId: "p1",
         victimId: "p2",
         availableCards: [{ id: "card1", type: "kill" as const }],
+        deadline: 0,
       },
     };
 
     const ctx = createPhaseContext(G, GamePhase.CARD_SELECTION);
 
     expect(() => config.onBegin?.(ctx)).not.toThrow();
-    expect(G.status).toBe(GamePhase.CARD_SELECTION);
+    expect(G.status as GamePhase).toBe(GamePhase.CARD_SELECTION);
   });
 
   it("should execute onEnd hook and randomly assign cards if not selected", () => {
@@ -407,6 +412,7 @@ describe("phaseConfigs - CARD_SELECTION", () => {
         selectingPlayerId: "p1",
         victimId: "p2",
         availableCards: [{ id: "card1", type: "kill" as const }],
+        deadline: 0,
       },
     };
 
@@ -444,11 +450,9 @@ describe("phaseConfigs - Phase Flow", () => {
     G.cardSelection = {};
 
     const ctx = createPhaseContext(G, GamePhase.RESOLUTION);
-    const nextPhase = phaseConfigs[GamePhase.RESOLUTION].next?.({
-      G: ctx.G,
-    } as ReturnType<typeof createPhaseContext>);
+    const nextPhase = phaseConfigs[GamePhase.RESOLUTION].next?.(ctx);
 
-    expect(nextPhase).toBe(GamePhase.MORNING);
+    expect(nextPhase as GamePhase).toBe(GamePhase.MORNING);
   });
 
   it("should handle card selection branch in resolution", () => {
@@ -458,15 +462,14 @@ describe("phaseConfigs - Phase Flow", () => {
         selectingPlayerId: "p1",
         victimId: "p2",
         availableCards: [{ id: "card1", type: "kill" as const }],
+        deadline: 0,
       },
     };
 
     const ctx = createPhaseContext(G, GamePhase.RESOLUTION);
-    const nextPhase = phaseConfigs[GamePhase.RESOLUTION].next?.({
-      G: ctx.G,
-    } as ReturnType<typeof createPhaseContext>);
+    const nextPhase = phaseConfigs[GamePhase.RESOLUTION].next?.(ctx);
 
-    expect(nextPhase).toBe(GamePhase.CARD_SELECTION);
+    expect(nextPhase as GamePhase).toBe(GamePhase.CARD_SELECTION);
     expect(phaseConfigs[GamePhase.CARD_SELECTION].next).toBe(GamePhase.MORNING);
   });
 });
