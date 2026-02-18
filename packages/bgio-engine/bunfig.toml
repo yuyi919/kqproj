@@ -1,0 +1,15 @@
+[test]
+# 跳过所有测试文件本身的覆盖率统计（推荐）
+coverageSkipTestFiles = true
+
+# 排除特定路径的文件（如第三方库、构建目录等）
+coveragePathIgnorePatterns = [
+  "**/node_modules/**",
+  "**/vendor/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/*.d.ts",
+  "**/*.test.*",    # 排除所有测试文件
+  "**/*.spec.*",
+  "**/__tests__/**"
+]

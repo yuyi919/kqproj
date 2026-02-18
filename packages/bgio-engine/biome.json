@@ -34,9 +34,19 @@
         }
       },
       "suspicious": {
+        "noUnassignedVariables": "info",
         "noDocumentImportInPage": "error",
         "noHeadImportInDocument": "error",
         "useGoogleFontDisplay": "warn"
+      },
+      "nursery": {
+        "noUnusedExpressions": "info"
+      },
+      "correctness": {
+        "noUnusedImports": {
+          "fix": "none",
+          "level": "info"
+        }
       }
     }
   }
