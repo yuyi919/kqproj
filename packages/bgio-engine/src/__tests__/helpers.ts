@@ -49,17 +49,31 @@ export const SEVEN_PLAYER_CONFIG: GameConfig = {
 
 /**
  * 创建模拟随机数生成器
+ *
+ * 注意：RandomAPI 的 D4/D6/D10/D12/D20/Die 有重载：
+ * - 不带参数调用: 返回 number
+ * - 带参数调用: 返回 number[]
+ *
+ * 这个 mock 实现同时支持两种调用方式
  */
 export function createMockRandom(overrides: Partial<RandomAPI> = {}): RandomAPI {
+  // 创建支持重载的骰子函数
+  const makeDice = (value: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fn: any = () => value;
+    fn.and = (count: number) => Array.from({ length: count }, () => value);
+    return fn;
+  };
+
   return {
     Number: () => 0.5,
     Shuffle: <T>(arr: T[]): T[] => [...arr],
-    Die: (sides: number) => Math.floor(sides / 2) + 1,
-    D4: () => 2,
-    D6: () => 3,
-    D10: () => 5,
-    D12: () => 6,
-    D20: () => 10,
+    Die: makeDice(3),
+    D4: makeDice(2),
+    D6: makeDice(3),
+    D10: makeDice(5),
+    D12: makeDice(6),
+    D20: makeDice(10),
     ...overrides,
   } as RandomAPI;
 }
@@ -294,17 +308,14 @@ export function makeTestScenario(options: MakeTestScenarioOptions = {}): BGGameS
  * @param random - 可选的随机数生成器（默认使用 createMockRandom）
  * @returns 可直接用于 Effect.provide 的 Layer
  */
-export function makeLayerWithState(
-  state: BGGameState,
-  random?: RandomAPI,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Layer.Layer<any, never, any> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function makeLayerWithState(state: BGGameState, random?: RandomAPI): Layer.Layer<any, never, never> {
   const mockRandom = random ?? createMockRandom();
 
   return Layer.provideMerge(
     Layer.provideMerge(BaseGameLayers, GameStateRef.layer(state)),
     makeGameRandomLayer(mockRandom),
-  );
+  ) as Layer.Layer<any, never, never>;
 }
 
 /**
@@ -315,6 +326,6 @@ export function makeLayerWithState(
  * @returns 包含基础服务的 Layer
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function makeBaseLayer(): Layer.Layer<any, never, any> {
-  return BaseGameLayers;
+export function makeBaseLayer(): Layer.Layer<any, never, never> {
+  return BaseGameLayers as Layer.Layer<any, never, never>;
 }

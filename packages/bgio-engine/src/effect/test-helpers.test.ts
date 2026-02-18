@@ -31,7 +31,7 @@ describe("runSync", () => {
   });
 
   it("should throw for failed effect", () => {
-    expect(() => runSync(Effect.fail(new Error("test error")))).toThrow();
+    expect(() => runSync(Effect.fail(new Error("test error")) as Effect.Effect<never>)).toThrow();
   });
 
   it("should work with string return", () => {
@@ -55,7 +55,7 @@ describe("runSyncExit", () => {
   });
 
   it("should return Exit.Failure for failed effect", () => {
-    const exit = runSyncExit(Effect.fail(new Error("test error")));
+    const exit = runSyncExit(Effect.fail(new Error("test error")) as Effect.Effect<never>);
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
       expect(exit.cause).toBeDefined();
@@ -75,7 +75,7 @@ describe("runPromise", () => {
   });
 
   it("should reject for failed effect", async () => {
-    await expect(runPromise(Effect.fail(new Error("test error")))).rejects.toThrow();
+    await expect(runPromise(Effect.fail(new Error("test error")) as Effect.Effect<never>)).rejects.toThrow();
   });
 
   it("should work with async effect", async () => {
@@ -94,7 +94,7 @@ describe("runPromiseExit", () => {
   });
 
   it("should return Exit.Failure for failed effect", async () => {
-    const exit = await runPromiseExit(Effect.fail(new Error("test error")));
+    const exit = await runPromiseExit(Effect.fail(new Error("test error")) as Effect.Effect<never>);
     expect(Exit.isFailure(exit)).toBe(true);
   });
 });
@@ -107,7 +107,7 @@ describe("expectSuccess", () => {
   });
 
   it("should throw for Exit.Failure", () => {
-    const exit = Exit.fail(new Error("test error"));
+    const exit = Exit.fail(new Error("test error")) as Exit.Exit<never, Error>;
     expect(() => expectSuccess(exit)).toThrow("Expected success");
   });
 
@@ -146,7 +146,7 @@ describe("runWithLayer", () => {
       Effect.gen(function* () {
         const service = yield* TestService;
         return service;
-      }),
+      }) as Effect.Effect<number>,
       mockLayer,
     );
     expect(result).toBe(42);
@@ -159,7 +159,7 @@ describe("runWithLayer", () => {
       Effect.gen(function* () {
         const service = yield* StringService;
         return service;
-      }),
+      }) as Effect.Effect<string>,
       mockLayer,
     );
     expect(result).toBe("hello");
@@ -172,7 +172,7 @@ describe("runWithLayer", () => {
       Effect.gen(function* () {
         const service = yield* ObjectService;
         return service;
-      }),
+      }) as Effect.Effect<{ a: number; b: number }>,
       mockLayer,
     );
     expect(result).toEqual({ a: 1, b: 2 });
@@ -186,7 +186,7 @@ describe("runWithLayerExit", () => {
       Effect.gen(function* () {
         const service = yield* TestService;
         return service;
-      }),
+      }) as Effect.Effect<number>,
       mockLayer,
     );
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -233,10 +233,10 @@ describe("makeEffectMockLayer", () => {
       Effect.succeed(42),
     );
     const result = await Effect.runPromiseExit(
-      Effect.gen(function* () {
+      (Effect.gen(function* () {
         const service = yield* TestService;
         return service;
-      }).pipe(Effect.provide(layer as any)),
+      }) as Effect.Effect<number>).pipe(Effect.provide(layer as any)),
     );
     expect(Exit.isSuccess(result)).toBe(true);
     if (Exit.isSuccess(result)) {
@@ -247,13 +247,13 @@ describe("makeEffectMockLayer", () => {
   it("should handle effect that fails", async () => {
     const layer = makeEffectMockLayer(
       TestService,
-      Effect.fail(new Error("effect error")),
+      Effect.fail(new Error("effect error")) as Effect.Effect<number>,
     );
     const result = await Effect.runPromiseExit(
-      Effect.gen(function* () {
+      (Effect.gen(function* () {
         const service = yield* TestService;
         return service;
-      }).pipe(Effect.provide(layer as any)),
+      }) as Effect.Effect<number>).pipe(Effect.provide(layer as any)),
     );
     expect(Exit.isFailure(result)).toBe(true);
   });
@@ -283,7 +283,7 @@ describe("mergeLayers", () => {
         const str = yield* StringService;
         const num = yield* NumberService;
         return { str, num };
-      }),
+      }) as Effect.Effect<{ str: string; num: number }>,
       mergeLayers(layer1, layer2),
     );
 

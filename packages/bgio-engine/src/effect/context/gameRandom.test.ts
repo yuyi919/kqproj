@@ -193,7 +193,7 @@ describe("GameRandom", () => {
 
   describe("Dice functions", () => {
     it("D4 should return value between 1 and 4", () => {
-      const mockRandom = createMockRandom({ D4: () => 3 });
+      const mockRandom = createMockRandom({ D4: (() => 3) as RandomAPI["D4"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D4();
@@ -204,7 +204,7 @@ describe("GameRandom", () => {
     });
 
     it("D6 should return value between 1 and 6", () => {
-      const mockRandom = createMockRandom({ D6: () => 5 });
+      const mockRandom = createMockRandom({ D6: (() => 5) as RandomAPI["D6"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D6();
@@ -215,7 +215,7 @@ describe("GameRandom", () => {
     });
 
     it("D10 should return value between 1 and 10", () => {
-      const mockRandom = createMockRandom({ D10: () => 7 });
+      const mockRandom = createMockRandom({ D10: (() => 7) as RandomAPI["D10"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D10();
@@ -226,7 +226,7 @@ describe("GameRandom", () => {
     });
 
     it("D12 should return value between 1 and 12", () => {
-      const mockRandom = createMockRandom({ D12: () => 9 });
+      const mockRandom = createMockRandom({ D12: (() => 9) as RandomAPI["D12"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D12();
@@ -237,7 +237,7 @@ describe("GameRandom", () => {
     });
 
     it("D20 should return value between 1 and 20", () => {
-      const mockRandom = createMockRandom({ D20: () => 15 });
+      const mockRandom = createMockRandom({ D20: (() => 15) as RandomAPI["D20"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D20();
@@ -248,7 +248,7 @@ describe("GameRandom", () => {
     });
 
     it("Die should return value based on sides", () => {
-      const mockRandom = createMockRandom({ Die: (sides) => Math.floor(sides / 2) });
+      const mockRandom = createMockRandom({ Die: ((sides?: number) => Math.floor((sides ?? 6) / 2)) as RandomAPI["Die"] });
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.Die(10);
@@ -264,7 +264,7 @@ describe("GameRandom", () => {
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.Number();
-      });
+      }) as Effect.Effect<unknown>;
 
       const exit = Effect.runSyncExit(program);
       expect(Exit.isFailure(exit)).toBe(true);
@@ -274,7 +274,7 @@ describe("GameRandom", () => {
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D4();
-      });
+      }) as Effect.Effect<unknown>;
 
       const exit = Effect.runSyncExit(program);
       expect(Exit.isFailure(exit)).toBe(true);
@@ -284,7 +284,7 @@ describe("GameRandom", () => {
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.D6();
-      });
+      }) as Effect.Effect<unknown>;
 
       const exit = Effect.runSyncExit(program);
       expect(Exit.isFailure(exit)).toBe(true);
@@ -294,7 +294,7 @@ describe("GameRandom", () => {
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.Shuffle([1, 2, 3]);
-      });
+      }) as Effect.Effect<unknown>;
 
       const exit = Effect.runSyncExit(program);
       expect(Exit.isFailure(exit)).toBe(true);
@@ -304,7 +304,7 @@ describe("GameRandom", () => {
       const program = Effect.gen(function* () {
         const random = yield* GameRandom;
         return yield* random.Die(6);
-      });
+      }) as Effect.Effect<unknown>;
 
       const exit = Effect.runSyncExit(program);
       expect(Exit.isFailure(exit)).toBe(true);
@@ -316,12 +316,12 @@ describe("GameRandom", () => {
       const random: RandomAPI = {
         Number: () => 0.5,
         Shuffle: (arr) => [...arr],
-        Die: (sides) => Math.floor(sides / 2),
-        D4: () => 2,
-        D6: () => 3,
-        D10: () => 5,
-        D12: () => 6,
-        D20: () => 10,
+        Die: ((sides?: number) => Math.floor((sides ?? 6) / 2)) as RandomAPI["Die"],
+        D4: (() => 2) as RandomAPI["D4"],
+        D6: (() => 3) as RandomAPI["D6"],
+        D10: (() => 5) as RandomAPI["D10"],
+        D12: (() => 6) as RandomAPI["D12"],
+        D20: (() => 10) as RandomAPI["D20"],
       };
 
       const layer = makeGameRandomLayer(random);
@@ -332,12 +332,12 @@ describe("GameRandom", () => {
       const customRandom: RandomAPI = {
         Number: () => 0.123,
         Shuffle: (arr) => arr.slice().reverse(),
-        Die: (sides) => sides - 1,
-        D4: () => 1,
-        D6: () => 6,
-        D10: () => 10,
-        D12: () => 12,
-        D20: () => 20,
+        Die: ((sides?: number) => (sides ?? 6) - 1) as RandomAPI["Die"],
+        D4: (() => 1) as RandomAPI["D4"],
+        D6: (() => 6) as RandomAPI["D6"],
+        D10: (() => 10) as RandomAPI["D10"],
+        D12: (() => 12) as RandomAPI["D12"],
+        D20: (() => 20) as RandomAPI["D20"],
       };
 
       const program = Effect.gen(function* () {

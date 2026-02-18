@@ -64,8 +64,8 @@ export const Selectors = {
    * 检查玩家是否存活
    */
   isPlayerAlive(state: BGGameState, playerId: PlayerID): boolean {
-    const secret = state.players[playerId];
-    return !!secret && Refinements.isAlive(secret);
+    const info = state.players[playerId];
+    return !!info && Refinements.isAlive(info);
   },
 
   /**

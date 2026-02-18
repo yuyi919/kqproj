@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { Effect, Exit } from "effect";
 import { createTestState } from "../../__tests__/testUtils";
 import { GameStateRef, makeGameStateRefLayer } from "./gameStateRef";
+import { GamePhase } from "../../types";
 
 describe("GameStateRef", () => {
   it("provides observable get/set/update operations", () => {
@@ -70,7 +71,7 @@ describe("GameStateRef", () => {
       const initial = createTestState();
       const newState = createTestState();
       newState.round = 99;
-      newState.status = "morning";
+      newState.status = GamePhase.MORNING;
 
       const program = Effect.gen(function* () {
         const stateRef = yield* GameStateRef;
@@ -80,7 +81,7 @@ describe("GameStateRef", () => {
 
       const result = Effect.runSync(program);
       expect(result.round).toBe(99);
-      expect(result.status).toBe("morning");
+      expect(result.status).toBe(GamePhase.MORNING);
     });
 
     it("should work with empty state", () => {
@@ -183,7 +184,7 @@ describe("GameStateRef", () => {
         const getEffect = stateRef.get();
         // Running this effect should trigger dieMessage at line 55
         return yield* getEffect;
-      });
+      }) as Effect.Effect<unknown>;
 
       expect(() => Effect.runSync(program)).toThrow();
     });
@@ -193,7 +194,7 @@ describe("GameStateRef", () => {
         const stateRef = yield* GameStateRef;
         const setEffect = stateRef.set(createTestState());
         return yield* setEffect;
-      });
+      }) as Effect.Effect<unknown>;
 
       expect(() => Effect.runSync(program)).toThrow();
     });
@@ -203,7 +204,7 @@ describe("GameStateRef", () => {
         const stateRef = yield* GameStateRef;
         const updateEffect = stateRef.update((s) => s);
         return yield* updateEffect;
-      });
+      }) as Effect.Effect<unknown>;
 
       expect(() => Effect.runSync(program)).toThrow();
     });
