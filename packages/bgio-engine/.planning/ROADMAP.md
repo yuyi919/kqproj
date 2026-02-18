@@ -101,7 +101,7 @@
 
 **Plans**: 5 plans
 
-- [ ] 04-01-PLAN.md — Effect-TS 服务层测试 (CardService, PriorityService)
+- [x] 04-01-PLAN.md — Effect-TS 服务层测试 (CardService, PriorityService)
 - [x] 04-02-PLAN.md — 消息类型和 Selectors 测试
 - [x] 04-03-PLAN.md — 相位钩子和断言函数测试
 - [x] 04-04-PLAN.md — Effect Context 和测试辅助函数测试
