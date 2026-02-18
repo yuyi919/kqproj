@@ -1,15 +1,15 @@
 import { describe, expect, it } from "bun:test";
 import { Effect } from "effect";
-import { makeBaseLayer } from "../../__tests__/helpers";
 import {
   makeBarrierCard,
+  makeBaseLayer,
   makeCheckCard,
   makeDetectCard,
   makeKillCard,
   makeWitchKillerCard,
 } from "../../__tests__/helpers";
-import { PriorityService } from "./priorityService";
 import type { NightAction } from "../../types";
+import { PriorityService } from "./priorityService";
 
 // ==================== Test Helpers ====================
 
@@ -106,7 +106,11 @@ describe("PriorityService", () => {
     it("should return true for witch_killer action", () => {
       const program = Effect.gen(function* () {
         const service = yield* PriorityService;
-        const action = createNightAction("p1", makeWitchKillerCard("wk-1"), "p2");
+        const action = createNightAction(
+          "p1",
+          makeWitchKillerCard("wk-1"),
+          "p2",
+        );
         return service.isAttackAction(action);
       });
 
@@ -136,7 +140,11 @@ describe("PriorityService", () => {
     it("should return false for detect action", () => {
       const program = Effect.gen(function* () {
         const service = yield* PriorityService;
-        const action = createNightAction("p1", makeDetectCard("detect-1"), "p2");
+        const action = createNightAction(
+          "p1",
+          makeDetectCard("detect-1"),
+          "p2",
+        );
         return service.isAttackAction(action);
       });
 

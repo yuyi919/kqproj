@@ -10,7 +10,7 @@ import { makeGameLayers } from "../layers/gameLayers";
 import { PlayerStateService } from "./playerStateService";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return makeGameLayers({ G: state, random: createMockRandom() })
+  return makeGameLayers({ G: state, random: createMockRandom() });
 }
 
 describe("PlayerStateService", () => {
@@ -121,4 +121,3 @@ describe("PlayerStateService", () => {
     ).toBe(true);
   });
 });
-

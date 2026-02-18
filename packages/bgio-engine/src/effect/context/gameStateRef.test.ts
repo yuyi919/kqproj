@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { Effect, Exit } from "effect";
+import { Effect } from "effect";
 import { createTestState } from "../../__tests__/testUtils";
-import { GameStateRef, makeGameStateRefLayer } from "./gameStateRef";
 import { GamePhase } from "../../types";
+import { GameStateRef } from "./gameStateRef";
 
 describe("GameStateRef", () => {
   it("provides observable get/set/update operations", () => {

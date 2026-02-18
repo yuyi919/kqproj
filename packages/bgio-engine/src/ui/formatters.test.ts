@@ -11,22 +11,22 @@
  */
 
 import { describe, expect, it } from "bun:test";
+import { GamePhase } from "../types";
 import {
-  getCardTypeName,
-  getCardTypeDescription,
-  getCardIcon,
-  getPhaseName,
-  getPhaseDescription,
-  getPhaseColor,
-  getPlayerStatusName,
-  getPlayerStatusColor,
-  getDeathCauseName,
+  formatAlivePlayerList,
   formatDuration,
   formatRelativeTime,
   formatVoteSummary,
-  formatAlivePlayerList,
+  getCardIcon,
+  getCardTypeDescription,
+  getCardTypeName,
+  getDeathCauseName,
+  getPhaseColor,
+  getPhaseDescription,
+  getPhaseName,
+  getPlayerStatusColor,
+  getPlayerStatusName,
 } from "./formatters";
-import { GamePhase } from "../types";
 
 // ==================== 卡牌格式化测试 ====================
 
@@ -120,7 +120,9 @@ describe("阶段格式化", () => {
       expect(getPhaseDescription(GamePhase.CARD_SELECTION)).toBe(
         "选择击杀后获得的卡牌",
       );
-      expect(getPhaseDescription(GamePhase.RESOLUTION)).toBe("结算所有行动结果");
+      expect(getPhaseDescription(GamePhase.RESOLUTION)).toBe(
+        "结算所有行动结果",
+      );
       expect(getPhaseDescription(GamePhase.ENDED)).toBe("游戏已结束");
     });
 

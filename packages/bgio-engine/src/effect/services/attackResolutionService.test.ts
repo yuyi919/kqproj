@@ -1,12 +1,16 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
-import { createMockRandom, createTestState, setupPlayers } from "../../__tests__/testUtils";
+import {
+  createMockRandom,
+  createTestState,
+  setupPlayers,
+} from "../../__tests__/testUtils";
+import type { PhaseResult } from "../../game/resolution/types";
+import type { BGGameState, TMessage } from "../../types";
 import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
 import { makeGameLayers, StaticGameLayers } from "../layers/gameLayers";
 import { AttackResolutionService } from "./attackResolutionService";
-import type { PhaseResult } from "../../game/resolution/types";
-import type { BGGameState, TMessage } from "../../types";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
   return Layer.provideMerge(
@@ -30,7 +34,9 @@ function runPhase2AndGetState(
     yield* service.resolvePhase2(previousResult);
     const stateRef = yield* GameStateRef;
     return yield* stateRef.get();
-  }).pipe(Effect.provide(makeGameLayers({ G: state, random: createMockRandom() })));
+  }).pipe(
+    Effect.provide(makeGameLayers({ G: state, random: createMockRandom() })),
+  );
 
   return Effect.runSync(program);
 }
@@ -367,4 +373,3 @@ describe("AttackResolutionService", () => {
     }
   });
 });
-

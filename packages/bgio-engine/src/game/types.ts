@@ -4,7 +4,7 @@
  * 游戏模块类型定义
  */
 
-import type { Ctx, DefaultPluginAPIs } from "boardgame.io";
+import type { Ctx } from "boardgame.io";
 import type { EventsAPI } from "boardgame.io/dist/types/src/plugins/events/events";
 import type { RandomAPI } from "boardgame.io/dist/types/src/plugins/random/random";
 import type { BGGameState } from "../types";

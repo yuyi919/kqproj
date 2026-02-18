@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * MessageService - 消息服务
  *
@@ -8,7 +6,6 @@
  * 2. 封装攻击成功/失败的消息分发
  * 3. 维护 revealedInfo 的结构化记录
  */
-
 import { Effect } from "effect";
 import { TMessageBuilder } from "../../domain/services/messageBuilder";
 import type {
