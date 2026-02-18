@@ -21,9 +21,7 @@ describe("Apply PhaseResult", () => {
   });
 
   it("应该应用状态更新", () => {
-    const cardSelection = {
-      
-    }
+    const cardSelection = {};
     const result: PhaseResult = {
       stateUpdates: { cardSelection: cardSelection },
       deadPlayers: new Set(),

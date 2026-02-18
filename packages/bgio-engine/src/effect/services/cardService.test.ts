@@ -1,16 +1,16 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
 import {
+  makeBarrierCard,
   makeBaseLayer,
   makeCard,
-  makeBarrierCard,
   makeCheckCard,
   makeDetectCard,
   makeKillCard,
   makeWitchKillerCard,
 } from "../../__tests__/helpers";
-import { CardService } from "./cardService";
 import type { CardPoolConfig, CardType } from "../../types";
+import { CardService } from "./cardService";
 
 // ==================== Test Helpers ====================
 
@@ -55,14 +55,26 @@ describe("CardService", () => {
     it("should create cards of all types", () => {
       const program = Effect.gen(function* () {
         const service = yield* CardService;
-        const types: CardType[] = ["witch_killer", "barrier", "kill", "detect", "check"];
+        const types: CardType[] = [
+          "witch_killer",
+          "barrier",
+          "kill",
+          "detect",
+          "check",
+        ];
         return types.map((type) => service.createCard(type));
       });
 
       const cards = runCardService(program);
 
       expect(cards).toHaveLength(5);
-      expect(cards.map((c) => c.type)).toEqual(["witch_killer", "barrier", "kill", "detect", "check"]);
+      expect(cards.map((c) => c.type)).toEqual([
+        "witch_killer",
+        "barrier",
+        "kill",
+        "detect",
+        "check",
+      ]);
     });
 
     it("should create unique card ids", () => {
@@ -257,7 +269,13 @@ describe("CardService", () => {
     it("should return non-empty descriptions for all card types", () => {
       const program = Effect.gen(function* () {
         const service = yield* CardService;
-        const types: CardType[] = ["witch_killer", "barrier", "kill", "detect", "check"];
+        const types: CardType[] = [
+          "witch_killer",
+          "barrier",
+          "kill",
+          "detect",
+          "check",
+        ];
         return types.map((type) => service.getCardTypeDescription(type));
       });
 

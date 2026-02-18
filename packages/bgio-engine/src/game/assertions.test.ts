@@ -82,9 +82,7 @@ describe("assertNotEmpty", () => {
 
   it("should throw GameLogicError for empty strings", () => {
     expect(() => assertNotEmpty("", "name")).toThrow(GameLogicError);
-    expect(() => assertNotEmpty("   ", "name")).toThrow(
-      "name cannot be empty",
-    );
+    expect(() => assertNotEmpty("   ", "name")).toThrow("name cannot be empty");
   });
 
   it("should pass for strings with content", () => {

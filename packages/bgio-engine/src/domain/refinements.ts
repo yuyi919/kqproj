@@ -84,13 +84,19 @@ export const Refinements = {
       (a) => a.playerId === playerId && Refinements.isAnyAttackSuccess(a),
     );
   },
-
+  /**
+   * 判断行动是否成功
+   */
+  isActionExecuted(action: NightAction): boolean {
+    return action.executed === true;
+  },
   /**
    * 判断行动是否成功击杀
    */
   isAnyAttackSuccess(action: NightAction): boolean {
     return (
-      action.executed === true && Refinements.isAttackCardOptional(action.card)
+      Refinements.isActionExecuted(action) &&
+      Refinements.isAttackCardOptional(action.card)
     );
   },
 
@@ -99,7 +105,7 @@ export const Refinements = {
    */
   isKillMagicSuccess(action: NightAction): boolean {
     return (
-      action.executed === true &&
+      Refinements.isActionExecuted(action) &&
       !!action.card &&
       Refinements.isKillMagicCard(action.card)
     );
@@ -110,7 +116,7 @@ export const Refinements = {
    */
   isWitchKillerSuccess(action: NightAction): boolean {
     return (
-      action.executed === true &&
+      Refinements.isActionExecuted(action) &&
       !!action.card &&
       Refinements.isWitchKillerCard(action.card)
     );

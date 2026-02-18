@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * GameStateRef - 游戏状态可变引用
  *
@@ -8,7 +6,6 @@
  * 2. 提供 get / set / update 三个统一入口
  * 3. 避免服务层直接依赖裸对象副作用
  */
-
 import { Effect, Layer, Ref } from "effect";
 import type { BGGameState } from "../../types";
 
@@ -44,6 +41,13 @@ function makeGameStateRefService(
   });
 }
 
+function missingRandomApiCall(name: keyof IGameStateRef): Effect.Effect<never> {
+  /* istanbul ignore next */
+  return Effect.dieMessage(
+    `GameStateRef.${name} called without provided layer`,
+  );
+}
+
 /**
  * GameStateRef Tag
  */
@@ -52,12 +56,9 @@ export class GameStateRef extends Effect.Service<GameStateRef>()(
   {
     accessors: true,
     effect: Effect.succeed<IGameStateRef>({
-      get: () =>
-        Effect.dieMessage("GameStateRef.get called without provided layer"),
-      set: () =>
-        Effect.dieMessage("GameStateRef.set called without provided layer"),
-      update: () =>
-        Effect.dieMessage("GameStateRef.update called without provided layer"),
+      get: () => missingRandomApiCall("get"),
+      set: () => missingRandomApiCall("set"),
+      update: () => missingRandomApiCall("update"),
     }),
   },
 ) {

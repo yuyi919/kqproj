@@ -1,24 +1,25 @@
+/** @effect-diagnostics globalErrorInEffectFailure:skip-file */
 "use client";
 
 /**
  * Effect-TS 测试工具测试用例
  */
 
-import { Context, Effect, Exit, Layer } from "effect";
 import { describe, expect, it } from "bun:test";
+import { Context, Effect, Exit, Layer } from "effect";
 
 import {
-  runSync,
-  runSyncExit,
+  expectFailure,
+  expectSuccess,
+  makeEffectMockLayer,
+  makeMockLayer,
+  mergeLayers,
   runPromise,
   runPromiseExit,
-  expectSuccess,
-  expectFailure,
+  runSync,
+  runSyncExit,
   runWithLayer,
   runWithLayerExit,
-  makeMockLayer,
-  makeEffectMockLayer,
-  mergeLayers,
 } from "./test-helpers";
 
 // Define a test service for layer testing
@@ -31,7 +32,9 @@ describe("runSync", () => {
   });
 
   it("should throw for failed effect", () => {
-    expect(() => runSync(Effect.fail(new Error("test error")) as Effect.Effect<never>)).toThrow();
+    expect(() =>
+      runSync(Effect.fail(new Error("test error")) as Effect.Effect<never>),
+    ).toThrow();
   });
 
   it("should work with string return", () => {
@@ -55,7 +58,9 @@ describe("runSyncExit", () => {
   });
 
   it("should return Exit.Failure for failed effect", () => {
-    const exit = runSyncExit(Effect.fail(new Error("test error")) as Effect.Effect<never>);
+    const exit = runSyncExit(
+      Effect.fail(new Error("test error")) as Effect.Effect<never>,
+    );
     expect(Exit.isFailure(exit)).toBe(true);
     if (Exit.isFailure(exit)) {
       expect(exit.cause).toBeDefined();
@@ -75,7 +80,9 @@ describe("runPromise", () => {
   });
 
   it("should reject for failed effect", async () => {
-    await expect(runPromise(Effect.fail(new Error("test error")) as Effect.Effect<never>)).rejects.toThrow();
+    await expect(
+      runPromise(Effect.fail(new Error("test error")) as Effect.Effect<never>),
+    ).rejects.toThrow();
   });
 
   it("should work with async effect", async () => {
@@ -94,7 +101,9 @@ describe("runPromiseExit", () => {
   });
 
   it("should return Exit.Failure for failed effect", async () => {
-    const exit = await runPromiseExit(Effect.fail(new Error("test error")) as Effect.Effect<never>);
+    const exit = await runPromiseExit(
+      Effect.fail(new Error("test error")) as Effect.Effect<never>,
+    );
     expect(Exit.isFailure(exit)).toBe(true);
   });
 });
@@ -166,7 +175,9 @@ describe("runWithLayer", () => {
   });
 
   it("should work with object service", () => {
-    const ObjectService = Context.GenericTag<{ a: number; b: number }>("test/ObjectService");
+    const ObjectService = Context.GenericTag<{ a: number; b: number }>(
+      "test/ObjectService",
+    );
     const mockLayer = makeMockLayer(ObjectService, { a: 1, b: 2 });
     const result = runWithLayer(
       Effect.gen(function* () {
@@ -228,15 +239,14 @@ describe("makeMockLayer", () => {
 
 describe("makeEffectMockLayer", () => {
   it("should create an effect layer", async () => {
-    const layer = makeEffectMockLayer(
-      TestService,
-      Effect.succeed(42),
-    );
+    const layer = makeEffectMockLayer(TestService, Effect.succeed(42));
     const result = await Effect.runPromiseExit(
-      (Effect.gen(function* () {
-        const service = yield* TestService;
-        return service;
-      }) as Effect.Effect<number>).pipe(Effect.provide(layer as any)),
+      (
+        Effect.gen(function* () {
+          const service = yield* TestService;
+          return service;
+        }) as Effect.Effect<number>
+      ).pipe(Effect.provide(layer)),
     );
     expect(Exit.isSuccess(result)).toBe(true);
     if (Exit.isSuccess(result)) {
@@ -247,13 +257,15 @@ describe("makeEffectMockLayer", () => {
   it("should handle effect that fails", async () => {
     const layer = makeEffectMockLayer(
       TestService,
-      Effect.fail(new Error("effect error")) as Effect.Effect<number>,
+      Effect.fail(new Error("effect error")),
     );
     const result = await Effect.runPromiseExit(
-      (Effect.gen(function* () {
-        const service = yield* TestService;
-        return service;
-      }) as Effect.Effect<number>).pipe(Effect.provide(layer as any)),
+      (
+        Effect.gen(function* () {
+          const service = yield* TestService;
+          return service;
+        }) as Effect.Effect<number>
+      ).pipe(Effect.provide(layer)),
     );
     expect(Exit.isFailure(result)).toBe(true);
   });

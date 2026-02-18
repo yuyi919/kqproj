@@ -8,7 +8,6 @@
 
 import { nanoid } from "nanoid";
 import type {
-  BGGameState,
   CardRef,
   CardType,
   DeathCause,

@@ -1,9 +1,17 @@
 import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
-import { createMockRandom, createTestState, setupPlayers } from "../../__tests__/testUtils";
+import {
+  createMockRandom,
+  createTestState,
+  setupPlayers,
+} from "../../__tests__/testUtils";
 import { makeGameRandomLayer } from "../context/gameRandom";
 import { GameStateRef } from "../context/gameStateRef";
-import { AttackResolutionService, CardService, PriorityService } from "../services";
+import {
+  AttackResolutionService,
+  CardService,
+  PriorityService,
+} from "../services";
 import { BaseGameLayers, StaticGameLayers } from "./gameLayers";
 
 describe("GameLayers", () => {
@@ -65,4 +73,3 @@ describe("GameLayers", () => {
     expect(status).toBe("dead");
   });
 });
-

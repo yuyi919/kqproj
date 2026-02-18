@@ -2,11 +2,14 @@ import { describe, expect, it } from "bun:test";
 import { Effect, Layer } from "effect";
 import { createTestState, setupPlayers } from "../../__tests__/testUtils";
 import { GameStateRef } from "../context/gameStateRef";
-import { MessageService } from "./messageService";
 import { BaseGameLayers } from "../layers/gameLayers";
+import { MessageService } from "./messageService";
 
 function makeLayer(state: ReturnType<typeof createTestState>) {
-  return Layer.provideMerge(MessageService.Default, GameStateRef.layer(state)).pipe(Layer.provide(BaseGameLayers));
+  return Layer.provideMerge(
+    MessageService.Default,
+    GameStateRef.layer(state),
+  ).pipe(Layer.provide(BaseGameLayers));
 }
 
 describe("MessageService", () => {

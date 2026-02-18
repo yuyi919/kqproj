@@ -72,9 +72,10 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 1 | 配置简单的.git pre-commit，在提交前执行format命令 | 2026-02-18 | - | [1-git-pre-commit-format](./quick/1-git-pre-commit-format/) |
+| 1 | 配置简单的.git pre-commit，在提交前执行format命令 | 2026-02-18 | 30042dd | [1-git-pre-commit-format](./quick/1-git-pre-commit-format/) |
+| 2 | 撤销上一个任务，用配置lint-staged代替 | 2026-02-18 | - | [2-lint-staged](./quick/2-lint-staged/) |
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Created git pre-commit hook
+Stopped at: Configured lint-staged instead of manual pre-commit hook

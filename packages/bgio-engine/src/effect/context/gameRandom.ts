@@ -20,10 +20,10 @@ export interface IRandomService {
   Number(): Effect.Effect<number>;
   Shuffle<T>(deck: T[]): Effect.Effect<T[]>;
 }
+
 function missingRandomApiCall(name: keyof RandomAPI): Effect.Effect<never> {
-  return Effect.die(
-    new Error(`${name} called without provided GameRandom layer`),
-  );
+  /* istanbul ignore next */
+  return Effect.dieMessage(`${name} called without provided GameRandom layer`);
 }
 
 const MissingRandomApi: IRandomService = {

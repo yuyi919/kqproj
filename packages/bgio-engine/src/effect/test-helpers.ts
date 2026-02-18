@@ -145,9 +145,9 @@ export function makeMockLayer<I, R>(
 /**
  * 创建 Effect Mock Layer（用于异步或需要 Effect 的场景）
  */
-export function makeEffectMockLayer<I, R, E>(
-  tag: Context.Tag<I, R>,
-  impl: Effect.Effect<R, E>,
+export function makeEffectMockLayer<I, S, E, R>(
+  tag: Context.Tag<I, S>,
+  impl: Effect.Effect<NoInfer<S>, E, R>,
 ): Layer.Layer<I, E, R> {
   return Layer.effect(tag, impl);
 }
