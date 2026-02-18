@@ -139,6 +139,9 @@ export interface BGGameState {
   // === 玩家（公开信息 - 所有人可见）===
   /** 玩家公开信息映射：玩家ID -> 公开信息 */
   players: Record<string, PublicPlayerInfo>;
+  // === 秘密信息（会被 playerView 过滤）===
+  /** 玩家私有信息映射：玩家ID -> 私有信息 */
+  secrets: Record<PlayerID, PrivatePlayerInfo>;
   /** 玩家座位顺序列表 */
   playerOrder: string[];
 
@@ -194,10 +197,6 @@ export interface BGGameState {
   phaseStartTime: number;
   /** 当前阶段结束的时间戳 */
   phaseEndTime: number;
-
-  // === 秘密信息（会被 playerView 过滤）===
-  /** 玩家私有信息映射：玩家ID -> 私有信息 */
-  secrets: Record<PlayerID, PrivatePlayerInfo>;
 
   // === 聊天消息（公开）===
   /** 历史聊天消息列表 */
